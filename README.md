@@ -120,3 +120,22 @@ Use the `:app:` task prefix so Gradle does not run the generated plugin librarie
 For iOS, use the App scheme's UI tests in Xcode with a booted simulator and make `Native fixture.gpx` available in its local Files storage. The test finds it in On My iPhone or the BareGPS folder. It opens, reads and exports the GPX through the real iOS picker. Tests are in `ios/App/AppUITests/AppUITests.swift`.
 
 Current development artifacts: `releases/BareGPS-Track-Editor-0.1.1-android-debug.apk` and layout previews in `docs/previews/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
+
+## Website downloads
+
+The Tools section on <https://appsbyonzy.dev/#tools> provides the iOS source
+bundle, Android bundle, direct APK and platform-specific instructions.
+The website source is maintained in `web-preview/site/` in the OpenBareMap
+repository. This app repository retains the guides, platform bundles and
+reproducible packaging/verification scripts under `docs/distribution/`,
+`releases/bundles/` and `scripts/distribution/`.
+
+```sh
+python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.1.1
+python3 scripts/distribution/verify-website.py /path/to/web-preview/site --base-url https://appsbyonzy.dev
+```
+
+The iOS ZIP is a source bundle with prebuilt web assets for Xcode; Apple
+signing is required to install it on a device. The Android ZIP includes the
+APK and installation instructions. The iOS row alone states: “Will be available
+through App Store”. The GitHub link keeps its existing repository access policy.
