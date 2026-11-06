@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BareGPS Track Editor</string>
+    <string name="title_activity_main">BareGPS Track Editor</string>
+    <string name="package_name">com.baregps.trackeditor</string>
+    <string name="custom_url_scheme">com.baregps.trackeditor</string>
+</resources>
