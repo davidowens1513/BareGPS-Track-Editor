@@ -5,7 +5,7 @@ from html.parser import HTMLParser
 import argparse
 import hashlib
 import json
-import urllib.request
+import subprocess
 import zipfile
 
 parser=argparse.ArgumentParser()
@@ -32,7 +32,7 @@ checks=[]
 for name,info in manifest['files'].items():
     path=prefix+name
     url=args.base_url.rstrip('/')+'/'+path if args.base_url else None
-    data=urllib.request.urlopen(url,timeout=40).read() if url else (site/path).read_bytes()
+    data=subprocess.check_output(['curl','--fail','--silent','--show-error','--location','--max-time','40',url]) if url else (site/path).read_bytes()
     assert hashlib.sha256(data).hexdigest()==info['sha256'],name
     checks.append({'path':path,'bytes':len(data),'sha256':info['sha256']})
 for platform in ['ios','android']:
