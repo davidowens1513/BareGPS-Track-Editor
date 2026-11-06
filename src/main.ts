@@ -59,7 +59,7 @@ let terrainController: AbortController | null = null;
 const STORAGE_KEY = "baregps-workspace-v1";
 
 document.querySelector("#app")!.innerHTML = `
-<header class="app-header"><a class="brand" href="#" aria-label="BareGPS Track Editor home"><img src="/logo.svg" alt="" width="40" height="40"><span><strong>BareGPS</strong><span class="brand-divider">/</span><span class="brand-title">Track Editor</span></span></a><div class="header-right"><span id="save-state" class="save-state">${icon("check", 14)} On your device</span><button id="help" class="icon-button" aria-label="Help and keyboard shortcuts">${icon("help")}</button></div></header>
+<header class="app-header"><a class="brand" href="#" aria-label="BareGPS Track Editor home"><img src="/logo.svg" alt="" width="40" height="40"><strong class="brand-title">BareGPS Track Editor</strong></a><div class="header-right"><span id="save-state" class="save-state" role="status" title="Your workspace is kept on this device. Use Save section or Save route to export a GPX file."><span class="save-full">On your device</span><span class="save-short" aria-hidden="true">On device</span></span><button id="help" class="icon-button" aria-label="Help and keyboard shortcuts">${icon("help")}</button></div></header>
 <main>
   <section class="workspace-heading"><div><p class="eyebrow">A LITTLE PLANNING. A GREAT WALK.</p><h1>Your tracks. Your way.</h1></div><div class="heading-actions"><span id="track-count" class="count-label">Your workspace</span><div class="history"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)">${icon("undo", 18)}</button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)">${icon("redo", 18)}</button></div></div></section>
   <section id="map-panel" class="map-panel" aria-label="Track map">
@@ -72,7 +72,7 @@ document.querySelector("#app")!.innerHTML = `
   <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} DISTANCE</span><strong id="distance">0.00 <small>km</small></strong></div><div class="metric"><span>${icon("up", 17)} ASCENT</span><strong id="ascent">— <small>m</small></strong></div><div class="metric"><span>${icon("down", 17)} DESCENT</span><strong id="descent">— <small>m</small></strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} SELECTED SECTION</span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
   <section class="profile-card" aria-label="Elevation profile"><div class="profile-heading"><span>ELEVATION PROFILE</span><span id="profile-range">Select a track to explore its elevation</span></div><div id="profile"></div><div id="elevation-note" class="elevation-note" hidden></div></section>
   <div id="editor" class="editor-grid">
-    <section class="card tracks-card"><div class="card-heading"><h2>Your tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote">${icon("file", 14)} GPX files · originals stay untouched</div></section>
+    <section class="card tracks-card"><div class="card-heading"><h2>Your tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote"><span>${icon("file", 14)} GPX files · originals stay untouched</span><button id="sample-tracks" class="text-button">Irish samples</button></div></section>
     <section class="card section-card"><div class="card-heading"><h2>Edit a section</h2><span class="badge soft">A → B</span></div><div id="section-controls"></div></section>
   </div>
   <section id="route-card" class="route-card"></section>
@@ -114,6 +114,13 @@ function report(error: unknown) {
     true,
   );
 }
+function setSaveState(full: string, short: string) {
+  $("save-state").innerHTML =
+    `<span class="save-full">${full}</span><span class="save-short" aria-hidden="true">${short}</span>`;
+  $("save-state").setAttribute("aria-label", full);
+  $("save-state").title =
+    `${full}. This refers to the workspace on this device; use Save section or Save route to export a GPX file.`;
+}
 let storageRevision = 0;
 function flushWorkspace() {
   clearTimeout(saveTimer);
@@ -124,10 +131,10 @@ function flushWorkspace() {
     .then(() => set(STORAGE_KEY, snapshot))
     .then(() => {
       if (revision === storageRevision)
-        $("save-state").innerHTML = `${icon("check", 14)} Saved on device`;
+        setSaveState("Saved on device", "Saved");
     })
     .catch(() => {
-      $("save-state").textContent = "Not saved";
+      setSaveState("Not saved", "Not saved");
       notification(
         "Your device could not save this workspace. Export your tracks before closing the app.",
         true,
@@ -137,7 +144,7 @@ function flushWorkspace() {
 function persist() {
   storageRevision++;
   clearTimeout(saveTimer);
-  $("save-state").innerHTML = "Saving…";
+  setSaveState("Saving…", "Saving…");
   saveTimer = setTimeout(flushWorkspace, 300);
 }
 document.addEventListener("visibilitychange", () => {
@@ -484,7 +491,13 @@ function render() {
   $<HTMLButtonElement>("redo").disabled = !redo.length || busy;
   $("view-toggle").innerHTML =
     `${icon("eye", 16)}<span>${showAll ? "All tracks" : "Selected section"}</span>`;
-  for (const id of ["import", "empty-import", "demo", "view-toggle"])
+  for (const id of [
+    "import",
+    "empty-import",
+    "demo",
+    "sample-tracks",
+    "view-toggle",
+  ])
     $<HTMLButtonElement>(id).disabled = busy;
   document.querySelectorAll<HTMLButtonElement>("button").forEach((b) => {
     if (
@@ -680,7 +693,7 @@ function terrainDialog() {
 }
 $("import").onclick = () => importFiles();
 $("empty-import").onclick = () => importFiles();
-$("demo").onclick = () =>
+function loadSampleTracks() {
   commit(() => {
     const tracks = demoTracks();
     ensureTrackCapacity(
@@ -694,6 +707,9 @@ $("demo").onclick = () =>
       "Illustrative sample tracks loaded. Import your own GPX files to plan a real walk.",
     );
   }, true);
+}
+$("demo").onclick = loadSampleTracks;
+$("sample-tracks").onclick = loadSampleTracks;
 $("view-toggle").onclick = () => {
   showAll = !showAll;
   render();

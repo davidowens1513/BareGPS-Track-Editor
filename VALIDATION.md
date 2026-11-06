@@ -24,8 +24,8 @@ Checked on 6 November 2026. This records the actual verification scope, rather t
 
 ## Executed checks
 
-- `npm test`: **21 passing tests**.
-- `npm run test:e2e`: **16 passing checks**, split between desktop Chromium and a phone viewport with touch enabled.
+- `npm test`: **22 passing tests**.
+- `npm run test:e2e`: **18 passing checks**, split between desktop Chromium and a phone viewport with touch enabled.
 - `npm run build`: TypeScript and the production web bundle build successfully.
 - `npm run format:check`: passes.
 - Dependency installation audit: **0 known vulnerabilities** at installation time, with the lockfile included as the reproducible dependency record.
@@ -40,3 +40,9 @@ The native tests use disposable simulator data. `Native fixture.gpx` was made av
 The app is a development version, tested in simulators/emulators and browsers. Physical-device installation and launch were subsequently checked on an Honor BND-L21 (Android 9), Samsung Galaxy A07 / SM-A075F (Android 16), and the attached iPhone 14 (iOS 27.0.1). The iPhone build uses the existing Apple Development certificate and managed device profile. Full file-editing workflow checks remain those described above for simulators/emulators. TestFlight, App Store and Play Store publication are not included. iOS external open-in-app delivery is implemented but needs a separate Files-app launch check on an iPhone; the iOS system-picker import/export path is verified. No automatic trail routing or offline map packs were requested. Public map/terrain services require internet, and their capacity/availability is external to this app.
 
 Connection distance always counts. Ascent is explicitly partial when recorded elevations are missing, and estimated for an unprofiled gap. Fetching terrain improves the gap profile; it does not turn a straight connector into a verified walkable trail.
+
+## Version 0.1.1 update
+
+Irish illustrative samples replace the Glen Coe samples: Glendalough Upper Lake and Spinc ridge. The starting map view is Ireland. Both native app icons, launch images, the web logo and header use the two-point winding-line mark; its `#34C759` green matches the light-appearance system green used in the BareGPS Ireland title. The full title is “BareGPS Track Editor”. The save indicator is now labelled with words, including on phones, and explains that it refers to workspace recovery rather than GPX export. The tracks panel also exposes Irish samples for existing workspaces.
+
+The update passed 22 unit tests and 18 desktop/phone browser checks, including the full title and save label at 320, 360 and 390 pixels, Irish sample geometry and existing editing/export regression checks. Android and signed iPhone builds succeeded.

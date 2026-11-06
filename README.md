@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:5173>. **Explore with sample tracks** loads two small, clearly labelled illustrative tracks. These samples are for exploring the editor, not navigation. GPX files are processed on the device; no account or upload service is required.
+Open <http://127.0.0.1:5173>. **Explore with sample tracks** loads two small, clearly labelled illustrative Irish tracks around Glendalough’s Upper Lake and the Spinc in County Wicklow. These samples are for exploring the editor, not navigation. GPX files are processed on the device; no account or upload service is required.
 
 ## Android and iOS
 
@@ -99,7 +99,7 @@ Browser tests use an installed Google Chrome on macOS by default. Set `BAREGPS_C
 
 ## Maps, branding and dependencies
 
-The green mountain mark is a new placeholder BareGPS logo created for this project. Replace `public/logo.svg` with the established brand asset when available; native icon assets should be replaced at the same time. No map layer selector is included.
+The logo shows two endpoints connected by a winding line. Its green matches `UIColor.systemGreen`, used by the BareGPS Ireland title (`#34C759` in light appearance). The header reads “BareGPS Track Editor”. The Saved indicator refers to automatic workspace recovery on the device; exporting a GPX file is a separate action. No map layer selector is included.
 
 Map tiles use [OpenTopoMap](https://opentopomap.org/) with visible attribution to [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), SRTM and OpenTopoMap (CC-BY-SA). Optional terrain uses [Open Topo Data](https://www.opentopodata.org/) and its [Mapzen dataset](https://www.opentopodata.org/datasets/mapzen/). Mapping uses [Leaflet](https://leafletjs.com/); mobile packaging uses [Capacitor](https://capacitorjs.com/). Review public tile/terrain service capacity for a store release. There is no offline tile pack, trail routing, account system or remote workspace sync in this version.
 
@@ -119,4 +119,4 @@ Use the `:app:` task prefix so Gradle does not run the generated plugin librarie
 
 For iOS, use the App scheme's UI tests in Xcode with a booted simulator and make `Native fixture.gpx` available in its local Files storage. The test finds it in On My iPhone or the BareGPS folder. It opens, reads and exports the GPX through the real iOS picker. Tests are in `ios/App/AppUITests/AppUITests.swift`.
 
-Current development artifacts: `releases/BareGPS-Track-Editor-0.1.0-android-debug.apk` and layout previews in `docs/previews/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
+Current development artifacts: `releases/BareGPS-Track-Editor-0.1.1-android-debug.apk` and layout previews in `docs/previews/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.

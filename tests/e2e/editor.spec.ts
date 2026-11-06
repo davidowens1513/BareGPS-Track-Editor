@@ -267,3 +267,32 @@ test("colour picker and selected-section export preserve the chosen colour", asy
   expect(xml.match(/<trkpt /g)).toHaveLength(3);
   expect(xml).not.toContain('lat="56"');
 });
+
+test("Irish samples and the full branded header remain clear on small phones", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /Explore with sample/ }).click();
+  await expect(page.locator(".brand-title")).toHaveText("BareGPS Track Editor");
+  await expect(page).toHaveTitle("BareGPS Track Editor");
+  await expect(page.locator("#track-list")).toContainText(
+    "Glendalough · Upper Lake",
+  );
+  await expect(page.locator("#track-list")).toContainText(
+    "Glendalough · Spinc ridge",
+  );
+  await expect(page.locator("#save-state")).toContainText("Saved on device");
+  await expect(page.locator("#save-state svg")).toHaveCount(0);
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(page.locator(".brand-title")).toBeVisible();
+    await expect(page.locator("#save-state .save-short")).toHaveText("Saved");
+    const brand = await page.locator(".brand").boundingBox(),
+      status = await page.locator(".header-right").boundingBox();
+    expect(brand!.x + brand!.width).toBeLessThanOrEqual(status!.x);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  }
+});

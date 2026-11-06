@@ -5,6 +5,7 @@
   font-synthesis: none;
   font-size: 14px;
   --green: #146644;
+  --brand-green: #34c759;
   --dark: #253f33;
   --muted: #7b857a;
   --border: #e4e8df;
@@ -73,28 +74,17 @@ button svg {
   display: flex;
   align-items: center;
   gap: 13px;
-  color: var(--green);
+  color: var(--brand-green);
   text-decoration: none;
 }
-.brand > span {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-.brand strong {
+.brand .brand-title {
   font-size: 24px;
-  letter-spacing: -1px;
-  font-weight: 750;
+  letter-spacing: -0.8px;
+  font-weight: 700;
+  white-space: nowrap;
 }
-.brand-divider {
-  color: #c5d4c6;
-  font-size: 25px;
-  font-weight: 200;
-}
-.brand-title {
-  font-size: 19px;
-  letter-spacing: -0.5px;
-  font-weight: 550;
+.save-short {
+  display: none;
 }
 .header-right {
   display: flex;
@@ -1258,11 +1248,8 @@ dialog p {
   main {
     padding: 0 24px;
   }
-  .brand strong {
+  .brand .brand-title {
     font-size: 22px;
-  }
-  .brand-title {
-    font-size: 17px;
   }
   .route-card {
     flex-wrap: wrap;
@@ -1326,28 +1313,23 @@ dialog p {
     width: 33px;
     height: 33px;
   }
-  .brand > span {
-    gap: 9px;
-  }
-  .brand strong {
-    font-size: 21px;
-  }
-  .brand-title {
-    font-size: 16px;
-  }
-  .brand-divider {
-    font-size: 21px;
+  .brand .brand-title {
+    font-size: 19px;
+    letter-spacing: -0.6px;
   }
   .header-right {
     gap: 6px;
   }
   .save-state {
-    font-size: 0;
+    font-size: 9px;
     gap: 0;
+    white-space: nowrap;
   }
-  .save-state svg {
-    width: 15px;
-    height: 15px;
+  .save-full {
+    display: none;
+  }
+  .save-short {
+    display: inline;
   }
   .icon-button {
     width: 35px;
@@ -1690,4 +1672,31 @@ dialog p {
     scroll-behavior: auto !important;
     transition: none !important;
   }
+}
+
+@media (max-width: 350px) {
+  .brand {
+    gap: 7px;
+  }
+  .brand .brand-title {
+    font-size: 17px;
+    letter-spacing: -0.7px;
+  }
+  .header-right {
+    gap: 3px;
+  }
+}
+
+.card-footnote {
+  justify-content: space-between;
+  gap: 8px;
+}
+.card-footnote > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.card-footnote .text-button {
+  font-size: 9px;
+  white-space: nowrap;
 }

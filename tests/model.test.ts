@@ -252,3 +252,24 @@ describe("terrain sampling", () => {
   });
 });
 import { vi } from "vitest";
+
+import { demoTracks } from "../src/demo";
+it("provides two illustrative Irish tracks with useful distance and ascent", () => {
+  const tracks = demoTracks();
+  expect(tracks).toHaveLength(2);
+  for (const track of tracks) {
+    expect(track.source).toContain("Glendalough, County Wicklow");
+    expect(track.name).toContain("Glendalough");
+    expect(
+      track.points.every(
+        (point) =>
+          point.lat > 52.9 &&
+          point.lat < 53.1 &&
+          point.lon > -6.5 &&
+          point.lon < -6.2,
+      ),
+    ).toBe(true);
+    expect(analytics(track.points).length).toBeGreaterThan(1000);
+    expect(analytics(track.points).ascent).toBeGreaterThan(20);
+  }
+});

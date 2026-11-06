@@ -13,7 +13,7 @@ await page
   .getByRole("button", { name: "Start joined route with section" })
   .click();
 await page
-  .getByRole("button", { name: /Lost Valley/ })
+  .getByRole("button", { name: /Spinc ridge/ })
   .first()
   .click();
 await page.getByRole("button", { name: "Append section to route" }).click();
@@ -21,6 +21,7 @@ await page.getByRole("button", { name: "Dismiss message" }).click();
 await page.waitForTimeout(2000);
 await page.screenshot({ path: "/tmp/baregps-desktop.png", fullPage: true });
 await page.setViewportSize({ width: 390, height: 844 });
+await page.getByRole("button", { name: "Fit tracks to map" }).click();
 await page.waitForTimeout(500);
 await page.screenshot({ path: "/tmp/baregps-mobile.png" });
 await page.locator("#section-controls").scrollIntoViewIfNeeded();

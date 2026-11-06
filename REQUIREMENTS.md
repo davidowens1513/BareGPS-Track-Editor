@@ -21,3 +21,10 @@ Every connection counts in distance. Every available elevation change counts in 
 ## Verification evidence
 
 See `VALIDATION.md` for executed checks and any remaining platform verification limits. Store publication, developer signing, offline tile packs and automated path routing were not requested.
+
+## Sample and branding update — 6 November 2026
+
+- Use Irish example tracks; the illustrative samples are Glendalough Upper Lake and Spinc ridge in County Wicklow.
+- Use a logo showing two endpoint circles joined by a winding line. Match the green used for the BareGPS Ireland title: `UIColor.systemGreen` / light `#34C759`.
+- Explain the title-line tick: it was automatic local workspace saving. Replace the unexplained symbol with a readable Saved indicator and explain that GPX export remains a separate action.
+- Display the complete title **BareGPS Track Editor**, without a slash or middle dot.
