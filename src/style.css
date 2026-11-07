@@ -11,7 +11,7 @@
   --border: #e4e8df;
   --paper: #fff;
   --header-height: 77px;
-  --analytics-height: 109px;
+  --analytics-height: 98px;
 }
 * {
   box-sizing: border-box;
@@ -78,7 +78,7 @@ button svg {
   text-decoration: none;
 }
 .brand .brand-title {
-  font-size: 24px;
+  font-size: 26.4px;
   letter-spacing: -0.8px;
   font-weight: 700;
   white-space: nowrap;
@@ -451,18 +451,19 @@ h3 {
 }
 .analytics {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1.35fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.35fr);
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 10px;
   margin: 16px 0 0;
-  padding: 22px 10px;
+  padding: 17px 0;
   position: sticky;
   top: calc(var(--header-height) + env(safe-area-inset-top));
   z-index: 700;
   box-shadow: 0 2px 8px #283a2503;
 }
 .metric {
+  min-width: 0;
   text-align: right;
   padding: 0 23px;
   border-right: 1px solid #e9ece5;
@@ -1196,7 +1197,7 @@ dialog p {
   border-radius: 0;
   margin: 0;
   height: calc(var(--analytics-height) + env(safe-area-inset-bottom));
-  padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  padding-bottom: calc(17px + env(safe-area-inset-bottom));
 }
 .map-expanded .map-legend {
   bottom: 25px;
@@ -1214,7 +1215,7 @@ dialog p {
     padding: 0 24px;
   }
   .brand .brand-title {
-    font-size: 22px;
+    font-size: 24.2px;
   }
   .route-card {
     flex-wrap: wrap;
@@ -1236,7 +1237,7 @@ dialog p {
     font-size: 14px;
   }
   .analytics {
-    grid-template-columns: 1fr 1fr 1fr 1.4fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr);
   }
   .editor-grid {
     gap: 14px;
@@ -1265,7 +1266,7 @@ dialog p {
 @media (max-width: 640px) {
   :root {
     --header-height: 66px;
-    --analytics-height: 101px;
+    --analytics-height: 91px;
   }
   .app-header {
     padding-left: max(16px, env(safe-area-inset-left));
@@ -1279,7 +1280,7 @@ dialog p {
     height: 33px;
   }
   .brand .brand-title {
-    font-size: 19px;
+    font-size: 20.9px;
     letter-spacing: -0.6px;
   }
   .header-right {
@@ -1397,9 +1398,9 @@ dialog p {
   }
   .analytics {
     margin-top: 12px;
-    padding: 16px 2px;
-    grid-template-columns: 1fr 1fr 1fr;
-    min-height: 94px;
+    padding: 12px 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 85px;
   }
   .metric {
     padding: 0 13px;
@@ -1602,7 +1603,7 @@ dialog p {
     height: calc(100% - 44px);
   }
   .map-expanded .analytics {
-    padding-top: 18px;
+    padding-top: 14px;
   }
   .map-expanded .map-toolbar {
     height: 44px;
@@ -1633,7 +1634,7 @@ dialog p {
     gap: 7px;
   }
   .brand .brand-title {
-    font-size: 17px;
+    font-size: 18.7px;
     letter-spacing: -0.7px;
   }
   .header-right {
@@ -1979,7 +1980,7 @@ dialog p {
     flex: 1;
   }
   .brand .brand-title {
-    font-size: 16px;
+    font-size: 17.6px;
     letter-spacing: -0.4px;
     max-width: 210px;
   }
@@ -2192,4 +2193,14 @@ dialog p {
 
 .leaflet-bottom.leaflet-left {
   bottom: var(--map-attribution-height, 0px);
+}
+
+.analytics { width: 100%; }
+.metric > span:first-child { min-width: 0; }
+.metric > span:first-child svg { flex-shrink: 0; }
+.selection-metric > strong,
+.metric-note { overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .metric { padding-inline: 6px; }
+  .metric > span:first-child { gap: 3px; letter-spacing: 0; }
 }
