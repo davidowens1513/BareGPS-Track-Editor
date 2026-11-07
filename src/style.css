@@ -2068,3 +2068,20 @@ dialog p {
   pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
+
+.dialog-heading-content {
+  min-width: 0;
+}
+.branded-dialog-heading .dialog-heading-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.dialog-logo {
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+.branded-dialog-heading h2 {
+  color: var(--brand-green);
+}
