@@ -2,42 +2,118 @@
 
 **GPX Creator and Editor**
 
-A local-first route creator and GPX editor for Android and iOS. Create walking routes by tapping the map, or open several tracks, choose the portions you want, split them or assemble a new walking route, preview it on OpenTopoMap, and save a GPX file back to Files.
+BareGPS Route Planner creates walking routes and edits GPX tracks on Android, iOS and in a browser. Work is stored on the device. Import GPX files, choose sections, split or join tracks, preview them on OpenTopoMap and export the result to Files.
 
-## Run the preview
+[Browser Preview](https://appsbyonzy.dev/tools/baregps-route-planner/) · [Downloads and instructions](https://appsbyonzy.dev/#tools)
 
-Use Node.js 22 or newer and npm.
+## Create a route
+
+The app opens in **Create**, the left tab. An empty map starts at Carrauntoohil at zoom 13. Create and Edit have separate maps; Create retains its draft and map position.
+
+- **Add points**, beneath the map, adds a starting point and subsequent points in walking order. Every tap extends the route, including taps near an existing line.
+- **Insert point** inserts one point between neighbouring points on the chosen line, then returns to Add points.
+- Drag numbered markers to move points. Use the grid to inspect coordinates, leg distance, total distance and available heights. A point's number locates it on the map; its bin button removes it.
+- **Close loop** joins the last point precisely to the start and includes the return leg in distance.
+- **Fetch terrain** estimates ascent and descent along the route. Moving, adding or removing points clears terrain estimates; fetch again after reshaping.
+- Choose a route name and **Line colour**, then **Save route** exports a GPX file.
+
+Lines connect points directly; the app does not automatically follow roads or paths. Undo and Redo are beneath the device-save status in the title panel. Create's undo history is separate from Edit's.
+
+## Edit GPX tracks
+
+Opening **Edit**, including switching from Create, resets its map to Carrauntoohil and shows **Open GPX files** and **Explore with sample tracks**. Imported tracks and joined routes remain saved. Select an imported track in **Your tracks** to resume editing it.
+
+Examples are optional illustrative tracks around Glendalough's Upper Lake and the Spinc in County Wicklow. They appear only after choosing the sample button. Opening Edit hides them again; requesting them reuses retained samples rather than adding duplicates.
+
+1. **Open files** accepts GPX tracks and routes, including multiple tracks within one file. On phones, GPX files can also be opened or shared into the app from Files.
+2. Select a track, then drag **A** and **B** on the map or use the sliders to choose a section. Distance, ascent, descent and the elevation profile update immediately.
+3. **Save section** exports the selection. **Split** creates two tracks sharing the cut point, retaining the original. **Reverse** reverses the selected track's direction.
+4. **Start joined route** and **Append section to route** assemble selected sections in walking order. The joined route is separate from its sources and can be previewed, renamed and saved.
+5. **Undo** and **Redo** cover editing, importing, splitting, reversal, joining, renaming, colour changes and removal. Use ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z on a keyboard.
+
+**Select whole track** resets the section selection. The fit control frames relevant tracks; the track-view control switches between all tracks and the selected section. Expand the map for a larger workspace, then collapse it or press Escape. The header and metrics remain visible while expanded.
+
+## Map, metrics and colour
+
+Both maps use OpenTopoMap. The crosshair at the upper right requests one current-position fix and shows a blue dot and accuracy circle. It never adds a waypoint or starts background tracking. Location access is requested only after tapping the button; approximate Android permission is supported. Zoom controls sit at the lower left above the scale. The smaller map-centre readout is right-aligned immediately above the attribution.
+
+Metrics show **Distance(km)**, **Ascent(m)** and **Descent(m)**, with labels and values centred in their columns. Empty ascent and descent display **0**. Where elevation is unavailable, the profile explains that heights are needed; displayed zero does not supply missing GPX heights. Terrain and partial-elevation totals are identified where applicable.
+
+The round **Line colour** buttons in Create and Edit open a spectrum picker with preset swatches, a hex field and a preview. **Apply colour** makes one undoable change; **Cancel** leaves the existing colour intact.
+
+The green BareGPS logo and title remain in the header. Help and Settings carry the same logo. The **?** button opens guidance; the cog beneath it opens Settings.
+
+## Coordinate display
+
+Settings offers Lat/Long (WGS84), Irish National Grid, British National Grid, Irish Transverse Mercator (ITM), MGRS, UTM and USNG (WGS84). The choice is remembered on the device and applies to the Create waypoint grid and map-centre coordinates in both views. GPX storage and export, geometry calculations and terrain requests use WGS84 regardless of the display format.
+
+Irish and British National Grid use approximate Helmert datum transformations. ITM uses ETRS89 with a null WGS84 transformation for walking-scale display. Regional formats identify positions outside their coverage. UTM, MGRS and USNG cover 80°S to 84°N. UTM zones include Norway/Svalbard exceptions and the date-line boundary. MGRS and USNG use full, spaced one-metre WGS84 references; the reference precision does not imply equivalent GPS accuracy.
+
+References: [Proj4js](https://proj4js.org/), [MGRS](https://github.com/proj4js/mgrs), [OS coordinate tools](https://www.ordnancesurvey.co.uk/geodesy-positioning/coordinate-transformations/resources), [FGDC USNG](https://www.fgdc.gov/standards/projects/usng), and EPSG definitions for [Irish Grid](https://epsg.io/29903.proj4) and [ITM](https://epsg.io/2157.proj4).
+
+## Walking connections and terrain
+
+Dashed connections between separated sections count toward distance, ascent and descent because they must be walked. They are straight connections, not generated paths. Connections over one metre are dashed; virtually identical shared endpoints are deduplicated.
+
+Distance uses great-circle calculations over every edge. Ascent sums positive elevation changes and descent sums negative changes. Recorded elevations are not smoothed, so noisy GPX heights can inflate ascent. Missing elevations remain missing in the data and produce partial totals where applicable.
+
+A connection initially uses its endpoint heights for estimated ascent. **Fetch gap terrain** samples heights at roughly 90-metre intervals using Open Topo Data's Mapzen dataset and recomputes the totals. This can reveal hills and valleys between imported tracks. Endpoint terrain heights replace the relevant GPX endpoint heights to give a continuous profile. Cancellation, timeouts, missing heights or service errors leave the route unchanged.
+
+Terrain dialogs explain that coordinates are sent to Open Topo Data. Requests are batched to 100 locations, spaced at least 1.1 seconds apart and bounded by timeouts. Import and export work offline; map tiles and optional terrain requests require internet. There is no offline tile pack, trail routing, account system or remote workspace sync.
+
+GPX export forms a continuous track so other readers include connection distance. BareGPS extensions preserve dashed edges, terrain status and line colour on reimport. Readers that ignore these extensions display a continuous line. Recorded timestamps are preserved; generated terrain points have no fabricated timestamps.
+
+## Files, saving and recovery
+
+Android uses the system document picker and Create Document save picker. iOS uses its document picker and Export to Files. Browser Preview uses browser file access or downloads. File actions can be cancelled without losing edits.
+
+The **Saved** header status refers to automatic workspace recovery in IndexedDB on this device, not an exported GPX file. Export work you want to keep before uninstalling the app or clearing its data. Undo history does not survive closing the app; the workspace does. Edit history is limited by a change count and point budget; Create retains up to 30 undo steps.
+
+Invalid XML, unsupported entities, missing points, invalid coordinates/elevations and file-size limits produce errors. Valid files in a mixed batch can import while invalid files are identified individually. Save failures, cancelled pickers, unavailable storage, missing maps, service outages and unavailable location have explicit handling. Failed tile loading does not disable editing or export; Retry reloads tiles. Restored workspace data is validated before use.
+
+Limits include 15 MB per GPX file, 20 files / 30 MB per picker batch, 150,000 points per imported file or joined route, 100 workspace tracks and 450,000 total workspace points. Create supports up to 5,000 waypoints. Terrain sampling is limited to 5,000 new locations per operation and 135 km per unsampled connector.
+
+## Run locally
+
+Use Node.js 22 or newer and npm:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:5173>. **Explore with sample tracks** loads two small, clearly labelled illustrative Irish tracks around Glendalough’s Upper Lake and the Spinc in County Wicklow. These samples are for exploring the editor, not navigation. GPX files are processed on the device; no account or upload service is required.
-
-## Android and iOS
-
-The repository includes native Capacitor 8 projects and a small, first-party Files bridge. Import uses the system document picker. Export uses Android's Create Document picker or iOS's Export to Files picker, so the user chooses the destination. File actions can be cancelled without losing edits. GPX files can also be opened/shared into the app from Files, whether the app is running or starting.
+Open <http://127.0.0.1:5173>. Browser files and drafts stay within that browser's local storage. The development server proxies terrain requests to Open Topo Data. Native Android/iOS builds use Capacitor's native HTTP API for terrain.
 
 ```sh
+npm test
+npm run test:e2e
+npm run build
+```
+
+Unit tests cover GPX/model operations, route creation and saving, coordinate formats, location permissions/errors and the terrain worker. Browser tests cover editing, export, restoration, examples, colour selection, map interactions and responsive layout. External map tiles are stubbed in browser tests. Browser tests use installed Google Chrome on macOS; set `BAREGPS_CHROME` to another Chromium executable if needed.
+
+## Build Android and iOS
+
+The native projects use Capacitor 8 and the first-party Files bridge. Android requires SDK 36 and Java 21. iOS supports 16.4 or newer and requires Xcode and its iOS SDK. Location permissions and usage descriptions are included for the optional current-position control. The application identifier is `com.baregps.trackeditor`.
+
+```sh
+npm ci
 npm run native:sync
 npm run android
 # or
 npm run ios
 ```
 
-Android requires Android Studio, SDK 36 and Java 21. iOS 16.4 or newer is supported; development requires Xcode and its iOS SDK. Configure your Apple development team in Xcode for a physical iPhone or a signed distribution build. The included application identifier, `com.baregps.trackeditor`, should be checked against your own developer accounts before release.
-
 Android command-line build:
 
 ```sh
 cd android
-./gradlew assembleDebug
+./gradlew :app:assembleDebug
 ```
 
-Output: `android/app/build/outputs/apk/debug/app-debug.apk`. This is a development build, not a Play Store release.
+The default output is `android/app/build/outputs/apk/debug/app-debug.apk`. Set `BAREGPS_ANDROID_BUILD_DIR` to a Mac-local directory to keep compiled files off an external project disk; Gradle caches can also remain on the Mac.
 
-Unsigned iOS simulator build:
+For an unsigned iOS simulator build:
 
 ```sh
 xcodebuild -project ios/App/App.xcodeproj -scheme App \
@@ -45,133 +121,25 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App \
   -derivedDataPath /tmp/baregps-ios-build CODE_SIGNING_ALLOWED=NO build
 ```
 
-## Editing
+For a physical iPhone, choose the App scheme, your connected device and your own Apple development team in Xcode. Normal Apple signing and provisioning rules apply. Run `npm ci` before opening the bundled Xcode source: its local Swift package depends on the installed geolocation plugin.
 
-1. **Open files** accepts GPX tracks and GPX routes, including multiple tracks in one file.
-2. Select a track. Drag **A** and **B** on the map, or move the two sliders to select the portion to keep. Distance, ascent, descent and the elevation profile update immediately.
-3. **Save section** exports just the selection. **Split** creates two tracks at a chosen point, retaining the original. **Reverse** reverses the selected track's direction. Track colours can be chosen from presets or the colour picker.
-4. **Start joined route** / **Append section to route** adds selected portions in walking order. The joined route remains separate from the source tracks. Preview, rename or save it from the route panel.
-5. **Undo** and **Redo** cover edits, import, split, reverse, joining, renaming, colours and removal. Section selection itself is nondestructive. Use ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z.
+Native document-picker tests are in `android/app/src/androidTest` and `ios/App/AppUITests`. Use a disposable test emulator/simulator with `tests/native-fixture.gpx` in Files/Downloads. Android runs them with `./gradlew :app:connectedDebugAndroidTest`; iOS uses the App scheme's UI tests.
 
-The map fits the relevant tracks on import, track selection, route preview and the fit button. Switch between all tracks and the selected section. Expand the map for a larger workspace; collapse it or press Escape to return. The BareGPS header and distance/ascent/descent stay visible, including while the map is expanded.
+## Website and downloads
 
-## Walking connections and elevation
+The browser Preview runs the same application at [appsbyonzy.dev/tools/baregps-route-planner/](https://appsbyonzy.dev/tools/baregps-route-planner/). Build it with `npm run build:web` and copy `web-dist/` into the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies validated terrain requests; `_routes.json` limits execution to that endpoint. The rest of the website and its downloads are static.
 
-**Dashed connections count toward the route's distance and ascent.** They are straight connections between separated sections, not generated paths along trails or roads. Connections over one metre are dashed; virtually identical shared endpoints are deduplicated.
+The public platform bundles are v0.2.4 in `releases/bundles/0.2.4/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
 
-Distance uses great-circle calculations over every edge, including connections. Ascent sums positive elevation changes, and descent sums negative changes. Recorded elevations are not smoothed, so noisy GPX heights can inflate ascent. Missing elevations are never silently replaced with zero: the interface marks partial totals and explains the missing data.
+## Source layout and dependencies
 
-Initially a connection's ascent uses its endpoint heights and is labelled estimated. **Fetch gap terrain** obtains terrain heights at roughly 90-metre intervals from Open Topo Data's Mapzen dataset, including endpoints, and recomputes the totals. This can reveal hills and valleys between the imported tracks. Terrain elevation remains an estimate; resolution, sampling and the actual path walked affect the result. Endpoint terrain heights replace those GPX endpoint heights for a continuous elevation profile. The whole update is atomic: cancellation, missing heights, timeouts and service errors leave the route unchanged.
+- `src/main.ts`: UI, actions, undo/redo, settings and local recovery.
+- `src/model.ts`: GPX parsing/export, validation, track operations and analytics.
+- `src/create.ts`: route creation and waypoint operations.
+- `src/map.ts`: map rendering, draggable markers, current-position layers and framing.
+- `src/coordinates.ts` and `src/location.ts`: coordinate formatting and one-shot location access.
+- `src/terrain.ts`: sampling and terrain lookup.
+- `src/files.ts`: browser/native file operations.
+- `android/.../BareFilesPlugin.java` and `ios/App/App/AppDelegate.swift`: native Files bridges; iOS `SceneDelegate.swift` handles incoming documents.
 
-The terrain dialog explains that connection coordinates are sent to Open Topo Data. Import and export do not need internet. Map tiles and optional terrain lookups do. Terrain requests are batched to 100 locations, spaced at least 1.1 seconds apart, with timeouts; the public service's availability and limits still apply. In the web development/preview server, `/terrain` is proxied to Open Topo Data; on Android/iOS, Capacitor's native HTTP API contacts it directly. A separately hosted web deployment needs that proxy as well.
-
-Export produces a standard, continuous GPX track so other GPX readers include connection distance. BareGPS extensions preserve dashed edges, terrain status and colour when reimported. A reader that ignores these extensions will display a continuous line. Timestamps from recorded points are preserved; generated terrain points have no fabricated timestamps. Split files share the cut point so no length is lost.
-
-## Error handling and recovery
-
-- Invalid XML, missing track points, invalid coordinates/elevations and unsupported XML entities produce actionable errors.
-- Valid files in a mixed batch can import while errors identify the invalid files.
-- File reads, save failures, picker cancellation, service outages, missing terrain, timeouts and unavailable maps have separate handling. A failed map request does not disable editing or export; Retry reloads tiles.
-- Workspace changes are automatically saved to IndexedDB on the device. Saved data is validated before restoring. Storage failures tell the user to export before closing.
-- Undo history is limited to 20 changes and a point budget to avoid unbounded memory use. Undo history does not survive closing the app; the workspace does.
-- Limits: 15 MB per GPX file, 20 files / 30 MB per picker batch, 150,000 points per imported file or joined route, 100 workspace tracks and 450,000 total workspace points. Terrain sampling is limited to 5,000 new locations per operation and 135 km per unsampled connector.
-
-## Tests
-
-```sh
-npm test
-npm run test:e2e
-npm run build
-npm run format:check
-```
-
-Unit tests cover GPX parsing and round-trip, invalid files, namespaced tracks and routes, splits, reversal, distance and ascent including gaps, missing heights, maximum point count, saved-state validation and terrain success/failure. Browser tests exercise import → trim → join → preview → export → restore, splitting/reversal, mixed valid/invalid files, safe filenames, map-handle dragging, expanded-map analytics, mobile layout and terrain failures. External map tiles are stubbed in automated browser tests; the real tile and terrain services are checked separately.
-
-Browser tests use an installed Google Chrome on macOS by default. Set `BAREGPS_CHROME` to an alternative Chromium executable, or install Playwright's Chromium and remove the executable override in `playwright.config.ts`.
-
-## Project layout
-
-- `src/model.ts`: GPX data model, validation, editing, analytics, parsing and export.
-- `src/main.ts`: workspace actions, UI, undo/redo and local recovery.
-- `src/map.ts`: OpenTopoMap, track rendering, dashed gaps and draggable endpoints.
-- `src/terrain.ts`: connector sampling and terrain lookup.
-- `src/files.ts`: browser/native document operations.
-- `android/.../BareFilesPlugin.java`: Android document picker, export and incoming-file intents.
-- `ios/App/App/AppDelegate.swift`: iOS document picker, export and bridge registration; `SceneDelegate.swift` handles incoming documents.
-
-## Maps, branding and dependencies
-
-The logo shows two endpoints connected by a winding line. Its green matches `UIColor.systemGreen`, used by the BareGPS Ireland title (`#34C759` in light appearance). The header reads “BareGPS Route Planner”. The Saved indicator refers to automatic workspace recovery on the device; exporting a GPX file is a separate action. No map layer selector is included.
-
-Map tiles use [OpenTopoMap](https://opentopomap.org/) with visible attribution to [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), SRTM and OpenTopoMap (CC-BY-SA). Optional terrain uses [Open Topo Data](https://www.opentopodata.org/) and its [Mapzen dataset](https://www.opentopodata.org/datasets/mapzen/). Mapping uses [Leaflet](https://leafletjs.com/); mobile packaging uses [Capacitor](https://capacitorjs.com/). Review public tile/terrain service capacity for a store release. There is no offline tile pack, trail routing, account system or remote workspace sync in this version.
-
-## Native workflow checks
-
-The native test suites exercise the actual system document pickers, cancellation and file export. The Android test also checks an incoming Files-style document intent. Use a disposable test simulator/emulator.
-
-For Android, boot an emulator, put `tests/native-fixture.gpx` in its Downloads folder as `Native fixture.gpx`, then run:
-
-```sh
-adb push tests/native-fixture.gpx '/sdcard/Download/Native fixture.gpx'
-cd android
-./gradlew :app:connectedDebugAndroidTest
-```
-
-Use the `:app:` task prefix so Gradle does not run the generated plugin libraries' unrelated test targets. To keep compiled files outside a cloud-synced workspace, set `BAREGPS_ANDROID_BUILD_DIR=/tmp/baregps-android-build`. This is optional and does not affect app behavior.
-
-For iOS, use the App scheme's UI tests in Xcode with a booted simulator and make `Native fixture.gpx` available in its local Files storage. The test finds it in On My iPhone or the BareGPS folder. It opens, reads and exports the GPX through the real iOS picker. Tests are in `ios/App/AppUITests/AppUITests.swift`.
-
-Current public downloads: v0.2.3 platform bundles in `releases/bundles/0.2.3/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
-
-## Website downloads
-
-The Tools section on <https://appsbyonzy.dev/#tools> provides the iOS source
-bundle, Android bundle, direct APK and platform-specific instructions.
-The website source is maintained in `web-preview/site/` in the OpenBareMap
-repository. This app repository retains the guides, platform bundles and
-reproducible packaging/verification scripts under `docs/distribution/`,
-`releases/bundles/` and `scripts/distribution/`.
-
-```sh
-python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.3
-python3 scripts/distribution/verify-website.py /path/to/web-preview/site --base-url https://appsbyonzy.dev
-```
-
-The iOS ZIP is a source bundle with prebuilt web assets for Xcode; Apple
-signing is required to install it on a device. The Android ZIP includes the
-APK and installation instructions. The iOS row alone states: “Will be available
-through App Store”. The GitHub link keeps its existing repository access policy.
-
-
-### Create a route on the map
-
-Choose **Create** above the map for an independent OpenTopoMap view. Tap the map to place the start and subsequent numbered waypoints; use **Insert point** and tap an existing line to insert one waypoint between its neighbours. **Add points** is the default, so taps beside existing lines always extend the route; insertion automatically returns to Add points. **Close loop** connects the last waypoint exactly to the start and includes that return leg in the totals. Drag markers to reshape the route. The grid lists walking order, coordinates, leg distance, cumulative distance and available heights. Grid controls locate or remove individual points. Each tab has its own undo/redo history; switching tabs preserves work and map position. Both drafts are saved in the device workspace, including a Create draft with only one point.
-
-Set a route name and colour, then use **Save route** with at least two points to export GPX. Created routes connect points directly rather than following paths. **Fetch terrain** sends the route coordinates to the existing Open Topo Data service, sampling about every 90 metres for estimated ascent and descent; changing geometry clears those estimates. Terrain failure or cancellation leaves the route untouched. Creation is limited to 1,000 waypoints and uses the terrain service's existing sampling limits. An unavailable map or terrain service does not prevent local editing or GPX export.
-
-The app opens with undo/redo controls inside the persistent title panel, below the device-save status. The empty Edit map starts around Carrauntoohil with an unobscured terrain backdrop and only the file-opening and Irish sample buttons over it.
-
-
-### Browser preview
-
-[Preview BareGPS Route Planner](https://appsbyonzy.dev/tools/baregps-route-planner/) runs the same Edit/Create app in the browser, including GPX import/export and terrain estimates. Files and drafts stay in that browser. The Preview action uses the same style as OpenBareMap. Build it with `npm run build:web`; copy `web-dist/` to the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies only validated terrain requests to Open Topo Data; `_routes.json` limits execution to that endpoint. The regular website and downloads remain static.
-
-Both empty Edit and Create maps start at Carrauntoohil at zoom 13. Existing created routes are framed when first reopened. Metric titles carry units: Distance(km), Ascent(m), Descent(m); values no longer repeat units. Optional Irish samples are kept only on the welcome screen. The joined-route placeholder and promotional footer are removed. Create instructions live in ? Help, covering addition, insertion, dragging/removal, the point grid, closing loops, straight-line legs, terrain invalidation and GPX saving.
-
-### Coordinate display
-
-The settings cog beneath Help selects Lat/Long (WGS84), Irish National Grid, British National Grid, ITM, MGRS, UTM or USNG (WGS84). The preference is stored on the device, separately from track undo history. It updates the Create waypoint table and map-centre readout in both workspaces. GPX coordinates, geometry, distance calculations and elevation requests remain WGS84.
-
-Irish and British National Grid use approximate Helmert datum transformations, not survey-grade correction grids. ITM uses ETRS89 with a null WGS84 transformation for walking-scale display. Regional grids are coverage-checked; unsupported polar UTM/MGRS/USNG positions are labelled explicitly. UTM zones include the Norway/Svalbard exceptions and the date-line boundary. MGRS and USNG use full, spaced one-metre WGS84 references.
-
-Conversion references: [Proj4js](https://proj4js.org/), [MGRS library](https://github.com/proj4js/mgrs), [OS coordinate tools and transformation accuracy](https://www.ordnancesurvey.co.uk/geodesy-positioning/coordinate-transformations/resources), [FGDC USNG standard](https://www.fgdc.gov/standards/projects/usng), and EPSG projection definitions for [Irish Grid](https://epsg.io/29903.proj4) and [ITM](https://epsg.io/2157.proj4).
-
-### Current position
-
-The crosshair button at the upper right of either map requests one location fix, centres the visible map, and shows a blue dot with an accuracy circle. It never adds a waypoint, changes tracks, or starts background tracking. Location permission is requested only after tapping the button; approximate Android permission is supported. Denied access, disabled services, invalid fixes and timeouts produce an error message and allow retry. Native configuration follows the [Capacitor geolocation plugin](https://capacitorjs.com/docs/apis/geolocation).
-
-### Edit welcome and compact controls
-
-Each transition into Edit starts at Carrauntoohil with the file and sample actions visible. Demonstration tracks are hidden from the list and map until explicitly requested again; retained demo tracks are reused rather than duplicated. Imported files and joined routes remain saved; choosing an imported track resumes editing it. Create retains its separate draft.
-
-The round colour buttons now open a shared in-app spectrum picker with presets, a hex field and a preview. Apply makes one undoable change; Cancel leaves the original colour intact. The spectrum uses [vanilla-colorful](https://github.com/web-padawan/vanilla-colorful). Track rows are about 10% shorter and the selected-section controls have reduced spacing. Map-centre coordinates use 8px text, aligned immediately above the right-aligned attribution; zoom buttons sit above the scale on the left.
+Maps use [OpenTopoMap](https://opentopomap.org/) with attribution to [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), SRTM and OpenTopoMap (CC-BY-SA). Terrain uses [Open Topo Data](https://www.opentopodata.org/) and its [Mapzen dataset](https://www.opentopodata.org/datasets/mapzen/). Mapping uses [Leaflet](https://leafletjs.com/), mobile packaging uses [Capacitor](https://capacitorjs.com/), current position uses its [geolocation plugin](https://capacitorjs.com/docs/apis/geolocation), and the spectrum picker uses [vanilla-colorful](https://github.com/web-padawan/vanilla-colorful).
