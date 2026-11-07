@@ -45,11 +45,12 @@ export class TrackMap {
       }
     });
     this.layers.addTo(this.map);
+    this.map.attributionControl.setPosition("bottomright");
     this.map.on("zoomend", () => this.positionHandles());
-    L.control.zoom({ position: "bottomright" }).addTo(this.map);
     L.control
       .scale({ position: "bottomleft", imperial: false })
       .addTo(this.map);
+    L.control.zoom({ position: "bottomleft" }).addTo(this.map);
     const container = document.getElementById(containerId)!;
     new ResizeObserver(() => {
       if (container.clientWidth && container.clientHeight) {

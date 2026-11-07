@@ -659,8 +659,8 @@ h3 {
   gap: 12px;
   width: calc(100% - 30px);
   text-align: left;
-  padding: 13px 7px 13px 12px;
-  min-height: 69px;
+  padding: 10px 7px 10px 12px;
+  min-height: 62px;
   border-radius: 8px;
   background: transparent;
 }
@@ -745,7 +745,7 @@ h3 {
   padding: 8px 22px 10px;
 }
 .selected-title {
-  margin-bottom: 15px;
+  margin-bottom: 9px;
 }
 .selected-title .eyebrow {
   font-size: 8px;
@@ -801,7 +801,7 @@ h3 {
 }
 .range-track {
   position: relative;
-  margin: 17px 2px 11px;
+  margin: 14px 2px 8px;
   height: 7px;
   background: #e4e9dd;
   border-radius: 4px;
@@ -874,7 +874,7 @@ h3 {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px;
   align-items: start;
-  margin: 14px 0;
+  margin: 10px 0;
 }
 .selection-slider {
   min-width: 0;
@@ -1470,8 +1470,8 @@ dialog p {
     font-size: 13px;
   }
   .track-select {
-    min-height: 66px;
-    padding: 13px 10px;
+    min-height: 59px;
+    padding: 10px 10px;
     gap: 12px;
   }
   .track-text strong {
@@ -1514,8 +1514,8 @@ dialog p {
     font-size: 10px;
   }
   .range-track {
-    margin-top: 22px;
-    margin-bottom: 16px;
+    margin-top: 18px;
+    margin-bottom: 12px;
   }
   .edit-buttons .button {
     font-size: 11px;
@@ -1741,29 +1741,67 @@ dialog p {
   flex: 1;
   max-width: 460px;
 }
-.line-color input[type="color"] {
-  appearance: none;
-  -webkit-appearance: none;
+.color-trigger {
   width: 42px;
   height: 42px;
   flex: none;
-  border: 1px solid var(--border);
+  border: 4px solid #fafbf7;
+  outline: 1px solid var(--border);
   border-radius: 50%;
-  background: #fafbf7;
-  padding: 4px;
-  overflow: hidden;
+  background: var(--line-colour);
+  padding: 0;
   cursor: pointer;
 }
-.line-color input[type="color"]::-webkit-color-swatch-wrapper {
+.color-trigger:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+#colour-spectrum {
+  width: 100%;
+  height: 190px;
+  margin: 4px 0 18px;
+}
+#colour-spectrum::part(saturation) {
+  border-radius: 10px 10px 0 0;
+}
+#colour-spectrum::part(hue) {
+  height: 20px;
+  border-radius: 0 0 10px 10px;
+}
+.colour-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.colour-preset {
+  width: 28px;
+  height: 28px;
+  border: 2px solid white;
+  outline: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--line-colour);
   padding: 0;
 }
-.line-color input[type="color"]::-webkit-color-swatch {
-  border: 0;
-  border-radius: 50%;
+.colour-preset[aria-pressed="true"] {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
 }
-.line-color input[type="color"]::-moz-color-swatch {
-  border: 0;
+.colour-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#colour-preview {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  background: var(--line-colour);
+  border: 1px solid var(--border);
+  flex: none;
+}
+.colour-value input {
+  font-variant-numeric: tabular-nums;
 }
 .create-guidance {
   padding: 0 22px;
@@ -2070,16 +2108,17 @@ dialog p {
 .map-coordinates {
   position: absolute;
   z-index: 500;
-  bottom: 48px;
-  right: 8px;
+  bottom: 18px;
+  right: 0;
   max-width: calc(100% - 16px);
-  padding: 4px 7px;
+  padding: 3px 5px;
   background: #fffffff0;
   border-radius: 4px;
   color: #3f6747;
-  font-size: 10px;
+  font-size: 8px;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .dialog-heading-content {
@@ -2149,4 +2188,8 @@ dialog p {
   flex: 1;
   min-height: 0;
   height: auto;
+}
+
+.leaflet-bottom.leaflet-left {
+  bottom: var(--map-attribution-height, 0px);
 }

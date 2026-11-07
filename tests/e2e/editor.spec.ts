@@ -9,6 +9,7 @@ async function importTracks(
   page: import("@playwright/test").Page,
   files: { name: string; buffer: Buffer; mimeType: string }[],
 ) {
+  await page.getByRole("tab", { name: "Edit", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Open files", exact: true }).click();
   await (await chooser).setFiles(files);
@@ -29,7 +30,9 @@ test.beforeEach(async ({ page }) => {
   await expect(
     page.getByRole("link", { name: "BareGPS Route Planner home" }),
   ).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Create", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(
+    page.getByRole("tab", { name: "Create", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tab").first()).toHaveText("Create");
   await page.getByRole("tab", { name: "Edit", exact: true }).click();
 });
@@ -89,7 +92,15 @@ test("import, trim, join, include gaps, undo, export and restore", async ({
   expect(xml.match(/<trkpt /g)).toHaveLength(9);
   await expect(page.locator("#save-state")).toContainText("Saved on device");
   await page.reload();
+  await page.getByRole("tab", { name: "Edit", exact: true }).click();
   await expect(page.locator("#source-count")).toHaveText("2");
+  await expect(
+    page.getByRole("button", { name: "Open GPX files", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: /Valley trail/ })
+    .first()
+    .click();
   await expect(page.locator("#route-card")).toContainText("2.56 km");
   await page.getByRole("button", { name: "Remove joined route" }).click();
   await expect(page.locator("#route-card")).toBeHidden();
@@ -248,15 +259,14 @@ test("colour picker and selected-section export preserve the chosen colour", asy
   await importTracks(page, [
     { name: "colour.gpx", mimeType: "text/xml", buffer: Buffer.from(first) },
   ]);
-  await page
-    .getByRole("button", { name: "Use #c35d68 track colour", exact: true })
-    .click();
-  await expect(page.locator("#track-color")).toHaveValue("#c35d68");
-  await page.locator("#track-color").evaluate((input: HTMLInputElement) => {
-    input.value = "#3264aa";
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-  await expect(page.locator("#track-color")).toHaveValue("#3264aa");
+  await page.getByRole("button", { name: "Choose track line colour" }).click();
+  await page.getByRole("button", { name: "Use #c35d68", exact: true }).click();
+  await page.getByLabel("Hex colour", { exact: true }).fill("#3264aa");
+  await page.getByRole("button", { name: "Apply colour", exact: true }).click();
+  await expect(page.locator("#track-color")).toHaveCSS(
+    "background-color",
+    "rgb(50, 100, 170)",
+  );
   await page.getByRole("slider", { name: "Section start point" }).fill("1");
   await page.getByRole("slider", { name: "Section end point" }).fill("3");
   await page.evaluate(() => {
@@ -303,4 +313,29 @@ test("Irish samples and the full branded header remain clear on small phones", a
       ),
     ).toBe(true);
   }
+});
+
+test("Edit always reopens at home with examples suppressed until explicitly requested", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /Explore with sample/ }).click();
+  await expect(page.locator("#source-count")).toHaveText("2");
+  await page.getByRole("tab", { name: "Create", exact: true }).click();
+  await page.getByRole("tab", { name: "Edit", exact: true }).click();
+  await expect(page.locator("#source-count")).toHaveText("0");
+  await expect(
+    page.getByRole("button", { name: "Open GPX files", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Explore with sample/ }),
+  ).toBeVisible();
+  await expect(page.locator("#edit-coordinates")).toContainText("51.999");
+  await page.getByRole("button", { name: /Explore with sample/ }).click();
+  await expect(page.locator("#source-count")).toHaveText("2");
+  await page.reload();
+  await page.getByRole("tab", { name: "Edit", exact: true }).click();
+  await expect(page.locator("#source-count")).toHaveText("0");
+  await expect(
+    page.getByRole("button", { name: /Explore with sample/ }),
+  ).toBeVisible();
 });

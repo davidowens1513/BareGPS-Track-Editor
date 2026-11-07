@@ -169,3 +169,9 @@ Conversion references: [Proj4js](https://proj4js.org/), [MGRS library](https://g
 ### Current position
 
 The crosshair button at the upper right of either map requests one location fix, centres the visible map, and shows a blue dot with an accuracy circle. It never adds a waypoint, changes tracks, or starts background tracking. Location permission is requested only after tapping the button; approximate Android permission is supported. Denied access, disabled services, invalid fixes and timeouts produce an error message and allow retry. Native configuration follows the [Capacitor geolocation plugin](https://capacitorjs.com/docs/apis/geolocation).
+
+### Edit welcome and compact controls
+
+Each transition into Edit starts at Carrauntoohil with the file and sample actions visible. Demonstration tracks are hidden from the list and map until explicitly requested again; retained demo tracks are reused rather than duplicated. Imported files and joined routes remain saved; choosing an imported track resumes editing it. Create retains its separate draft.
+
+The round colour buttons now open a shared in-app spectrum picker with presets, a hex field and a preview. Apply makes one undoable change; Cancel leaves the original colour intact. The spectrum uses [vanilla-colorful](https://github.com/web-padawan/vanilla-colorful). Track rows are about 10% shorter and the selected-section controls have reduced spacing. Map-centre coordinates use 8px text, aligned immediately above the right-aligned attribution; zoom buttons sit above the scale on the left.

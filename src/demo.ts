@@ -1,11 +1,13 @@
 import { type Track, uid } from "./model";
+export const DEMO_SOURCE = "Illustrative sample · Glendalough, County Wicklow";
+export const isDemoTrack = (track: Track) => track.source === DEMO_SOURCE;
 // Deliberately small illustrative tracks, never presented as navigation guidance.
 export function demoTracks(): Track[] {
   const make = (name: string, color: string, coords: number[][]): Track => ({
     id: uid(),
     name,
     color,
-    source: "Illustrative sample · Glendalough, County Wicklow",
+    source: DEMO_SOURCE,
     kind: "track",
     points: coords.flatMap((b, i) => {
       if (!i) return [{ lat: b[0], lon: b[1], ele: b[2] }];

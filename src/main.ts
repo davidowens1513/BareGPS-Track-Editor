@@ -4,6 +4,7 @@ import { get, set } from "idb-keyval";
 import { Capacitor } from "@capacitor/core";
 import {
   analytics,
+  COLORS,
   emptyWorkspace,
   join,
   MAX_POINTS,
@@ -28,7 +29,9 @@ import {
 } from "./files";
 import { TrackMap, CreateMap } from "./map";
 import { icon } from "./icons";
-import { demoTracks } from "./demo";
+import { demoTracks, isDemoTrack } from "./demo";
+import "vanilla-colorful/hex-color-picker.js";
+import type { HexColorPicker } from "vanilla-colorful/hex-color-picker.js";
 import { enrichTerrain } from "./terrain";
 import { getDevicePosition, locationError } from "./location";
 let locating = false;
@@ -60,6 +63,8 @@ const metres = (n: number) => Math.round(n).toLocaleString("en-IE");
 let workspace = emptyWorkspace(),
   undo: Workspace[] = [],
   redo: Workspace[] = [];
+let editWelcome = true;
+let examplesVisible = false;
 let showAll = true,
   expanded = false,
   busy = false,
@@ -110,7 +115,7 @@ document.querySelector("#app")!.innerHTML = `
   <section id="route-card" class="route-card"></section>
   <section id="create-card" class="card create-card" aria-label="Created route waypoints" hidden>
     <div class="card-heading"><h2>Your new route <span id="waypoint-count" class="badge">0</span></h2><span class="badge soft">TAP → SHAPE → SAVE</span></div>
-    <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label><label class="line-color">Line colour<input id="create-color" type="color" value="#16724d"></label></div>
+    <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label><div class="line-color"><span>Line colour</span><button id="create-color" class="color-trigger" style="--line-colour:#16724d" aria-label="Choose route line colour" title="Choose route line colour"></button></div></div>
     <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><thead><tr><th scope="col">Point</th><th id="coordinate-heading" scope="col" colspan="2">Lat/Long (WGS84)</th><th scope="col">Leg</th><th scope="col">Total</th><th scope="col">Height</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
   </section>
@@ -153,10 +158,22 @@ for (const [name, view] of [
   ["edit", map],
   ["create", createMap],
 ] as const) {
-  view.map.on("moveend", () => updateMapCoordinates(name, view));
+  view.map.on("moveend resize", () => updateMapCoordinates(name, view));
 }
 function updateMapCoordinates(name: string, view: TrackMap) {
   const centre = view.map.getCenter().wrap();
+  const attribution = view.map
+    .getContainer()
+    .querySelector<HTMLElement>(".leaflet-control-attribution");
+  if (attribution) {
+    $(name + "-coordinates").style.bottom = `${attribution.offsetHeight + 2}px`;
+    view.map
+      .getContainer()
+      .style.setProperty(
+        "--map-attribution-height",
+        `${attribution.offsetHeight}px`,
+      );
+  }
   $(name + "-coordinates").textContent =
     `Centre · ${formatCoordinate({ lat: centre.lat, lon: centre.lng }, coordinateSystem)}`;
   $(name + "-coordinates").title = coordinateSystems[coordinateSystem];
@@ -195,8 +212,14 @@ async function goToCurrentPosition() {
 }
 const active = () =>
   [...workspace.tracks, ...(workspace.route ? [workspace.route] : [])].find(
-    (t) => t.id === workspace.activeId,
+    (t) => t.id === workspace.activeId && (examplesVisible || !isDemoTrack(t)),
   ) ?? null;
+const displayTracks = () =>
+  workspace.tracks.filter((t) => examplesVisible || !isDemoTrack(t));
+const displayMapTracks = () => [
+  ...displayTracks(),
+  ...(workspace.route ? [workspace.route] : []),
+];
 const allTracks = () => [
   ...workspace.tracks,
   ...(workspace.route ? [workspace.route] : []),
@@ -303,6 +326,7 @@ function replace(track: Track) {
     );
 }
 function select(track: Track) {
+  editWelcome = false;
   workspace.activeId = track.id;
   workspace.selection = { start: 0, end: track.points.length - 1 };
   persist();
@@ -314,9 +338,13 @@ function fitMap() {
     createMap.fit([draft()]);
     return;
   }
+  if (editWelcome) {
+    map.home();
+    return;
+  }
   const t = active();
   map.fit(
-    showAll ? allTracks() : t ? [t] : [],
+    showAll ? displayMapTracks() : t ? [t] : [],
     showAll ? undefined : workspace.selection,
   );
 }
@@ -361,12 +389,23 @@ function renderMap() {
     $("map-legend").hidden = true;
     return;
   }
-  map.render(allTracks(), active(), workspace.selection, showAll);
-  $("map-empty").hidden = allTracks().length > 0;
-  $("map-legend").hidden = !allTracks().length;
+  const tracks = editWelcome ? [] : displayMapTracks();
+  map.render(
+    tracks,
+    editWelcome ? null : active(),
+    workspace.selection,
+    showAll,
+  );
+  $("map-empty").hidden = tracks.length > 0;
+  $("map-legend").hidden = !tracks.length;
 }
 function renderStats(preview?: Track) {
-  const t = mode === "create" ? (preview ?? createdTrack()) : active(),
+  const t =
+      mode === "create"
+        ? (preview ?? createdTrack())
+        : editWelcome
+          ? null
+          : active(),
     points =
       mode === "create"
         ? t!.points
@@ -462,16 +501,17 @@ function renderStats(preview?: Track) {
 }
 import { distance as analyticsDistance } from "./model";
 function renderTracks() {
-  $("source-count").textContent = String(workspace.tracks.length);
-  $("track-count").textContent = allTracks().length
-    ? `${workspace.tracks.length} ${workspace.tracks.length === 1 ? "track" : "tracks"} in workspace`
+  const tracks = displayTracks();
+  $("source-count").textContent = String(tracks.length);
+  $("track-count").textContent = displayMapTracks().length
+    ? `${tracks.length} ${tracks.length === 1 ? "track" : "tracks"} in workspace`
     : "Your workspace";
   const list = $("track-list");
-  list.innerHTML = workspace.tracks.length
-    ? workspace.tracks
+  list.innerHTML = tracks.length
+    ? tracks
         .map((t) => {
           const a = analytics(t.points);
-          return `<div class="track-row ${t.id === workspace.activeId ? "active" : ""}"><button class="track-select" data-id="${t.id}" aria-pressed="${t.id === workspace.activeId}"><span class="track-symbol" style="--track-color:${t.color}">${icon("route", 20)}</span><span class="track-text"><strong>${esc(t.name)}</strong><small>${km(a.length)} km <span>·</span> ${t.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ↗` : "No elevation"} <span>·</span> ${t.points.length.toLocaleString()} pts</small></span>${t.id === workspace.activeId ? '<span class="active-dot"></span>' : icon("chevron", 15)}</button><button class="icon-button delete-track" data-id="${t.id}" aria-label="Remove ${esc(t.name)}" title="Remove track">${icon("trash", 16)}</button></div>`;
+          return `<div class="track-row ${!editWelcome && t.id === workspace.activeId ? "active" : ""}"><button class="track-select" data-id="${t.id}" aria-pressed="${!editWelcome && t.id === workspace.activeId}"><span class="track-symbol" style="--track-color:${t.color}">${icon("route", 20)}</span><span class="track-text"><strong>${esc(t.name)}</strong><small>${km(a.length)} km <span>·</span> ${t.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ↗` : "No elevation"} <span>·</span> ${t.points.length.toLocaleString()} pts</small></span>${!editWelcome && t.id === workspace.activeId ? '<span class="active-dot"></span>' : icon("chevron", 15)}</button><button class="icon-button delete-track" data-id="${t.id}" aria-label="Remove ${esc(t.name)}" title="Remove track">${icon("trash", 16)}</button></div>`;
         })
         .join("")
     : '<div class="tracks-empty">' +
@@ -502,7 +542,7 @@ function renderTracks() {
   );
 }
 function renderControls() {
-  const t = active(),
+  const t = editWelcome ? null : active(),
     box = $("section-controls");
   if (!t) {
     box.innerHTML =
@@ -514,7 +554,7 @@ function renderControls() {
   <div class="selection-settings"><div class="selection-slider"><div class="selection-labels"><span><i class="endpoint">A</i> Start <strong id="start-label">Point ${start + 1}</strong></span><span><i class="endpoint">B</i> End <strong id="end-label">Point ${end + 1}</strong></span></div>
   <div class="range-track"><div id="range-fill" style="left:${(start / (t.points.length - 1)) * 100}%;right:${100 - (end / (t.points.length - 1)) * 100}%"></div><input id="range-start" type="range" min="0" max="${t.points.length - 1}" value="${start}" aria-label="Section start point"><input id="range-end" type="range" min="0" max="${t.points.length - 1}" value="${end}" aria-label="Section end point"></div>
   <div class="range-caption"><span id="selected-label">${end - start + 1} of ${t.points.length} points</span><button id="reset-selection" class="text-button">Select whole track</button></div>
-  </div><label class="line-color">Line colour<input id="track-color" type="color" value="${t.color}"></label></div>
+  </div><div class="line-color"><span>Line colour</span><button id="track-color" class="color-trigger" style="--line-colour:${t.color}" aria-label="Choose track line colour" title="Choose track line colour"></button></div></div>
   <div class="edit-buttons"><button id="save-section" class="button secondary">${icon("export", 16)}Save section</button><button id="split" class="button secondary" ${end - start < 2 ? "disabled" : ""}>${icon("scissors", 16)}Split</button><button id="reverse" class="button secondary" title="Reverse the whole track">${icon("reverse", 16)}Reverse</button></div>
   ${t.kind !== "route" ? `<button id="add-route" class="button primary full">${icon("join", 18)}${workspace.route ? "Append section to route" : "Start joined route with section"}</button>` : '<button id="save-copy" class="button primary full">' + icon("plus", 18) + "Keep section as a new track</button>"}
   <p class="control-hint">Drag map handles or use the sliders. Originals are never overwritten.</p>`;
@@ -577,10 +617,10 @@ function renderControls() {
       workspace.tracks.push(section(t, workspace.selection));
     }),
   );
-  $<HTMLInputElement>("track-color").onchange = (e) =>
-    commit(() =>
-      replace({ ...t, color: (e.target as HTMLInputElement).value }),
-    );
+  $("track-color").onclick = () =>
+    openColourPicker(t.color, (color) => {
+      if (color !== t.color) commit(() => replace({ ...t, color }));
+    });
 }
 function renderRoute() {
   const route = workspace.route,
@@ -694,6 +734,7 @@ async function importFiles(files?: ImportFile[]) {
       checkpoint();
       workspace.tracks.push(...tracks);
       mode = "edit";
+      editWelcome = false;
       workspace.activeId = tracks[0].id;
       workspace.selection = { start: 0, end: tracks[0].points.length - 1 };
       persist();
@@ -744,6 +785,43 @@ function openDialog(content: string) {
 }
 function dialogHeader(title: string, subtitle = "", branded = false) {
   return `<div class="dialog-heading${branded ? " branded-dialog-heading" : ""}"><div class="dialog-heading-content">${branded ? `<img class="dialog-logo" src="${import.meta.env.BASE_URL}logo.svg" alt="BareGPS" width="36" height="36">` : ""}<div><h2>${title}</h2>${subtitle ? `<p>${subtitle}</p>` : ""}</div></div><button class="icon-button" data-close aria-label="Close dialog">${icon("close", 20)}</button></div>`;
+}
+function openColourPicker(initial: string, apply: (color: string) => void) {
+  openDialog(
+    `${dialogHeader("Line colour", "Choose a colour for your route", true)}<form id="colour-form"><hex-color-picker id="colour-spectrum" color="${initial}"></hex-color-picker><div class="colour-presets" role="group" aria-label="Preset colours">${COLORS.map((color) => `<button type="button" class="colour-preset" data-colour="${color}" style="--line-colour:${color}" aria-label="Use ${color}" aria-pressed="${color === initial}"></button>`).join("")}</div><label class="field-label" for="colour-hex">Hex colour</label><div class="colour-value"><span id="colour-preview" style="--line-colour:${initial}" aria-hidden="true"></span><input id="colour-hex" class="text-input" value="${initial.toUpperCase()}" pattern="#[0-9A-Fa-f]{6}" maxlength="7" spellcheck="false" autocapitalize="characters" required title="Use # followed by six hexadecimal characters"></div><div class="dialog-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button primary">Apply colour</button></div></form>`,
+  );
+  const spectrum = $<HexColorPicker>("colour-spectrum");
+  const field = $<HTMLInputElement>("colour-hex");
+  function preview(color: string, updateField: boolean) {
+    if (!/^#[0-9a-f]{6}$/i.test(color)) return;
+    spectrum.color = color;
+    if (updateField) field.value = color.toUpperCase();
+    $("colour-preview").style.setProperty("--line-colour", color);
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-colour]")
+      .forEach((button) =>
+        button.setAttribute(
+          "aria-pressed",
+          String(button.dataset.colour === color.toLowerCase()),
+        ),
+      );
+  }
+  spectrum.addEventListener("color-changed", (event) =>
+    preview(event.detail.value, true),
+  );
+  field.oninput = () => preview(field.value, false);
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-colour]")
+    .forEach(
+      (button) =>
+        (button.onclick = () => preview(button.dataset.colour!, true)),
+    );
+  $("colour-form").onsubmit = (event) => {
+    event.preventDefault();
+    if (!field.reportValidity()) return;
+    apply(field.value.toLowerCase());
+    $<HTMLDialogElement>("dialog").close();
+  };
 }
 function rename(track: Track) {
   openDialog(
@@ -861,10 +939,24 @@ function setMode(next: "edit" | "create") {
   const firstCreate = next === "create" && !createMapOpened;
   if (next === "create") createMapOpened = true;
   mode = next;
+  if (next === "edit") {
+    editWelcome = true;
+    examplesVisible = false;
+    showAll = true;
+  }
   drawingMode = "add";
   render();
+  if (next === "edit") {
+    map.home();
+    updateMapCoordinates("edit", map);
+  }
   requestAnimationFrame(() => {
+    if (mode !== next) return;
     visibleMap().map.invalidateSize({ pan: false });
+    if (next === "edit" && editWelcome) {
+      map.home();
+      updateMapCoordinates("edit", map);
+    }
     if (firstCreate) {
       if (draft().points.length) createMap.fit([draft()]);
       else createMap.home();
@@ -879,10 +971,10 @@ function renderMode() {
   $("edit-map-view").hidden = creating;
   $("create-map-view").hidden = !creating;
   $("editor").hidden = creating;
-  $("route-card").hidden = creating || !workspace.route;
+  $("route-card").hidden = creating || editWelcome || !workspace.route;
   $("create-card").hidden = !creating;
   $("create-tools").hidden = !creating;
-  $("view-toggle").hidden = creating;
+  $("view-toggle").hidden = creating || editWelcome;
   $("selection-caption").textContent = creating
     ? "CREATED ROUTE"
     : "SELECTED SECTION";
@@ -906,7 +998,7 @@ function renderCreated() {
   $("track-count").textContent = `${points.length} route points`;
   $("waypoint-count").textContent = String(points.length);
   $<HTMLInputElement>("create-name").value = route.name;
-  $<HTMLInputElement>("create-color").value = route.color;
+  $("create-color").style.setProperty("--line-colour", route.color);
   if (points.length < 2) drawingMode = "add";
   const closed = isClosedRoute(route);
   $("create-map-hint").textContent =
@@ -963,7 +1055,7 @@ function renderCreated() {
     busy || points.length < 2 || !!workspace.createdTerrain;
   $<HTMLButtonElement>("create-clear").disabled = busy || !points.length;
   $<HTMLInputElement>("create-name").disabled = busy;
-  $<HTMLInputElement>("create-color").disabled = busy;
+  $<HTMLButtonElement>("create-color").disabled = busy;
 }
 $("edit-tab").onclick = () => setMode("edit");
 $("create-tab").onclick = () => setMode("create");
@@ -1005,16 +1097,17 @@ $<HTMLInputElement>("create-name").onblur = () => {
   nameEditStarted = false;
   $<HTMLInputElement>("create-name").value = draft().name;
 };
-$<HTMLInputElement>("create-color").onchange = (e) => {
-  const color = (e.target as HTMLInputElement).value,
-    terrain = workspace.createdTerrain;
-  changeCreated(() => ({ ...draft(), color }));
-  if (terrain) {
-    workspace.createdTerrain = { ...terrain, color };
-    persist();
-    render();
-  }
-};
+$("create-color").onclick = () =>
+  openColourPicker(draft().color, (color) => {
+    if (color === draft().color) return;
+    const terrain = workspace.createdTerrain;
+    changeCreated(() => ({ ...draft(), color }));
+    if (terrain) {
+      workspace.createdTerrain = { ...terrain, color };
+      persist();
+      render();
+    }
+  });
 $("draw-add").onclick = () => {
   if (!busy) {
     drawingMode = "add";
@@ -1117,8 +1210,14 @@ $("create-terrain").onclick = () => {
 $("import").onclick = () => importFiles();
 $("empty-import").onclick = () => importFiles();
 function loadSampleTracks() {
-  commit(() => {
-    const tracks = demoTracks();
+  const existing = workspace.tracks.filter(isDemoTrack);
+  if (existing.length) {
+    examplesVisible = true;
+    select(existing[0]);
+    return;
+  }
+  const tracks = demoTracks();
+  const loaded = commit(() => {
     ensureTrackCapacity(
       tracks.length,
       tracks.reduce((n, t) => n + t.points.length, 0),
@@ -1126,10 +1225,16 @@ function loadSampleTracks() {
     workspace.tracks.push(...tracks);
     workspace.activeId = tracks[0].id;
     workspace.selection = { start: 0, end: tracks[0].points.length - 1 };
+  });
+  if (loaded) {
+    examplesVisible = true;
+    editWelcome = false;
+    render();
+    fitMap();
     notification(
       "Illustrative sample tracks loaded. Import your own GPX files to plan a real walk.",
     );
-  }, true);
+  }
 }
 $("demo").onclick = loadSampleTracks;
 $("view-toggle").onclick = () => {
@@ -1214,7 +1319,7 @@ $("settings").onclick = () => {
 };
 $("help").onclick = () =>
   openDialog(
-    `${dialogHeader("A route that’s yours", "A quick guide to BareGPS Route Planner", true)}<h3>Create a route</h3><ol class="help-list"><li><strong>Add points.</strong> Tap the map to place the start and each next point. Add points always extends the route, even beside an existing line.</li><li><strong>Insert a point.</strong> Choose Insert point, then tap the chosen route line. The new point goes between its neighbours and Add points resumes automatically.</li><li><strong>Move or remove points.</strong> Drag any numbered marker to reshape the route. The grid shows walking order, coordinates, leg and total distances, and available heights. Tap a point number to locate it; use its bin button to remove it.</li><li><strong>Close a loop.</strong> Close loop joins the last point precisely to the start, including that return leg in distance. Undo can reopen the loop.</li><li><strong>Check the route.</strong> Lines connect points directly and do not automatically follow paths. Check that your route is walkable.</li><li><strong>Fetch terrain.</strong> With at least two points, fetch heights sampled along every leg for estimated ascent and descent. Coordinates are sent to Open Topo Data. Moving, adding or removing points clears previous terrain estimates; fetch again after changes.</li><li><strong>Save.</strong> Choose a name and colour, then Save route exports GPX. Undo/redo are below the device status in the title. Edit and Create preserve separate work and map positions. Irish demonstration tracks are optional and available from the welcome screen’s sample button.</li></ol><p class="dialog-note">The current-position button at the upper right of either map centres it on your device location. It requests access only when tapped and never adds a route point. Use the cog beneath ? to choose the coordinate system for route points and the map centre. This display setting is remembered on this device; exported GPX remains WGS84 Lat/Long.</p><h3>Edit GPX tracks</h3><ol class="help-list"><li><strong>Open your files.</strong> Choose one or more GPX tracks or routes from Files. Multiple tracks in one file are supported.</li><li><strong>Choose a section.</strong> Drag A and B on the map or use the sliders. Distance and ascent update as you go.</li><li><strong>Shape your route.</strong> Save the section, split it into two tracks, reverse direction, or add it to a joined route. Add sections in walking order.</li><li><strong>Check connections.</strong> Dashed lines connect separated sections. Their distance and ascent count. Fetch terrain to include hills between endpoints.</li><li><strong>Save to Files.</strong> Save the current section or your complete joined route as GPX. Your originals stay untouched.</li></ol><p class="dialog-note">Undo / redo: ⌘ or Ctrl + Z / Shift + Z. Escape collapses the map. Edits are saved on this device. Ascent sums elevation gains; missing heights are marked as partial. GPX connection markers and track colours round-trip in BareGPS.</p><button class="button primary full" data-close>Let’s go</button>`,
+    `${dialogHeader("A route that’s yours", "A quick guide to BareGPS Route Planner", true)}<h3>Create a route</h3><ol class="help-list"><li><strong>Add points.</strong> Tap the map to place the start and each next point. Add points always extends the route, even beside an existing line.</li><li><strong>Insert a point.</strong> Choose Insert point, then tap the chosen route line. The new point goes between its neighbours and Add points resumes automatically.</li><li><strong>Move or remove points.</strong> Drag any numbered marker to reshape the route. The grid shows walking order, coordinates, leg and total distances, and available heights. Tap a point number to locate it; use its bin button to remove it.</li><li><strong>Close a loop.</strong> Close loop joins the last point precisely to the start, including that return leg in distance. Undo can reopen the loop.</li><li><strong>Check the route.</strong> Lines connect points directly and do not automatically follow paths. Check that your route is walkable.</li><li><strong>Fetch terrain.</strong> With at least two points, fetch heights sampled along every leg for estimated ascent and descent. Coordinates are sent to Open Topo Data. Moving, adding or removing points clears previous terrain estimates; fetch again after changes.</li><li><strong>Save.</strong> Choose a name and colour, then Save route exports GPX. Undo/redo are below the device status in the title. Create preserves its draft and map position. Opening Edit resets its map to Carrauntoohil and shows the file and example buttons; imported tracks remain in Your tracks. Example tracks appear only after choosing the sample button.</li></ol><p class="dialog-note">The current-position button at the upper right of either map centres it on your device location. It requests access only when tapped and never adds a route point. Use the cog beneath ? to choose the coordinate system for route points and the map centre. This display setting is remembered on this device; exported GPX remains WGS84 Lat/Long.</p><h3>Edit GPX tracks</h3><ol class="help-list"><li><strong>Open your files.</strong> Choose one or more GPX tracks or routes from Files. Multiple tracks in one file are supported.</li><li><strong>Choose a section.</strong> Drag A and B on the map or use the sliders. Distance and ascent update as you go.</li><li><strong>Shape your route.</strong> Save the section, split it into two tracks, reverse direction, or add it to a joined route. Add sections in walking order.</li><li><strong>Check connections.</strong> Dashed lines connect separated sections. Their distance and ascent count. Fetch terrain to include hills between endpoints.</li><li><strong>Save to Files.</strong> Save the current section or your complete joined route as GPX. Your originals stay untouched.</li></ol><p class="dialog-note">Undo / redo: ⌘ or Ctrl + Z / Shift + Z. Escape collapses the map. Edits are saved on this device. Ascent sums elevation gains; missing heights are marked as partial. GPX connection markers and track colours round-trip in BareGPS.</p><button class="button primary full" data-close>Let’s go</button>`,
   );
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && expanded && !$<HTMLDialogElement>("dialog").open)
