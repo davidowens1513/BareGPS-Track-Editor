@@ -46,3 +46,11 @@ Connection distance always counts. Ascent is explicitly partial when recorded el
 Irish illustrative samples replace the Glen Coe samples: Glendalough Upper Lake and Spinc ridge. The starting map view is Ireland. Both native app icons, launch images, the web logo and header use the two-point winding-line mark; its `#34C759` green matches the light-appearance system green used in the BareGPS Ireland title. The full title is “BareGPS Track Editor”. The save indicator is now labelled with words, including on phones, and explains that it refers to workspace recovery rather than GPX export. The tracks panel also exposes Irish samples for existing workspaces.
 
 The update passed 22 unit tests and 18 desktop/phone browser checks, including the full title and save label at 320, 360 and 390 pixels, Irish sample geometry and existing editing/export regression checks. Android and signed iPhone builds succeeded.
+
+## Version 0.2.5 verification — 7 November 2026
+
+Optional Create point names survive point changes, local recovery, undo/redo and GPX export/import. Text routecards include point labels, names, selected coordinates, distances and heights. Grid-reference settings use the Help dialog styling.
+
+55 unit tests, TypeScript, formatting, native Android and signed iPhone builds passed. All 22 browser checks passed in a sequential run after an intermittent phone drag failure in the parallel run. Native text-sharing bridges compile; sending a routecard through another app was not separately tested on the physical devices.
+
+The Samsung Galaxy A07 and iPhone 14 received update installs and launched successfully, without uninstalling or clearing data. The public preview assets match the production build, download checksums match all five platform files, previous links remain available, and the live terrain proxy returned OK. The release record is in docs/website/production-publication-0.2.5.json.

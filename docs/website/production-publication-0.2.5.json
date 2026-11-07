@@ -1,0 +1,76 @@
+{
+  "published_at": "2026-11-07T18:14:40.245872+00:00",
+  "app": "BareGPS Route Planner",
+  "version": "0.2.5",
+  "build": 8,
+  "website": "https://appsbyonzy.dev/#tools",
+  "preview": "https://appsbyonzy.dev/tools/baregps-route-planner/",
+  "deployment": "Cloudflare Pages production upload confirmed successful",
+  "app_source_commit": "936d9dd",
+  "app_bundle_commit": "17868e0",
+  "website_source_commit": "f77ab35",
+  "automated_tests": 55,
+  "browser_checks": 22,
+  "browser_check_note": "Parallel run: 21/22, phone drag passed isolated rerun. Complete sequential rerun: 22/22.",
+  "format_check": "passed",
+  "phones": {
+    "Samsung Galaxy A07": "v0.2.5 build 8 update installed and cold launched successfully",
+    "iPhone 14": "Signed v0.2.5 build 8 update installed and launched successfully"
+  },
+  "installation_method": "Update in place; no uninstall or data clearing",
+  "downloads": {
+    "base_url": "https://appsbyonzy.dev",
+    "existing_links_preserved": true,
+    "tools_after_openbaremap": true,
+    "platform_bundles_valid": true,
+    "downloads": [
+      {
+        "path": "tools/baregps-track-editor/0.2.5/android/BareGPS-Route-Planner-0.2.5.apk",
+        "bytes": 4823225,
+        "sha256": "822c25db2ca4f3cb59868b8eda22532d4cc93b87c4e0612c00e796be343b14f5"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.5/android/BareGPS-Route-Planner-android-Bundle-0.2.5.zip",
+        "bytes": 4374138,
+        "sha256": "847a0dd9d8c99cab26634e33771f4007de47edf92f1df5ac66a1a0ddb4337a91"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.5/android/instructions.txt",
+        "bytes": 5963,
+        "sha256": "9cf349020a2a75da633b77a1df084ce3e2e068360cedff2fbb6cf87d828de8ec"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.5/ios/BareGPS-Route-Planner-ios-Bundle-0.2.5.zip",
+        "bytes": 460550,
+        "sha256": "43267c3b51b13daf9c13868a51c0b88c1ccd252c797d433552dfd041905d1286"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.5/ios/instructions.txt",
+        "bytes": 5283,
+        "sha256": "6b08fc06cb698f39891112d74a2e49fa6038ee244b938921007fa8b340f030be"
+      }
+    ]
+  },
+  "terrain": {
+    "results": [
+      {
+        "dataset": "mapzen",
+        "elevation": 1022,
+        "location": {
+          "lat": 51.99947,
+          "lng": -9.74269
+        }
+      }
+    ],
+    "status": "OK"
+  },
+  "all_preview_assets_match_build": true,
+  "assets": [
+    "index.html",
+    "logo.svg",
+    "assets/index-kkaj2fTq.js",
+    "assets/web-B5AEM-UY.js",
+    "assets/index-un5gkFwj.css"
+  ],
+  "homepage_links_v025": true
+}
