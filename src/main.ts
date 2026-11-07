@@ -106,7 +106,7 @@ document.querySelector("#app")!.innerHTML = `
     <div id="map-error" class="map-error" hidden>Map tiles couldn’t load. Your tracks and editing are still available.<button id="retry-map" class="text-button">Retry</button></div>
     <div class="map-legend" id="map-legend" hidden><span><i class="legend-solid"></i>Recorded track</span><span><i class="legend-dashed"></i>Walking connection</span></div>
   </section>
-  <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} Distance(km)</span><strong id="distance">0.00</strong></div><div class="metric"><span>${icon("up", 17)} Ascent(m)</span><strong id="ascent">—</strong></div><div class="metric"><span>${icon("down", 17)} Descent(m)</span><strong id="descent">—</strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} <span id="selection-caption">SELECTED SECTION</span></span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
+  <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} Distance(km)</span><strong id="distance">0.00</strong></div><div class="metric"><span>${icon("up", 17)} Ascent(m)</span><strong id="ascent">0</strong></div><div class="metric"><span>${icon("down", 17)} Descent(m)</span><strong id="descent">0</strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} <span id="selection-caption">SELECTED SECTION</span></span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
   <section class="profile-card" aria-label="Elevation profile"><div class="profile-heading"><span>ELEVATION PROFILE</span><span id="profile-range">Select a track to explore its elevation</span></div><div id="profile"></div><div id="elevation-note" class="elevation-note" hidden></div></section>
   <div id="editor" class="editor-grid">
     <section class="card tracks-card"><div class="card-heading"><h2>Your tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote"><span>${icon("file", 14)} GPX files · originals stay untouched</span></div></section>
@@ -416,8 +416,8 @@ function renderStats(preview?: Track) {
   $("distance").innerHTML = `${km(a.length)}`;
   const hasElevation = points.some((p) => p.ele !== undefined);
   $("ascent").innerHTML =
-    `${hasElevation ? metres(a.ascent) : "—"}${hasElevation && (mode === "create" || a.missingEdges || a.estimatedGap) ? "<sup>est.</sup>" : ""}`;
-  $("descent").innerHTML = `${hasElevation ? metres(a.descent) : "—"}`;
+    `${hasElevation ? metres(a.ascent) : "0"}${hasElevation && (mode === "create" || a.missingEdges || a.estimatedGap) ? "<sup>est.</sup>" : ""}`;
+  $("descent").innerHTML = `${hasElevation ? metres(a.descent) : "0"}`;
   $("point-count").textContent =
     mode === "create"
       ? `${draft().points.length.toLocaleString()} waypoints`
