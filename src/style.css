@@ -2057,6 +2057,7 @@ dialog p {
 .header-utilities {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0;
 }
 .header-right .header-utilities .icon-button {
