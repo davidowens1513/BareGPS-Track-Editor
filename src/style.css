@@ -1725,7 +1725,7 @@ dialog p {
   overflow: hidden;
 }
 .create-settings {
-  padding: 20px 22px 6px;
+  padding: 10px 22px 4px;
   display: flex;
   gap: 24px;
   align-items: flex-end;
@@ -1757,7 +1757,7 @@ dialog p {
 .waypoint-scroll {
   max-height: 350px;
   overflow: auto;
-  margin-top: 18px;
+  margin-top: 12px;
   border-block: 1px solid var(--border);
 }
 .waypoint-table {
@@ -1854,7 +1854,7 @@ dialog p {
     padding: 7px 9px;
   }
   .create-settings {
-    padding: 18px 16px 6px;
+    padding: 10px 16px 4px;
     gap: 16px;
   }
   .create-guidance {
