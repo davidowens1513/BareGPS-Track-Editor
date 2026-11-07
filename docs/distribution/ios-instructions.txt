@@ -1,5 +1,5 @@
-BAREGPS TRACK EDITOR - iOS BUNDLE
-Version 0.1.1 | 6 November 2026
+BAREGPS TRACK CREATOR AND EDITOR - iOS BUNDLE
+Version 0.2.0 | 7 November 2026
 
 Will be available through App Store
 
@@ -51,6 +51,21 @@ Distance, ascent, descent and the elevation profile update as you edit.
 Dashed connections count toward distance and ascent. Connection ascent is
 estimated from endpoint heights until you fetch intermediate terrain.
 The map and optional terrain requests require internet; file operations do not.
+
+5. CREATE A NEW WALKING ROUTE
+
+Choose Create above the map. Add points is the default: every map tap extends
+the route, even near an existing line. To insert between existing points,
+choose Insert point and tap the chosen line. The app then returns to Add points.
+Drag numbered markers to reshape the route. Close loop connects precisely
+back to the start. The grid lists points in walking order, coordinates,
+leg distances, total distance and available heights. Remove points or undo
+changes as needed. Edit and Create keep separate maps and working drafts.
+
+Lines connect points directly and do not automatically follow paths.
+Fetch terrain to estimate ascent and descent along the whole route.
+Changing route points clears these estimates so you can fetch fresh heights.
+Give the route a name and colour, then Save route exports it as GPX.
 
 Save section or Save route exports a GPX using the system Files save picker.
 The Saved label refers to local workspace recovery, not an exported GPX.

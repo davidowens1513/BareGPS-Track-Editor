@@ -1,6 +1,6 @@
 # BareGPS Track Creator and Editor
 
-A local-first GPX editor for Android and iOS. Open several tracks, choose the portions you want, split them or assemble a new walking route, preview it on OpenTopoMap, and save a GPX file back to Files.
+A local-first route creator and GPX editor for Android and iOS. Create walking routes by tapping the map, or open several tracks, choose the portions you want, split them or assemble a new walking route, preview it on OpenTopoMap, and save a GPX file back to Files.
 
 ## Run the preview
 
@@ -119,7 +119,7 @@ Use the `:app:` task prefix so Gradle does not run the generated plugin librarie
 
 For iOS, use the App scheme's UI tests in Xcode with a booted simulator and make `Native fixture.gpx` available in its local Files storage. The test finds it in On My iPhone or the BareGPS folder. It opens, reads and exports the GPX through the real iOS picker. Tests are in `ios/App/AppUITests/AppUITests.swift`.
 
-Current development artifacts: `releases/BareGPS-Track-Editor-0.1.1-android-debug.apk` and layout previews in `docs/previews/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
+Current public downloads: v0.2.0 platform bundles in `releases/bundles/0.2.0/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
 
 ## Website downloads
 
@@ -131,7 +131,7 @@ reproducible packaging/verification scripts under `docs/distribution/`,
 `releases/bundles/` and `scripts/distribution/`.
 
 ```sh
-python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.1.1
+python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.0
 python3 scripts/distribution/verify-website.py /path/to/web-preview/site --base-url https://appsbyonzy.dev
 ```
 

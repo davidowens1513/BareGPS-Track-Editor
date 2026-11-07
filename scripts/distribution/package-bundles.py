@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build public platform downloads without signing identities or local settings."""
 from pathlib import Path
+import argparse
 import hashlib
 import json
 import shutil
@@ -10,11 +11,19 @@ import zipfile
 
 root = Path(__file__).resolve().parents[2]
 version = json.loads((root / 'package.json').read_text())['version']
-output = Path(sys.argv[1]).resolve() if len(sys.argv)>1 else root/'releases'/'bundles'
+parser=argparse.ArgumentParser()
+parser.add_argument('output',nargs='?',type=Path,default=root/'releases'/'bundles'/version)
+parser.add_argument('--apk',type=Path,default=root/'android/app/build/outputs/apk/debug/app-debug.apk')
+args=parser.parse_args()
+output=args.output.resolve()
+filename_prefix='BareGPS-Track-Creator-and-Editor'
 output.mkdir(parents=True,exist_ok=True)
 commit = subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
-apk = root/'releases'/f'BareGPS-Track-Editor-{version}-android-debug.apk'
+apk=args.apk.resolve()
 assert apk.is_file(), 'Build and validate the Android APK first.'
+metadata=apk.parent/'output-metadata.json'
+if metadata.is_file():
+    assert all(item['versionName']==version for item in json.loads(metadata.read_text())['elements']), 'APK version does not match package.json.'
 assert (root/'dist/index.html').is_file(), 'Run npm run native:sync first.'
 excluded = {'node_modules','build','Pods','DerivedData','xcuserdata','.git','outputs'}
 secret_suffixes={'.p12','.p8','.mobileprovision','.jks','.keystore','.xcuserstate'}
@@ -32,12 +41,12 @@ for platform in ['ios','android']:
     directory.mkdir(parents=True,exist_ok=True)
     guide=root/'docs'/'distribution'/f'{platform}-instructions.txt'
     shutil.copy(guide,directory/'instructions.txt')
-    bundle=directory/f'BareGPS-Track-Editor-{platform}-Bundle-{version}.zip'
+    bundle=directory/f'{filename_prefix}-{platform}-Bundle-{version}.zip'
     with zipfile.ZipFile(bundle,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
         archive.write(guide,'instructions.txt')
-        archive.writestr('BUILD-INFO.json',json.dumps({'app':'BareGPS Track Editor','version':version,'platform':platform,'app_source_commit':commit},indent=2)+'\n')
+        archive.writestr('BUILD-INFO.json',json.dumps({'app':'BareGPS Track Creator and Editor','version':version,'platform':platform,'app_source_commit':commit},indent=2)+'\n')
         if platform=='android':
-            filename=f'BareGPS-Track-Editor-{version}.apk'
+            filename=f'{filename_prefix}-{version}.apk'
             shutil.copy(apk,directory/filename)
             archive.write(apk,filename)
             archive.writestr('SHA256SUMS.txt',hashlib.sha256(apk.read_bytes()).hexdigest()+'  '+filename+'\n')

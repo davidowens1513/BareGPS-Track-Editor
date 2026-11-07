@@ -1,9 +1,9 @@
-BAREGPS TRACK EDITOR - ANDROID BUNDLE
-Version 0.1.1 | 6 November 2026
+BAREGPS TRACK CREATOR AND EDITOR - ANDROID BUNDLE
+Version 0.2.0 | 7 November 2026
 
 1. WHAT IS INCLUDED
 
-BareGPS-Track-Editor-0.1.1.apk is the installable Android app.
+BareGPS-Track-Creator-and-Editor-0.2.0.apk is the installable Android app.
 This guide and SHA256SUMS.txt are included in the Android ZIP bundle.
 
 This is a development build, signed with the project's development key.
@@ -20,9 +20,9 @@ Location permission is not required to edit tracks.
 3. INSTALL THE APK
 
 Download the .apk directly, or unzip the Android Bundle and open the APK.
-In Files / My Files / Downloads, tap BareGPS-Track-Editor-0.1.1.apk.
+In Files / My Files / Downloads, tap BareGPS-Track-Creator-and-Editor-0.2.0.apk.
 If Android asks, allow installation from the browser or Files app you used,
-then return to the APK and choose Install. Open BareGPS Track Editor.
+then return to the APK and choose Install. Open BareGPS Track Creator and Editor.
 You can turn off that install permission again afterwards.
 
 Use your device's normal security checks. If installation is blocked,
@@ -48,16 +48,32 @@ ascent because they must be walked. Their initial ascent uses endpoint
 heights and is estimated. Fetch gap terrain to include intermediate hills
 and valleys. Terrain sampling uses straight connections, not trail routing.
 
-6. SAVE YOUR RESULT
+6. CREATE A NEW WALKING ROUTE
+
+Choose Create above the map. Add points is the default: every map tap extends
+the route, even near an existing line. To insert between existing points,
+choose Insert point and tap the chosen line. The app then returns to Add points.
+Drag numbered markers to reshape the route. Close loop connects precisely
+back to the start. The grid lists points in walking order, coordinates,
+leg distances, total distance and available heights. Remove points or undo
+changes as needed. Edit and Create keep separate maps and working drafts.
+
+Lines connect points directly and do not automatically follow paths.
+Fetch terrain to estimate ascent and descent along the whole route.
+Changing route points clears these estimates so you can fetch fresh heights.
+Give the route a name and colour, then Save route exports it as GPX.
+
+7. SAVE YOUR RESULT
 
 Save section exports the chosen A-B portion. Save route exports the joined
-route. Choose a destination in Files and save the GPX there.
+route in Edit, or the new walking route in Create. Choose a destination in
+Files and save the GPX there.
 
 Saved in the header means the workspace is saved on this device. It does
 not mean a GPX file has been exported. Export tracks you want to keep.
 Uninstalling or clearing the app's data can remove the local workspace.
 
-7. UPDATING OR TROUBLESHOOTING
+8. UPDATING OR TROUBLESHOOTING
 
 For updates signed with the same project key, installing the newer APK
 normally keeps the workspace. Export important GPX files before an update.
