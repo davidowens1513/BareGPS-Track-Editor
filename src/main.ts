@@ -68,6 +68,7 @@ import {
 } from "./create";
 let drawingMode: DrawingMode = "add";
 let mode: "edit" | "create" = "edit";
+let createMapOpened = false;
 type CreatedSnapshot = { route: Track; terrain?: Track };
 let createUndo: CreatedSnapshot[] = [],
   createRedo: CreatedSnapshot[] = [];
@@ -91,23 +92,20 @@ document.querySelector("#app")!.innerHTML = `
     <div id="map-error" class="map-error" hidden>Map tiles couldn’t load. Your tracks and editing are still available.<button id="retry-map" class="text-button">Retry</button></div>
     <div class="map-legend" id="map-legend" hidden><span><i class="legend-solid"></i>Recorded track</span><span><i class="legend-dashed"></i>Walking connection</span></div>
   </section>
-  <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} DISTANCE</span><strong id="distance">0.00 <small>km</small></strong></div><div class="metric"><span>${icon("up", 17)} ASCENT</span><strong id="ascent">— <small>m</small></strong></div><div class="metric"><span>${icon("down", 17)} DESCENT</span><strong id="descent">— <small>m</small></strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} <span id="selection-caption">SELECTED SECTION</span></span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
+  <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} Distance(km)</span><strong id="distance">0.00</strong></div><div class="metric"><span>${icon("up", 17)} Ascent(m)</span><strong id="ascent">—</strong></div><div class="metric"><span>${icon("down", 17)} Descent(m)</span><strong id="descent">—</strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} <span id="selection-caption">SELECTED SECTION</span></span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
   <section class="profile-card" aria-label="Elevation profile"><div class="profile-heading"><span>ELEVATION PROFILE</span><span id="profile-range">Select a track to explore its elevation</span></div><div id="profile"></div><div id="elevation-note" class="elevation-note" hidden></div></section>
   <div id="editor" class="editor-grid">
-    <section class="card tracks-card"><div class="card-heading"><h2>Your tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote"><span>${icon("file", 14)} GPX files · originals stay untouched</span><button id="sample-tracks" class="text-button">Irish samples</button></div></section>
+    <section class="card tracks-card"><div class="card-heading"><h2>Your tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote"><span>${icon("file", 14)} GPX files · originals stay untouched</span></div></section>
     <section class="card section-card"><div class="card-heading"><h2>Edit a section</h2><span class="badge soft">A → B</span></div><div id="section-controls"></div></section>
   </div>
   <section id="route-card" class="route-card"></section>
   <section id="create-card" class="card create-card" aria-label="Created route waypoints" hidden>
     <div class="card-heading"><h2>Your new route <span id="waypoint-count" class="badge">0</span></h2><span class="badge soft">TAP → SHAPE → SAVE</span></div>
     <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label><label>Line colour<input id="create-color" type="color" value="#16724d"></label></div>
-    <p class="create-guidance">Add points extends the route, even beside an existing line. Choose Insert point, then tap a line to insert one point between its neighbours. Drag numbered markers to reshape the route. Use Close loop to join the end to the start.</p>
-    <p class="create-guidance">Lines connect your points directly; they do not follow paths automatically. Check that your route is walkable.</p>
     <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><thead><tr><th scope="col">Point</th><th scope="col">Latitude</th><th scope="col">Longitude</th><th scope="col">Leg</th><th scope="col">Total</th><th scope="col">Height</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
-    <p id="create-terrain-note" class="create-guidance">Ascent needs terrain heights. Add at least two points, then fetch terrain.</p>
     <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
   </section>
-  <footer><span><span class="footer-dot"></span> Made for the journey.</span><span>Your files stay on your device. Map & terrain requests use the internet.</span></footer>
+  <footer><span>Your files stay on your device. Map & terrain requests use the internet.</span></footer>
 </main>
 <div id="notice" class="notice" role="status" hidden></div>
 <dialog id="dialog"><div id="dialog-content"></div></dialog>
@@ -323,12 +321,11 @@ function renderStats(preview?: Track) {
           ? selectedPoints(t, workspace.selection)
           : [],
     a = analytics(points);
-  $("distance").innerHTML = `${km(a.length)} <small>km</small>`;
+  $("distance").innerHTML = `${km(a.length)}`;
   const hasElevation = points.some((p) => p.ele !== undefined);
   $("ascent").innerHTML =
-    `${hasElevation ? metres(a.ascent) : "—"} <small>m</small>${hasElevation && (mode === "create" || a.missingEdges || a.estimatedGap) ? "<sup>est.</sup>" : ""}`;
-  $("descent").innerHTML =
-    `${hasElevation ? metres(a.descent) : "—"} <small>m</small>`;
+    `${hasElevation ? metres(a.ascent) : "—"}${hasElevation && (mode === "create" || a.missingEdges || a.estimatedGap) ? "<sup>est.</sup>" : ""}`;
+  $("descent").innerHTML = `${hasElevation ? metres(a.descent) : "—"}`;
   $("point-count").textContent =
     mode === "create"
       ? `${draft().points.length.toLocaleString()} waypoints`
@@ -543,7 +540,7 @@ function renderRoute() {
   const route = workspace.route,
     card = $("route-card");
   if (!route) {
-    card.innerHTML = `<span class="route-empty-icon">${icon("join", 26)}</span><div><h2>A few tracks. One adventure.</h2><p>Add selected sections in the order you’ll walk them. We’ll connect the gaps.</p></div><span class="route-step">SELECT <span>→</span> ADD <span>→</span> EXPLORE</span>`;
+    card.innerHTML = "";
     return;
   }
   const a = analytics(route.points);
@@ -588,7 +585,6 @@ function render() {
     "import",
     "empty-import",
     "demo",
-    "sample-tracks",
     "view-toggle",
     "edit-tab",
     "create-tab",
@@ -815,10 +811,18 @@ function changeCreated(change: () => Track) {
 }
 function setMode(next: "edit" | "create") {
   if (busy || mode === next) return;
+  const firstCreate = next === "create" && !createMapOpened;
+  if (next === "create") createMapOpened = true;
   mode = next;
   drawingMode = "add";
   render();
-  requestAnimationFrame(() => visibleMap().map.invalidateSize({ pan: false }));
+  requestAnimationFrame(() => {
+    visibleMap().map.invalidateSize({ pan: false });
+    if (firstCreate) {
+      if (draft().points.length) createMap.fit([draft()]);
+      else createMap.home();
+    }
+  });
 }
 function renderMode() {
   const creating = mode === "create";
@@ -826,7 +830,7 @@ function renderMode() {
   $("edit-map-view").hidden = creating;
   $("create-map-view").hidden = !creating;
   $("editor").hidden = creating;
-  $("route-card").hidden = creating;
+  $("route-card").hidden = creating || !workspace.route;
   $("create-card").hidden = !creating;
   $("create-tools").hidden = !creating;
   $("view-toggle").hidden = creating;
@@ -874,9 +878,6 @@ function renderCreated() {
   $<HTMLButtonElement>("create-close").disabled =
     busy || points.length < 3 || closed;
   $("create-close").textContent = closed ? "Loop closed" : "Close loop";
-  $("create-terrain-note").textContent = workspace.createdTerrain
-    ? "Terrain heights sampled along every leg. Ascent is an estimate; moving, adding or removing points requires fresh terrain."
-    : "Ascent is unavailable until you fetch terrain. Changing route points clears previous terrain estimates.";
   let total = 0;
   $("waypoint-rows").innerHTML = points.length
     ? points
@@ -1081,7 +1082,6 @@ function loadSampleTracks() {
   }, true);
 }
 $("demo").onclick = loadSampleTracks;
-$("sample-tracks").onclick = loadSampleTracks;
 $("view-toggle").onclick = () => {
   showAll = !showAll;
   render();
@@ -1136,7 +1136,7 @@ $("undo").onclick = () => history(true);
 $("redo").onclick = () => history(false);
 $("help").onclick = () =>
   openDialog(
-    `${dialogHeader("A route that’s yours", "A quick guide to BareGPS Route Planner")}<p><strong>Create a new route:</strong> switch to Create, use Add points to extend your route, even near existing lines. Choose Insert point and tap a line to insert one point; Add points resumes automatically. Close loop joins the end to the start. Drag numbered markers to move them. The grid follows your walking order. Remove individual points or undo changes. Fetch terrain for estimated ascent, then save as GPX. Edit and Create keep separate work and map positions.</p><ol class="help-list"><li><strong>Open your files.</strong> Choose one or more GPX tracks or routes from Files. Multiple tracks in one file are supported.</li><li><strong>Choose a section.</strong> Drag A and B on the map or use the sliders. Distance and ascent update as you go.</li><li><strong>Shape your route.</strong> Save the section, split it into two tracks, reverse direction, or add it to a joined route. Add sections in walking order.</li><li><strong>Check connections.</strong> Dashed lines connect separated sections. Their distance and ascent count. Fetch terrain to include hills between endpoints.</li><li><strong>Save to Files.</strong> Save the current section or your complete joined route as GPX. Your originals stay untouched.</li></ol><p class="dialog-note">Undo / redo: ⌘ or Ctrl + Z / Shift + Z. Escape collapses the map. Edits are saved on this device. Ascent sums elevation gains; missing heights are marked as partial. GPX connection markers and track colours round-trip in BareGPS.</p><button class="button primary full" data-close>Let’s go</button>`,
+    `${dialogHeader("A route that’s yours", "A quick guide to BareGPS Route Planner")}<h3>Create a route</h3><ol class="help-list"><li><strong>Add points.</strong> Tap the map to place the start and each next point. Add points always extends the route, even beside an existing line.</li><li><strong>Insert a point.</strong> Choose Insert point, then tap the chosen route line. The new point goes between its neighbours and Add points resumes automatically.</li><li><strong>Move or remove points.</strong> Drag any numbered marker to reshape the route. The grid shows walking order, coordinates, leg and total distances, and available heights. Tap a point number to locate it; use its bin button to remove it.</li><li><strong>Close a loop.</strong> Close loop joins the last point precisely to the start, including that return leg in distance. Undo can reopen the loop.</li><li><strong>Check the route.</strong> Lines connect points directly and do not automatically follow paths. Check that your route is walkable.</li><li><strong>Fetch terrain.</strong> With at least two points, fetch heights sampled along every leg for estimated ascent and descent. Coordinates are sent to Open Topo Data. Moving, adding or removing points clears previous terrain estimates; fetch again after changes.</li><li><strong>Save.</strong> Choose a name and colour, then Save route exports GPX. Undo/redo are below the device status in the title. Edit and Create preserve separate work and map positions. Irish demonstration tracks are optional and available from the welcome screen’s sample button.</li></ol><h3>Edit GPX tracks</h3><ol class="help-list"><li><strong>Open your files.</strong> Choose one or more GPX tracks or routes from Files. Multiple tracks in one file are supported.</li><li><strong>Choose a section.</strong> Drag A and B on the map or use the sliders. Distance and ascent update as you go.</li><li><strong>Shape your route.</strong> Save the section, split it into two tracks, reverse direction, or add it to a joined route. Add sections in walking order.</li><li><strong>Check connections.</strong> Dashed lines connect separated sections. Their distance and ascent count. Fetch terrain to include hills between endpoints.</li><li><strong>Save to Files.</strong> Save the current section or your complete joined route as GPX. Your originals stay untouched.</li></ol><p class="dialog-note">Undo / redo: ⌘ or Ctrl + Z / Shift + Z. Escape collapses the map. Edits are saved on this device. Ascent sums elevation gains; missing heights are marked as partial. GPX connection markers and track colours round-trip in BareGPS.</p><button class="button primary full" data-close>Let’s go</button>`,
   );
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && expanded && !$<HTMLDialogElement>("dialog").open)

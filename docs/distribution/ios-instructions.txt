@@ -1,6 +1,6 @@
 BAREGPS ROUTE PLANNER - iOS BUNDLE
 GPX Creator and Editor
-Version 0.2.2 | 7 November 2026
+Version 0.2.3 | 7 November 2026
 
 Will be available through App Store
 
@@ -42,7 +42,7 @@ Android version and automated tests, is linked below.
 
 4. USING THE APP
 
-Tap Explore with sample tracks or Irish samples to try the illustrative
+Tap Explore with sample tracks on the welcome screen to try the illustrative
 Glendalough Upper Lake and Spinc ridge tracks from County Wicklow.
 Tap Open files to select one or more GPX files from Files.
 Drag the A and B handles on the map, or use the sliders, to choose a section.

@@ -2075,3 +2075,15 @@ dialog p {
     gap: 3px;
   }
 }
+
+.metric > span:first-child {
+  letter-spacing: 0.6px;
+}
+@media (max-width: 640px) {
+  .metric {
+    padding-inline: 10px;
+  }
+  .metric > span:first-child {
+    letter-spacing: 0.35px;
+  }
+}

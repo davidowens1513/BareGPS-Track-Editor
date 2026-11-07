@@ -121,7 +121,7 @@ Use the `:app:` task prefix so Gradle does not run the generated plugin librarie
 
 For iOS, use the App scheme's UI tests in Xcode with a booted simulator and make `Native fixture.gpx` available in its local Files storage. The test finds it in On My iPhone or the BareGPS folder. It opens, reads and exports the GPX through the real iOS picker. Tests are in `ios/App/AppUITests/AppUITests.swift`.
 
-Current public downloads: v0.2.2 platform bundles in `releases/bundles/0.2.2/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
+Current public downloads: v0.2.3 platform bundles in `releases/bundles/0.2.3/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
 
 ## Website downloads
 
@@ -133,7 +133,7 @@ reproducible packaging/verification scripts under `docs/distribution/`,
 `releases/bundles/` and `scripts/distribution/`.
 
 ```sh
-python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.2
+python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.3
 python3 scripts/distribution/verify-website.py /path/to/web-preview/site --base-url https://appsbyonzy.dev
 ```
 
@@ -155,3 +155,5 @@ The app opens with undo/redo controls inside the persistent title panel, below t
 ### Browser preview
 
 [Preview BareGPS Route Planner](https://appsbyonzy.dev/tools/baregps-route-planner/) runs the same Edit/Create app in the browser, including GPX import/export and terrain estimates. Files and drafts stay in that browser. The Preview action uses the same style as OpenBareMap. Build it with `npm run build:web`; copy `web-dist/` to the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies only validated terrain requests to Open Topo Data; `_routes.json` limits execution to that endpoint. The regular website and downloads remain static.
+
+Both empty Edit and Create maps start at Carrauntoohil at zoom 13. Existing created routes are framed when first reopened. Metric titles carry units: Distance(km), Ascent(m), Descent(m); values no longer repeat units. Optional Irish samples are kept only on the welcome screen. The joined-route placeholder and promotional footer are removed. Create instructions live in ? Help, covering addition, insertion, dragging/removal, the point grid, closing loops, straight-line legs, terrain invalidation and GPX saving.

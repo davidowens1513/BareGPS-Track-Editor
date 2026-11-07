@@ -89,7 +89,7 @@ test("import, trim, join, include gaps, undo, export and restore", async ({
   await expect(page.locator("#source-count")).toHaveText("2");
   await expect(page.locator("#route-card")).toContainText("2.56 km");
   await page.getByRole("button", { name: "Remove joined route" }).click();
-  await expect(page.locator("#route-card")).toContainText("A few tracks.");
+  await expect(page.locator("#route-card")).toBeHidden();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.locator("#route-card")).toContainText("My joined route");
 });

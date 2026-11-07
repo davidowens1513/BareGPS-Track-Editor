@@ -6,6 +6,9 @@ import {
   selectedPoints,
   distance,
 } from "./model";
+export const HOME_CENTER: L.LatLngTuple = [51.99947, -9.74269];
+export const HOME_ZOOM = 13;
+
 export class TrackMap {
   map: L.Map;
   protected layers = L.layerGroup();
@@ -23,10 +26,7 @@ export class TrackMap {
       zoomControl: false,
       preferCanvas: true,
       attributionControl: true,
-    }).setView(
-      containerId === "map" ? [51.99947, -9.74269] : [53.4, -8.0],
-      containerId === "map" ? 13 : 7,
-    );
+    }).setView(HOME_CENTER, HOME_ZOOM);
     this.tileLayer = L.tileLayer(
       "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
       {
@@ -53,6 +53,9 @@ export class TrackMap {
       if (container.clientWidth && container.clientHeight)
         this.map.invalidateSize({ pan: false });
     }).observe(container);
+  }
+  home() {
+    this.map.setView(HOME_CENTER, HOME_ZOOM, { animate: false });
   }
   hasTileError() {
     return this.tileFailed;
