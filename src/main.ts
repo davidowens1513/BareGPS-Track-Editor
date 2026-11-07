@@ -4,7 +4,6 @@ import { get, set } from "idb-keyval";
 import { Capacitor } from "@capacitor/core";
 import {
   analytics,
-  COLORS,
   emptyWorkspace,
   join,
   MAX_POINTS,
@@ -67,8 +66,8 @@ import {
   type DrawingMode,
 } from "./create";
 let drawingMode: DrawingMode = "add";
-let mode: "edit" | "create" = "edit";
-let createMapOpened = false;
+let mode: "edit" | "create" = "create";
+let createMapOpened = true;
 type CreatedSnapshot = { route: Track; terrain?: Track };
 let createUndo: CreatedSnapshot[] = [],
   createRedo: CreatedSnapshot[] = [];
@@ -82,7 +81,7 @@ document.querySelector("#app")!.innerHTML = `
 <main>
   <span id="track-count" class="sr-only">Your workspace</span>
   <section id="map-panel" class="map-panel" aria-label="Track map">
-    <div class="mode-tabs" role="tablist" aria-label="Route workspace"><button id="edit-tab" role="tab" aria-selected="true" aria-controls="edit-map-view">Edit</button><button id="create-tab" role="tab" aria-selected="false" aria-controls="create-map-view" tabindex="-1">Create</button><span id="mode-caption">Work with your GPX tracks</span></div>
+    <div class="mode-tabs" role="tablist" aria-label="Route workspace"><button id="create-tab" role="tab" aria-selected="true" aria-controls="create-map-view">Create</button><button id="edit-tab" role="tab" aria-selected="false" aria-controls="edit-map-view" tabindex="-1">Edit</button><span id="mode-caption">Work with your GPX tracks</span></div>
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
     <div id="create-tools" class="create-tools" role="group" aria-label="Route drawing controls" hidden><div class="drawing-modes" role="group" aria-label="Drawing mode"><button id="draw-add" aria-pressed="true">Add points</button><button id="draw-insert" aria-pressed="false">Insert point</button></div><button id="create-close" class="small-button">Close loop</button></div>
     <div id="edit-map-view" role="tabpanel" aria-labelledby="edit-tab"><div id="map"></div></div>
@@ -101,7 +100,7 @@ document.querySelector("#app")!.innerHTML = `
   <section id="route-card" class="route-card"></section>
   <section id="create-card" class="card create-card" aria-label="Created route waypoints" hidden>
     <div class="card-heading"><h2>Your new route <span id="waypoint-count" class="badge">0</span></h2><span class="badge soft">TAP → SHAPE → SAVE</span></div>
-    <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label><label>Line colour<input id="create-color" type="color" value="#16724d"></label></div>
+    <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label><label class="line-color">Line colour<input id="create-color" type="color" value="#16724d"></label></div>
     <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><thead><tr><th scope="col">Point</th><th scope="col">Latitude</th><th scope="col">Longitude</th><th scope="col">Leg</th><th scope="col">Total</th><th scope="col">Height</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
   </section>
@@ -458,10 +457,10 @@ function renderControls() {
   }
   const { start, end } = workspace.selection;
   box.innerHTML = `<div class="selected-title"><span class="eyebrow">${t.kind === "route" ? "JOINED ROUTE" : "SELECTED TRACK"}</span><button id="rename" class="name-button" title="Rename track">${esc(t.name)}${icon("edit", 14)}</button></div>
-  <div class="selection-labels"><span><i class="endpoint">A</i> Start <strong id="start-label">Point ${start + 1}</strong></span><span><i class="endpoint">B</i> End <strong id="end-label">Point ${end + 1}</strong></span></div>
+  <div class="selection-settings"><div class="selection-slider"><div class="selection-labels"><span><i class="endpoint">A</i> Start <strong id="start-label">Point ${start + 1}</strong></span><span><i class="endpoint">B</i> End <strong id="end-label">Point ${end + 1}</strong></span></div>
   <div class="range-track"><div id="range-fill" style="left:${(start / (t.points.length - 1)) * 100}%;right:${100 - (end / (t.points.length - 1)) * 100}%"></div><input id="range-start" type="range" min="0" max="${t.points.length - 1}" value="${start}" aria-label="Section start point"><input id="range-end" type="range" min="0" max="${t.points.length - 1}" value="${end}" aria-label="Section end point"></div>
   <div class="range-caption"><span id="selected-label">${end - start + 1} of ${t.points.length} points</span><button id="reset-selection" class="text-button">Select whole track</button></div>
-  <div class="color-row"><label for="track-color">Track colour</label><div class="swatches">${COLORS.map((c) => `<button class="swatch ${c === t.color ? "chosen" : ""}" data-color="${c}" style="--swatch:${c}" aria-label="Use ${c} track colour" aria-pressed="${c === t.color}"></button>`).join("")}<label class="custom-color" title="Choose custom track colour"><input id="track-color" type="color" value="${t.color}" aria-label="Custom track colour">${icon("plus", 13)}</label></div></div>
+  </div><label class="line-color">Line colour<input id="track-color" type="color" value="${t.color}"></label></div>
   <div class="edit-buttons"><button id="save-section" class="button secondary">${icon("export", 16)}Save section</button><button id="split" class="button secondary" ${end - start < 2 ? "disabled" : ""}>${icon("scissors", 16)}Split</button><button id="reverse" class="button secondary" title="Reverse the whole track">${icon("reverse", 16)}Reverse</button></div>
   ${t.kind !== "route" ? `<button id="add-route" class="button primary full">${icon("join", 18)}${workspace.route ? "Append section to route" : "Start joined route with section"}</button>` : '<button id="save-copy" class="button primary full">' + icon("plus", 18) + "Keep section as a new track</button>"}
   <p class="control-hint">Drag map handles or use the sliders. Originals are never overwritten.</p>`;
@@ -524,13 +523,6 @@ function renderControls() {
       workspace.tracks.push(section(t, workspace.selection));
     }),
   );
-  box
-    .querySelectorAll<HTMLButtonElement>(".swatch")
-    .forEach(
-      (b) =>
-        (b.onclick = () =>
-          commit(() => replace({ ...t, color: b.dataset.color! }))),
-    );
   $<HTMLInputElement>("track-color").onchange = (e) =>
     commit(() =>
       replace({ ...t, color: (e.target as HTMLInputElement).value }),
@@ -923,9 +915,9 @@ for (const name of ["edit", "create"])
     e.preventDefault();
     const next =
       e.key === "Home"
-        ? "edit"
+        ? "create"
         : e.key === "End"
-          ? "create"
+          ? "edit"
           : mode === "edit"
             ? "create"
             : "edit";

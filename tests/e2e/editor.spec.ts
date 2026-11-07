@@ -29,6 +29,9 @@ test.beforeEach(async ({ page }) => {
   await expect(
     page.getByRole("link", { name: "BareGPS Route Planner home" }),
   ).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Create", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab").first()).toHaveText("Create");
+  await page.getByRole("tab", { name: "Edit", exact: true }).click();
 });
 test("import, trim, join, include gaps, undo, export and restore", async ({
   page,

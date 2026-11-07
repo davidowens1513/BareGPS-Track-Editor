@@ -463,6 +463,7 @@ h3 {
   box-shadow: 0 2px 8px #283a2503;
 }
 .metric {
+  text-align: right;
   padding: 0 23px;
   border-right: 1px solid #e9ece5;
   display: flex;
@@ -470,6 +471,7 @@ h3 {
   justify-content: center;
 }
 .metric > span:first-child {
+  justify-content: flex-end;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.3px;
@@ -867,58 +869,21 @@ h3 {
 .range-caption .text-button {
   font-size: 9px;
 }
-.color-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 0 14px;
-  font-size: 10px;
-  color: #7a8b6c;
+.selection-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin: 14px 0;
 }
-.swatches {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+.selection-slider {
+  min-width: 0;
 }
-.swatch {
-  background: var(--swatch);
-  border: 2px solid white;
-  width: 19px;
-  height: 19px;
-  border-radius: 50%;
-  position: relative;
-}
-.swatch.chosen {
-  outline: 1px solid var(--swatch);
-  outline-offset: 1px;
-}
-.swatch.chosen:after {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  background: white;
-  border-radius: 50%;
-}
-.custom-color {
-  position: relative;
-  width: 20px;
-  height: 20px;
-  border: 1px dashed #cbd7bf;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #819573;
-  margin-left: 3px;
-}
-.custom-color input {
-  opacity: 0;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-  inset: 0;
+.line-color {
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+  color: #637b58;
 }
 .edit-buttons {
   display: flex;
@@ -1552,17 +1517,6 @@ dialog p {
     margin-top: 22px;
     margin-bottom: 16px;
   }
-  .color-row {
-    font-size: 11px;
-    padding-top: 20px;
-  }
-  .swatches {
-    gap: 8px;
-  }
-  .swatch {
-    width: 21px;
-    height: 21px;
-  }
   .edit-buttons .button {
     font-size: 11px;
     padding: 9px 11px;
@@ -1786,7 +1740,7 @@ dialog p {
   flex: 1;
   max-width: 460px;
 }
-#create-color {
+.line-color input[type="color"] {
   width: 48px;
   height: 42px;
   border: 1px solid var(--border);
