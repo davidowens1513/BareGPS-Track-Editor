@@ -1,0 +1,24 @@
+{
+  "verified_at": "2026-11-07T08:46:55.769689+00:00",
+  "preview": "http://127.0.0.1:5174/",
+  "automated_tests": 28,
+  "checks": [
+    "Separate Edit and Create Leaflet map instances using the same OpenTopoMap tiles",
+    "Tap blank map to append waypoint; tap segment to insert between its neighbours",
+    "Drag inserted marker updates geometry, grid and live distance",
+    "Independent Edit/Create undo and redo histories",
+    "Edit undo does not discard the Create draft",
+    "Removing a point renumbers the grid; undo restores it",
+    "Name and draft points restore after reload",
+    "GPX generation preserves route order; save fallback integration test passes",
+    "Real Open Topo Data sampling returned estimated ascent and descent",
+    "Geometry edits invalidate terrain heights",
+    "Tabs re-enable after a terrain request",
+    "Phone viewport 390x844 has no page overflow; waypoint table scrolls horizontally",
+    "Expanded map keeps logo, tabs and analytics visible",
+    "Marker positions unchanged across Edit/Create tab switch",
+    "Android debug package and iOS simulator build succeed with Mac-local caches"
+  ],
+  "save_ui_note": "In-app browser download-event capture is unavailable; native save flow and GPX export use existing shared saveTrack. Save fallback is covered by automated test.",
+  "release_scope": "Project feature and native build verification; public website bundles remain their existing release."
+}

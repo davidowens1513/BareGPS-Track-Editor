@@ -20,6 +20,8 @@ export interface Selection {
 }
 export interface Workspace {
   version: 1;
+  created?: Track;
+  createdTerrain?: Track;
   tracks: Track[];
   route: Track | null;
   activeId: string | null;
@@ -306,7 +308,12 @@ export function validateWorkspace(value: unknown): value is Workspace {
   )
     return false;
   let total = 0;
-  const all = [...w.tracks, ...(w.route ? [w.route] : [])];
+  const all = [
+    ...w.tracks,
+    ...(w.route ? [w.route] : []),
+    ...(w.created ? [w.created] : []),
+    ...(w.createdTerrain ? [w.createdTerrain] : []),
+  ];
   return (
     all.every(
       (t) =>
@@ -318,8 +325,12 @@ export function validateWorkspace(value: unknown): value is Workspace {
         ["track", "route"].includes(t.kind) &&
         /^#[0-9a-f]{6}$/i.test(t.color) &&
         Array.isArray(t.points) &&
-        t.points.length >= 2 &&
-        (total += t.points.length) <= MAX_POINTS * 3 &&
+        t.points.length >= (t === w.created ? 0 : 2) &&
+        (t !== w.created || t.points.length <= 1000) &&
+        t.points.length <= MAX_POINTS &&
+        (t === w.created ||
+          t === w.createdTerrain ||
+          (total += t.points.length) <= MAX_POINTS * 3) &&
         t.points.every(
           (p) =>
             p &&
@@ -333,6 +344,9 @@ export function validateWorkspace(value: unknown): value is Workspace {
             (p.terrain === undefined || typeof p.terrain === "boolean"),
         ),
     ) &&
-    (w.activeId === null || all.some((t) => t.id === w.activeId))
+    (w.activeId === null ||
+      [...w.tracks, ...(w.route ? [w.route] : [])].some(
+        (t) => t.id === w.activeId,
+      ))
   );
 }

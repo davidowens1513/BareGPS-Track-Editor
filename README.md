@@ -139,3 +139,10 @@ The iOS ZIP is a source bundle with prebuilt web assets for Xcode; Apple
 signing is required to install it on a device. The Android ZIP includes the
 APK and installation instructions. The iOS row alone states: “Will be available
 through App Store”. The GitHub link keeps its existing repository access policy.
+
+
+### Create a route on the map
+
+Choose **Create** above the map for an independent OpenTopoMap view. Tap the map to place the start and subsequent numbered waypoints; tap an existing line to insert a waypoint between its neighbours. Drag markers to reshape the route. The grid lists walking order, coordinates, leg distance, cumulative distance and available heights. Grid controls locate or remove individual points. Each tab has its own undo/redo history; switching tabs preserves work and map position. Both drafts are saved in the device workspace, including a Create draft with only one point.
+
+Set a route name and colour, then use **Save route** with at least two points to export GPX. Created routes connect points directly rather than following paths. **Fetch terrain** sends the route coordinates to the existing Open Topo Data service, sampling about every 90 metres for estimated ascent and descent; changing geometry clears those estimates. Terrain failure or cancellation leaves the route untouched. Creation is limited to 1,000 waypoints and uses the terrain service's existing sampling limits. An unavailable map or terrain service does not prevent local editing or GPX export.

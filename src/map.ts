@@ -8,7 +8,7 @@ import {
 } from "./model";
 export class TrackMap {
   map: L.Map;
-  private layers = L.layerGroup();
+  protected layers = L.layerGroup();
   private tileLayer: L.TileLayer;
   private tileFailed = false;
   private editing = false;
@@ -17,8 +17,9 @@ export class TrackMap {
   constructor(
     private onSelection: (s: Selection) => void,
     onTileError: () => void,
+    containerId = "map",
   ) {
-    this.map = L.map("map", {
+    this.map = L.map(containerId, {
       zoomControl: false,
       preferCanvas: true,
       attributionControl: true,
@@ -44,9 +45,14 @@ export class TrackMap {
     L.control
       .scale({ position: "bottomleft", imperial: false })
       .addTo(this.map);
-    new ResizeObserver(() => this.map.invalidateSize()).observe(
-      document.getElementById("map")!,
-    );
+    const container = document.getElementById(containerId)!;
+    new ResizeObserver(() => {
+      if (container.clientWidth && container.clientHeight)
+        this.map.invalidateSize({ pan: false });
+    }).observe(container);
+  }
+  hasTileError() {
+    return this.tileFailed;
   }
   retryTiles() {
     this.tileFailed = false;
@@ -152,7 +158,7 @@ export class TrackMap {
     });
     this.positionHandles();
   }
-  private handleIcon(label: string, offset: number) {
+  protected handleIcon(label: string, offset: number) {
     return L.divIcon({
       className: "track-handle",
       html: `<span>${label}</span>`,
@@ -183,5 +189,92 @@ export class TrackMap {
         maxZoom: 16,
         animate: false,
       });
+  }
+}
+
+export class CreateMap extends TrackMap {
+  enabled = true;
+  private draggingPoint = false;
+  private current: Track | null = null;
+  private segments: L.Polyline[] = [];
+  constructor(
+    private onAdd: (index: number, point: Point) => void,
+    private onMove: (index: number, point: Point) => void,
+    private onPreview: (index: number, point: Point) => void,
+    onTileError: () => void,
+  ) {
+    super(() => {}, onTileError, "create-map");
+    this.map.doubleClickZoom.disable();
+    this.map.on("click", (event: L.LeafletMouseEvent) => {
+      if (this.enabled && !this.draggingPoint && this.current)
+        this.onAdd(this.current.points.length, this.coordinate(event.latlng));
+    });
+  }
+  private coordinate(pos: L.LatLng): Point {
+    return { lat: pos.lat, lon: pos.wrap().lng };
+  }
+  renderCreated(route: Track) {
+    if (this.draggingPoint) return;
+    this.current = route;
+    this.layers.clearLayers();
+    this.segments = [];
+    route.points.forEach((point, index) => {
+      if (!index) return;
+      const previous = route.points[index - 1];
+      const coords: L.LatLngTuple[] = [
+        [previous.lat, previous.lon],
+        [point.lat, point.lon],
+      ];
+      const options = { bubblingMouseEvents: false, interactive: true };
+      const hit = L.polyline(coords, {
+        ...options,
+        weight: 24,
+        opacity: 0,
+        className: "create-segment-hit",
+      }).addTo(this.layers);
+      const line = L.polyline(coords, {
+        ...options,
+        weight: 4,
+        color: route.color,
+        className: "create-segment",
+      }).addTo(this.layers);
+      const insert = (event: L.LeafletMouseEvent) => {
+        if (this.enabled) this.onAdd(index, this.coordinate(event.latlng));
+      };
+      hit.on("click", insert);
+      line.on("click", insert);
+      this.segments.push(hit, line);
+    });
+    route.points.forEach((point, index) => {
+      const marker = L.marker([point.lat, point.lon], {
+        draggable: this.enabled,
+        autoPan: true,
+        bubblingMouseEvents: false,
+        icon: this.handleIcon(String(index + 1), 0),
+        title: `Route point ${index + 1} · drag to move`,
+        keyboard: true,
+      }).addTo(this.layers);
+      marker.on("dragstart", () => {
+        this.draggingPoint = true;
+      });
+      marker.on("drag", () => {
+        const pos = marker.getLatLng();
+        const preview = route.points.map((p, i) =>
+          i === index ? this.coordinate(pos) : p,
+        );
+        this.segments.forEach((segment, i) => {
+          const end = Math.floor(i / 2) + 1;
+          segment.setLatLngs([
+            [preview[end - 1].lat, preview[end - 1].lon],
+            [preview[end].lat, preview[end].lon],
+          ]);
+        });
+        this.onPreview(index, this.coordinate(pos));
+      });
+      marker.on("dragend", () => {
+        this.draggingPoint = false;
+        this.onMove(index, this.coordinate(marker.getLatLng()));
+      });
+    });
   }
 }
