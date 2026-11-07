@@ -1680,7 +1680,7 @@ dialog p {
 }
 .mode-tabs [aria-selected="true"] {
   background: white;
-  border-color: #dce6d4;
+  border-color: #b3261e;
   color: #b3261e;
   box-shadow: 0 1px 3px #25402b08;
 }
