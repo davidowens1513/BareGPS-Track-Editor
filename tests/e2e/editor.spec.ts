@@ -27,7 +27,7 @@ test.beforeEach(async ({ page }) => {
   );
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Your tracks. Your way." }),
+    page.getByRole("link", { name: "BareGPS Route Planner home" }),
   ).toBeVisible();
 });
 test("import, trim, join, include gaps, undo, export and restore", async ({

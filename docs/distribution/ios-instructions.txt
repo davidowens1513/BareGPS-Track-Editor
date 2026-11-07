@@ -1,6 +1,6 @@
 BAREGPS ROUTE PLANNER - iOS BUNDLE
 GPX Creator and Editor
-Version 0.2.1 | 7 November 2026
+Version 0.2.2 | 7 November 2026
 
 Will be available through App Store
 
@@ -75,3 +75,5 @@ Export tracks you want to keep before deleting the app or its data.
 Project: https://github.com/davidowens1513/BareGPS-Track-Editor
 Website: https://appsbyonzy.dev/#tools
 Contact: appsbyonzy@gmail.com
+
+Browser Preview: https://appsbyonzy.dev/tools/baregps-route-planner/

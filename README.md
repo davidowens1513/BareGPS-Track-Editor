@@ -121,7 +121,7 @@ Use the `:app:` task prefix so Gradle does not run the generated plugin librarie
 
 For iOS, use the App scheme's UI tests in Xcode with a booted simulator and make `Native fixture.gpx` available in its local Files storage. The test finds it in On My iPhone or the BareGPS folder. It opens, reads and exports the GPX through the real iOS picker. Tests are in `ios/App/AppUITests/AppUITests.swift`.
 
-Current public downloads: v0.2.1 platform bundles in `releases/bundles/0.2.1/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
+Current public downloads: v0.2.2 platform bundles in `releases/bundles/0.2.2/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
 
 ## Website downloads
 
@@ -133,7 +133,7 @@ reproducible packaging/verification scripts under `docs/distribution/`,
 `releases/bundles/` and `scripts/distribution/`.
 
 ```sh
-python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.1
+python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.2
 python3 scripts/distribution/verify-website.py /path/to/web-preview/site --base-url https://appsbyonzy.dev
 ```
 
@@ -148,3 +148,10 @@ through App Store”. The GitHub link keeps its existing repository access polic
 Choose **Create** above the map for an independent OpenTopoMap view. Tap the map to place the start and subsequent numbered waypoints; use **Insert point** and tap an existing line to insert one waypoint between its neighbours. **Add points** is the default, so taps beside existing lines always extend the route; insertion automatically returns to Add points. **Close loop** connects the last waypoint exactly to the start and includes that return leg in the totals. Drag markers to reshape the route. The grid lists walking order, coordinates, leg distance, cumulative distance and available heights. Grid controls locate or remove individual points. Each tab has its own undo/redo history; switching tabs preserves work and map position. Both drafts are saved in the device workspace, including a Create draft with only one point.
 
 Set a route name and colour, then use **Save route** with at least two points to export GPX. Created routes connect points directly rather than following paths. **Fetch terrain** sends the route coordinates to the existing Open Topo Data service, sampling about every 90 metres for estimated ascent and descent; changing geometry clears those estimates. Terrain failure or cancellation leaves the route untouched. Creation is limited to 1,000 waypoints and uses the terrain service's existing sampling limits. An unavailable map or terrain service does not prevent local editing or GPX export.
+
+The app opens with undo/redo controls inside the persistent title panel, below the device-save status. The empty Edit map starts around Carrauntoohil with an unobscured terrain backdrop and only the file-opening and Irish sample buttons over it.
+
+
+### Browser preview
+
+[Preview BareGPS Route Planner](https://appsbyonzy.dev/tools/baregps-route-planner/) runs the same Edit/Create app in the browser, including GPX import/export and terrain estimates. Files and drafts stay in that browser. The Preview action uses the same style as OpenBareMap. Build it with `npm run build:web`; copy `web-dist/` to the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies only validated terrain requests to Open Topo Data; `_routes.json` limits execution to that endpoint. The regular website and downloads remain static.

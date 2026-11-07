@@ -96,7 +96,7 @@ export async function enrichTerrain(
       let response: Response;
       try {
         response = await fetch(
-          `/terrain/v1/mapzen?locations=${encodeURIComponent(locations)}`,
+          `${import.meta.env.BASE_URL}terrain/v1/mapzen?locations=${encodeURIComponent(locations)}`,
           { signal: requestController.signal },
         );
       } finally {

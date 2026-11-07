@@ -23,7 +23,10 @@ export class TrackMap {
       zoomControl: false,
       preferCanvas: true,
       attributionControl: true,
-    }).setView([53.4, -8.0], 7);
+    }).setView(
+      containerId === "map" ? [51.99947, -9.74269] : [53.4, -8.0],
+      containerId === "map" ? 13 : 7,
+    );
     this.tileLayer = L.tileLayer(
       "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
       {

@@ -2021,3 +2021,57 @@ dialog p {
     gap: 2px;
   }
 }
+
+/* Compact history controls leave the map close to the persistent title. */
+.workspace-heading {
+  padding: 3px 0 4px;
+  justify-content: flex-end;
+}
+.map-empty {
+  background: transparent;
+  pointer-events: none;
+  justify-content: flex-end;
+  padding: 0 14px 38px;
+  gap: 8px;
+}
+.map-empty button {
+  pointer-events: auto;
+}
+.map-empty .text-button {
+  margin-top: 0;
+  background: #fffffff2;
+  border: 1px solid #dce4d3;
+  border-radius: 7px;
+  padding: 6px 12px;
+}
+@media (max-width: 640px) {
+  .workspace-heading {
+    padding: 2px 0 4px;
+  }
+}
+
+.device-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.header-right .history .icon-button {
+  width: 28px;
+  height: 24px;
+}
+.header-right .history svg {
+  width: 15px;
+  height: 15px;
+}
+.header-right {
+  gap: 10px;
+}
+@media (max-width: 640px) {
+  .header-right {
+    gap: 5px;
+  }
+  .device-status {
+    gap: 3px;
+  }
+}
