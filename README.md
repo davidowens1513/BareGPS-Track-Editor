@@ -1,4 +1,6 @@
-# BareGPS Track Creator and Editor
+# BareGPS Route Planner
+
+**GPX Creator and Editor**
 
 A local-first route creator and GPX editor for Android and iOS. Create walking routes by tapping the map, or open several tracks, choose the portions you want, split them or assemble a new walking route, preview it on OpenTopoMap, and save a GPX file back to Files.
 
@@ -99,7 +101,7 @@ Browser tests use an installed Google Chrome on macOS by default. Set `BAREGPS_C
 
 ## Maps, branding and dependencies
 
-The logo shows two endpoints connected by a winding line. Its green matches `UIColor.systemGreen`, used by the BareGPS Ireland title (`#34C759` in light appearance). The header reads “BareGPS Track Creator and Editor”. The Saved indicator refers to automatic workspace recovery on the device; exporting a GPX file is a separate action. No map layer selector is included.
+The logo shows two endpoints connected by a winding line. Its green matches `UIColor.systemGreen`, used by the BareGPS Ireland title (`#34C759` in light appearance). The header reads “BareGPS Route Planner”. The Saved indicator refers to automatic workspace recovery on the device; exporting a GPX file is a separate action. No map layer selector is included.
 
 Map tiles use [OpenTopoMap](https://opentopomap.org/) with visible attribution to [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), SRTM and OpenTopoMap (CC-BY-SA). Optional terrain uses [Open Topo Data](https://www.opentopodata.org/) and its [Mapzen dataset](https://www.opentopodata.org/datasets/mapzen/). Mapping uses [Leaflet](https://leafletjs.com/); mobile packaging uses [Capacitor](https://capacitorjs.com/). Review public tile/terrain service capacity for a store release. There is no offline tile pack, trail routing, account system or remote workspace sync in this version.
 
@@ -119,7 +121,7 @@ Use the `:app:` task prefix so Gradle does not run the generated plugin librarie
 
 For iOS, use the App scheme's UI tests in Xcode with a booted simulator and make `Native fixture.gpx` available in its local Files storage. The test finds it in On My iPhone or the BareGPS folder. It opens, reads and exports the GPX through the real iOS picker. Tests are in `ios/App/AppUITests/AppUITests.swift`.
 
-Current public downloads: v0.2.0 platform bundles in `releases/bundles/0.2.0/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
+Current public downloads: v0.2.1 platform bundles in `releases/bundles/0.2.1/`, linked from [Tools on appsbyonzy.dev](https://appsbyonzy.dev/#tools). The Android bundle includes the APK verified on Samsung; the iOS bundle includes source and prebuilt assets for Xcode. Current layout previews are in `docs/create-view/`. The test APK is signed with the local Android development key. Installing on a personal Android phone requires that phone's normal permission for installing a development APK. iPhone installation requires your own Apple signing team in Xcode.
 
 ## Website downloads
 
@@ -131,7 +133,7 @@ reproducible packaging/verification scripts under `docs/distribution/`,
 `releases/bundles/` and `scripts/distribution/`.
 
 ```sh
-python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.0
+python3 scripts/distribution/package-bundles.py /tmp/baregps-public-bundles/0.2.1
 python3 scripts/distribution/verify-website.py /path/to/web-preview/site --base-url https://appsbyonzy.dev
 ```
 

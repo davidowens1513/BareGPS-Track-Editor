@@ -1997,3 +1997,27 @@ dialog p {
     height: calc(100% - 141px);
   }
 }
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.brand-subtitle {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  color: #527b56;
+  line-height: 1.2;
+}
+@media (max-width: 640px) {
+  .brand-subtitle {
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+  .brand-copy {
+    gap: 2px;
+  }
+}

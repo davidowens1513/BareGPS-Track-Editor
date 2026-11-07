@@ -16,7 +16,7 @@ parser.add_argument('output',nargs='?',type=Path,default=root/'releases'/'bundle
 parser.add_argument('--apk',type=Path,default=root/'android/app/build/outputs/apk/debug/app-debug.apk')
 args=parser.parse_args()
 output=args.output.resolve()
-filename_prefix='BareGPS-Track-Creator-and-Editor'
+filename_prefix='BareGPS-Route-Planner'
 output.mkdir(parents=True,exist_ok=True)
 commit = subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
 apk=args.apk.resolve()
@@ -44,7 +44,7 @@ for platform in ['ios','android']:
     bundle=directory/f'{filename_prefix}-{platform}-Bundle-{version}.zip'
     with zipfile.ZipFile(bundle,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
         archive.write(guide,'instructions.txt')
-        archive.writestr('BUILD-INFO.json',json.dumps({'app':'BareGPS Track Creator and Editor','version':version,'platform':platform,'app_source_commit':commit},indent=2)+'\n')
+        archive.writestr('BUILD-INFO.json',json.dumps({'app':'BareGPS Route Planner','version':version,'platform':platform,'app_source_commit':commit},indent=2)+'\n')
         if platform=='android':
             filename=f'{filename_prefix}-{version}.apk'
             shutil.copy(apk,directory/filename)

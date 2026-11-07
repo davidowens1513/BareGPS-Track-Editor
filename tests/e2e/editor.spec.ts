@@ -273,9 +273,12 @@ test("Irish samples and the full branded header remain clear on small phones", a
 }) => {
   await page.getByRole("button", { name: /Explore with sample/ }).click();
   await expect(page.locator(".brand-title")).toHaveText(
-    "BareGPS Track Creator and Editor",
+    "BareGPS Route Planner",
   );
-  await expect(page).toHaveTitle("BareGPS Track Creator and Editor");
+  await expect(page).toHaveTitle("BareGPS Route Planner");
+  await expect(page.locator(".brand-subtitle")).toHaveText(
+    "GPX Creator and Editor",
+  );
   await expect(page.locator("#track-list")).toContainText(
     "Glendalough · Upper Lake",
   );

@@ -1,5 +1,6 @@
-BAREGPS TRACK CREATOR AND EDITOR - iOS BUNDLE
-Version 0.2.0 | 7 November 2026
+BAREGPS ROUTE PLANNER - iOS BUNDLE
+GPX Creator and Editor
+Version 0.2.1 | 7 November 2026
 
 Will be available through App Store
 

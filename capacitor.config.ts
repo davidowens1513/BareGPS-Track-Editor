@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "com.baregps.trackeditor",
-  appName: "BareGPS Track Creator and Editor",
+  appName: "BareGPS Route Planner",
   webDir: "dist",
   ios: { contentInset: "never" },
   android: { backgroundColor: "#f5f6f2" },

@@ -1,9 +1,10 @@
-BAREGPS TRACK CREATOR AND EDITOR - ANDROID BUNDLE
-Version 0.2.0 | 7 November 2026
+BAREGPS ROUTE PLANNER - ANDROID BUNDLE
+GPX Creator and Editor
+Version 0.2.1 | 7 November 2026
 
 1. WHAT IS INCLUDED
 
-BareGPS-Track-Creator-and-Editor-0.2.0.apk is the installable Android app.
+BareGPS-Route-Planner-0.2.1.apk is the installable Android app.
 This guide and SHA256SUMS.txt are included in the Android ZIP bundle.
 
 This is a development build, signed with the project's development key.
@@ -20,9 +21,9 @@ Location permission is not required to edit tracks.
 3. INSTALL THE APK
 
 Download the .apk directly, or unzip the Android Bundle and open the APK.
-In Files / My Files / Downloads, tap BareGPS-Track-Creator-and-Editor-0.2.0.apk.
+In Files / My Files / Downloads, tap BareGPS-Route-Planner-0.2.1.apk.
 If Android asks, allow installation from the browser or Files app you used,
-then return to the APK and choose Install. Open BareGPS Track Creator and Editor.
+then return to the APK and choose Install. Open BareGPS Route Planner.
 You can turn off that install permission again afterwards.
 
 Use your device's normal security checks. If installation is blocked,
