@@ -16,6 +16,7 @@ export class TrackMap {
   private tileFailed = false;
   private initialViewPending = true;
   private editing = false;
+  private positionLayers = L.layerGroup();
   private endpointLayers: L.Marker[] = [];
   private dragFrame = 0;
   constructor(
@@ -56,6 +57,39 @@ export class TrackMap {
         if (this.initialViewPending) this.home();
       }
     }).observe(container);
+  }
+  showPosition(point: Point & { accuracy: number }, centre: boolean) {
+    this.positionLayers.clearLayers();
+    if (!this.map.hasLayer(this.positionLayers))
+      this.positionLayers.addTo(this.map);
+    const position: L.LatLngTuple = [point.lat, point.lon];
+    L.circle(position, {
+      radius: point.accuracy,
+      color: "#1976d2",
+      weight: 1,
+      fillOpacity: 0.08,
+      interactive: false,
+    }).addTo(this.positionLayers);
+    L.circleMarker(position, {
+      radius: 7,
+      color: "white",
+      weight: 3,
+      fillColor: "#1976d2",
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(this.positionLayers);
+    if (centre) {
+      this.initialViewPending = false;
+      this.map.invalidateSize({ pan: false });
+      this.map.setView(
+        position,
+        Math.min(17, Math.max(this.map.getZoom(), 15)),
+      );
+      if (point.accuracy > 300)
+        this.map.fitBounds(L.latLng(position).toBounds(point.accuracy * 2), {
+          maxZoom: 15,
+        });
+    }
   }
   home() {
     this.initialViewPending = false;

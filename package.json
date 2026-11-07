@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@capacitor/core": "^8.0.0",
+    "@capacitor/geolocation": "^8.2.4",
     "idb-keyval": "^6.2.2",
     "leaflet": "^1.9.4",
     "mgrs": "^2.2.0",

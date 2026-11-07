@@ -165,3 +165,7 @@ The settings cog beneath Help selects Lat/Long (WGS84), Irish National Grid, Bri
 Irish and British National Grid use approximate Helmert datum transformations, not survey-grade correction grids. ITM uses ETRS89 with a null WGS84 transformation for walking-scale display. Regional grids are coverage-checked; unsupported polar UTM/MGRS/USNG positions are labelled explicitly. UTM zones include the Norway/Svalbard exceptions and the date-line boundary. MGRS and USNG use full, spaced one-metre WGS84 references.
 
 Conversion references: [Proj4js](https://proj4js.org/), [MGRS library](https://github.com/proj4js/mgrs), [OS coordinate tools and transformation accuracy](https://www.ordnancesurvey.co.uk/geodesy-positioning/coordinate-transformations/resources), [FGDC USNG standard](https://www.fgdc.gov/standards/projects/usng), and EPSG projection definitions for [Irish Grid](https://epsg.io/29903.proj4) and [ITM](https://epsg.io/2157.proj4).
+
+### Current position
+
+The crosshair button at the upper right of either map requests one location fix, centres the visible map, and shows a blue dot with an accuracy circle. It never adds a waypoint, changes tracks, or starts background tracking. Location permission is requested only after tapping the button; approximate Android permission is supported. Denied access, disabled services, invalid fixes and timeouts produce an error message and allow retry. Native configuration follows the [Capacitor geolocation plugin](https://capacitorjs.com/docs/apis/geolocation).
