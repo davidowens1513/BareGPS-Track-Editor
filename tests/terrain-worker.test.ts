@@ -76,3 +76,21 @@ describe("hosted route preview terrain", () => {
     ).toBe(503);
   });
 });
+
+it("declines provider redirects using the redirect mode supported by Cloudflare", async () => {
+  const upstream = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: { Location: "https://example.org/" },
+      }),
+    );
+  const response = await worker.fetch(
+    new Request(endpoint + "?locations=0,0"),
+    env(),
+  );
+  expect(response.status).toBe(503);
+  expect(upstream).toHaveBeenCalledOnce();
+  expect(upstream.mock.calls[0][1]?.redirect).toBe("manual");
+});
