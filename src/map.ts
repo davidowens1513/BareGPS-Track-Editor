@@ -14,6 +14,7 @@ export class TrackMap {
   protected layers = L.layerGroup();
   private tileLayer: L.TileLayer;
   private tileFailed = false;
+  private initialViewPending = true;
   private editing = false;
   private endpointLayers: L.Marker[] = [];
   private dragFrame = 0;
@@ -50,11 +51,14 @@ export class TrackMap {
       .addTo(this.map);
     const container = document.getElementById(containerId)!;
     new ResizeObserver(() => {
-      if (container.clientWidth && container.clientHeight)
-        this.map.invalidateSize({ pan: false });
+      if (container.clientWidth && container.clientHeight) {
+        this.map.invalidateSize({ animate: false });
+        if (this.initialViewPending) this.home();
+      }
     }).observe(container);
   }
   home() {
+    this.initialViewPending = false;
     this.map.setView(HOME_CENTER, HOME_ZOOM, { animate: false });
   }
   hasTileError() {
@@ -189,6 +193,7 @@ export class TrackMap {
         (p) => [p.lat, p.lon] as L.LatLngTuple,
       ),
     );
+    if (coords.length) this.initialViewPending = false;
     if (coords.length)
       this.map.fitBounds(L.latLngBounds(coords), {
         padding: [48, 50],
