@@ -1924,3 +1924,76 @@ dialog p {
     height: calc(100% - 95px);
   }
 }
+
+.create-tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  height: 46px;
+  border-bottom: 1px solid var(--border);
+  background: #f7f9f3;
+}
+.drawing-modes {
+  display: flex;
+  gap: 4px;
+}
+.drawing-modes button {
+  min-height: 34px;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  color: #627a57;
+}
+.drawing-modes button[aria-pressed="true"] {
+  background: white;
+  color: var(--green);
+  border-color: #cadabd;
+  font-weight: 650;
+}
+.creating .map-error {
+  top: 158px;
+}
+.map-expanded.creating #create-map-view {
+  height: calc(100% - 147px);
+}
+.brand {
+  min-width: 0;
+}
+.brand .brand-title {
+  white-space: normal;
+  line-height: 1.15;
+}
+@media (max-width: 640px) {
+  .brand {
+    flex: 1;
+  }
+  .brand .brand-title {
+    font-size: 16px;
+    letter-spacing: -0.4px;
+    max-width: 210px;
+  }
+  .brand img {
+    flex-shrink: 0;
+  }
+  .header-right {
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+  .create-tools {
+    padding: 5px 8px;
+  }
+  .drawing-modes button {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  .creating .map-error {
+    top: 148px;
+  }
+  .map-expanded.creating #create-map-view {
+    height: calc(100% - 141px);
+  }
+}

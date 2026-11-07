@@ -105,3 +105,54 @@ describe("created walking routes", () => {
     }
   });
 });
+
+import { routeTapIndex, closeRoute, isClosedRoute } from "../src/create";
+describe("circular route drawing", () => {
+  const c = { lat: 53.013, lon: -6.331 };
+  const triangle = () => insertWaypoint(route(), 2, c);
+  it("extends the return leg even when a tap hits an outgoing segment in Add points", () => {
+    const r = triangle(),
+      index = routeTapIndex("add", r.points.length, 1)!;
+    expect(insertWaypoint(r, index, mid).points).toEqual([a, b, c, mid]);
+  });
+  it("inserts only into a chosen segment in Insert point mode", () => {
+    const r = triangle();
+    expect(routeTapIndex("insert", r.points.length)).toBeNull();
+    expect(routeTapIndex("insert", r.points.length, 0)).toBeNull();
+    expect(routeTapIndex("insert", r.points.length, 3)).toBeNull();
+    expect(
+      insertWaypoint(r, routeTapIndex("insert", r.points.length, 1)!, mid)
+        .points,
+    ).toEqual([a, mid, b, c]);
+  });
+  it("closes exactly at the start, counts the closing leg, and round-trips through GPX", () => {
+    const original = triangle(),
+      closed = closeRoute(original);
+    expect(closed.points).toEqual([a, b, c, a]);
+    expect(original.points).toHaveLength(3);
+    expect(isClosedRoute(closed)).toBe(true);
+    expect(analytics(closed.points).length).toBeGreaterThan(
+      analytics(original.points).length,
+    );
+    expect(isClosedRoute(parseGPX(exportGPX(closed), "loop.gpx")[0])).toBe(
+      true,
+    );
+    expect(closeRoute(closed)).toBe(closed);
+  });
+  it("snaps a nearly closed endpoint instead of adding a duplicate point", () => {
+    const r = triangle();
+    r.points.push({ lat: a.lat + 0.0000001, lon: a.lon, ele: 99 });
+    const closed = closeRoute(r);
+    expect(closed.points).toHaveLength(4);
+    expect(closed.points.at(-1)).toEqual(a);
+    expect(closed.points.every((p) => p.ele === undefined)).toBe(true);
+  });
+  it("rejects too few points and obeys the waypoint limit when closing", () => {
+    expect(() => closeRoute(route())).toThrow("at least three");
+    const r = triangle();
+    r.points = Array.from({ length: MAX_WAYPOINTS }, (_, i) =>
+      i === 0 ? a : b,
+    );
+    expect(() => closeRoute(r)).toThrow("1,000");
+  });
+});

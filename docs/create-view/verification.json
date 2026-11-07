@@ -1,10 +1,9 @@
 {
-  "verified_at": "2026-11-07T08:46:55.769689+00:00",
-  "preview": "http://127.0.0.1:5174/",
-  "automated_tests": 28,
+  "verified_at": "2026-11-07T09:01:37.878560+00:00",
+  "preview": "http://127.0.0.1:5175/",
+  "automated_tests": 33,
   "checks": [
     "Separate Edit and Create Leaflet map instances using the same OpenTopoMap tiles",
-    "Tap blank map to append waypoint; tap segment to insert between its neighbours",
     "Drag inserted marker updates geometry, grid and live distance",
     "Independent Edit/Create undo and redo histories",
     "Edit undo does not discard the Create draft",
@@ -17,8 +16,29 @@
     "Phone viewport 390x844 has no page overflow; waypoint table scrolls horizontally",
     "Expanded map keeps logo, tabs and analytics visible",
     "Marker positions unchanged across Edit/Create tab switch",
-    "Android debug package and iOS simulator build succeed with Mac-local caches"
+    "Android debug package and iOS simulator build succeed with Mac-local caches",
+    "Add points appends even when tapping an existing line or near an outgoing segment",
+    "Insert point changes only the selected segment; blank map taps do nothing in this mode",
+    "Successful insertion automatically returns to Add points",
+    "Close loop appends or snaps to the exact starting coordinate; return distance counts",
+    "Undo reopens a closed loop and redo restores closure",
+    "Overlapping start/end markers are offset so both remain reachable",
+    "Renamed header fits at phone width 390 without page overflow",
+    "Expanded phone map retains the new drawing controls and branded header"
   ],
   "save_ui_note": "In-app browser download-event capture is unavailable; native save flow and GPX export use existing shared saveTrack. Save fallback is covered by automated test.",
-  "release_scope": "Project feature and native build verification; public website bundles remain their existing release."
+  "release_scope": "Updated source and fresh installations on Samsung and iPhone only. Public website bundles remain their existing release.",
+  "app_name": "BareGPS Track Creator and Editor",
+  "version": "0.2.0",
+  "build": 3,
+  "installation": {
+    "requested_devices_only": [
+      "Samsung Galaxy A07",
+      "iPhone 14"
+    ],
+    "fresh_install": true,
+    "previous_saved_tracks_and_routes_cleared": true,
+    "samsung": "Old package absent; installed v0.2.0 build 3 without replace flag; cold launch Status ok",
+    "iphone": "Previous app uninstalled; signed v0.2.0 build 3 installed and launched successfully"
+  }
 }

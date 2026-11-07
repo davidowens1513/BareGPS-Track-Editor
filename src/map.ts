@@ -192,7 +192,10 @@ export class TrackMap {
   }
 }
 
+import { routeTapIndex, isClosedRoute, type DrawingMode } from "./create";
+
 export class CreateMap extends TrackMap {
+  drawingMode: DrawingMode = "add";
   enabled = true;
   private draggingPoint = false;
   private current: Track | null = null;
@@ -206,8 +209,13 @@ export class CreateMap extends TrackMap {
     super(() => {}, onTileError, "create-map");
     this.map.doubleClickZoom.disable();
     this.map.on("click", (event: L.LeafletMouseEvent) => {
-      if (this.enabled && !this.draggingPoint && this.current)
-        this.onAdd(this.current.points.length, this.coordinate(event.latlng));
+      if (this.enabled && !this.draggingPoint && this.current) {
+        const index = routeTapIndex(
+          this.drawingMode,
+          this.current.points.length,
+        );
+        if (index !== null) this.onAdd(index, this.coordinate(event.latlng));
+      }
     });
   }
   private coordinate(pos: L.LatLng): Point {
@@ -225,7 +233,10 @@ export class CreateMap extends TrackMap {
         [previous.lat, previous.lon],
         [point.lat, point.lon],
       ];
-      const options = { bubblingMouseEvents: false, interactive: true };
+      const options = {
+        bubblingMouseEvents: false,
+        interactive: this.drawingMode === "insert",
+      };
       const hit = L.polyline(coords, {
         ...options,
         weight: 24,
@@ -239,7 +250,13 @@ export class CreateMap extends TrackMap {
         className: "create-segment",
       }).addTo(this.layers);
       const insert = (event: L.LeafletMouseEvent) => {
-        if (this.enabled) this.onAdd(index, this.coordinate(event.latlng));
+        const target = routeTapIndex(
+          this.drawingMode,
+          route.points.length,
+          index,
+        );
+        if (this.enabled && target !== null)
+          this.onAdd(target, this.coordinate(event.latlng));
       };
       hit.on("click", insert);
       line.on("click", insert);
@@ -250,7 +267,16 @@ export class CreateMap extends TrackMap {
         draggable: this.enabled,
         autoPan: true,
         bubblingMouseEvents: false,
-        icon: this.handleIcon(String(index + 1), 0),
+        icon: this.handleIcon(
+          String(index + 1),
+          isClosedRoute(route)
+            ? index === 0
+              ? -19
+              : index === route.points.length - 1
+                ? 19
+                : 0
+            : 0,
+        ),
         title: `Route point ${index + 1} · drag to move`,
         keyboard: true,
       }).addTo(this.layers);

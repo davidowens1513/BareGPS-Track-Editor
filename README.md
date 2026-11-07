@@ -1,4 +1,4 @@
-# BareGPS Track Editor
+# BareGPS Track Creator and Editor
 
 A local-first GPX editor for Android and iOS. Open several tracks, choose the portions you want, split them or assemble a new walking route, preview it on OpenTopoMap, and save a GPX file back to Files.
 
@@ -99,7 +99,7 @@ Browser tests use an installed Google Chrome on macOS by default. Set `BAREGPS_C
 
 ## Maps, branding and dependencies
 
-The logo shows two endpoints connected by a winding line. Its green matches `UIColor.systemGreen`, used by the BareGPS Ireland title (`#34C759` in light appearance). The header reads “BareGPS Track Editor”. The Saved indicator refers to automatic workspace recovery on the device; exporting a GPX file is a separate action. No map layer selector is included.
+The logo shows two endpoints connected by a winding line. Its green matches `UIColor.systemGreen`, used by the BareGPS Ireland title (`#34C759` in light appearance). The header reads “BareGPS Track Creator and Editor”. The Saved indicator refers to automatic workspace recovery on the device; exporting a GPX file is a separate action. No map layer selector is included.
 
 Map tiles use [OpenTopoMap](https://opentopomap.org/) with visible attribution to [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), SRTM and OpenTopoMap (CC-BY-SA). Optional terrain uses [Open Topo Data](https://www.opentopodata.org/) and its [Mapzen dataset](https://www.opentopodata.org/datasets/mapzen/). Mapping uses [Leaflet](https://leafletjs.com/); mobile packaging uses [Capacitor](https://capacitorjs.com/). Review public tile/terrain service capacity for a store release. There is no offline tile pack, trail routing, account system or remote workspace sync in this version.
 
@@ -143,6 +143,6 @@ through App Store”. The GitHub link keeps its existing repository access polic
 
 ### Create a route on the map
 
-Choose **Create** above the map for an independent OpenTopoMap view. Tap the map to place the start and subsequent numbered waypoints; tap an existing line to insert a waypoint between its neighbours. Drag markers to reshape the route. The grid lists walking order, coordinates, leg distance, cumulative distance and available heights. Grid controls locate or remove individual points. Each tab has its own undo/redo history; switching tabs preserves work and map position. Both drafts are saved in the device workspace, including a Create draft with only one point.
+Choose **Create** above the map for an independent OpenTopoMap view. Tap the map to place the start and subsequent numbered waypoints; use **Insert point** and tap an existing line to insert one waypoint between its neighbours. **Add points** is the default, so taps beside existing lines always extend the route; insertion automatically returns to Add points. **Close loop** connects the last waypoint exactly to the start and includes that return leg in the totals. Drag markers to reshape the route. The grid lists walking order, coordinates, leg distance, cumulative distance and available heights. Grid controls locate or remove individual points. Each tab has its own undo/redo history; switching tabs preserves work and map position. Both drafts are saved in the device workspace, including a Create draft with only one point.
 
 Set a route name and colour, then use **Save route** with at least two points to export GPX. Created routes connect points directly rather than following paths. **Fetch terrain** sends the route coordinates to the existing Open Topo Data service, sampling about every 90 metres for estimated ascent and descent; changing geometry clears those estimates. Terrain failure or cancellation leaves the route untouched. Creation is limited to 1,000 waypoints and uses the terrain service's existing sampling limits. An unavailable map or terrain service does not prevent local editing or GPX export.
