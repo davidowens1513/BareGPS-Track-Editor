@@ -30,6 +30,14 @@ import { TrackMap, CreateMap } from "./map";
 import { icon } from "./icons";
 import { demoTracks } from "./demo";
 import { enrichTerrain } from "./terrain";
+import {
+  coordinateSystems,
+  formatCoordinate,
+  isCoordinateSystem,
+  type CoordinateSystem,
+} from "./coordinates";
+let coordinateSystem: CoordinateSystem = "latlon";
+const COORDINATE_KEY = "baregps-coordinate-system-v1";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -77,15 +85,15 @@ const visibleMap = () => (mode === "create" ? createMap : map);
 const STORAGE_KEY = "baregps-workspace-v1";
 
 document.querySelector("#app")!.innerHTML = `
-<header class="app-header"><a class="brand" href="#" aria-label="BareGPS Route Planner home"><img src="${import.meta.env.BASE_URL}logo.svg" alt="" width="40" height="40"><span class="brand-copy"><strong class="brand-title">BareGPS Route Planner</strong><span class="brand-subtitle">GPX Creator and Editor</span></span></a><div class="header-right"><div class="device-status"><span id="save-state" class="save-state" role="status" title="Your workspace is kept on this device. Use Save section or Save route to export a GPX file."><span class="save-full">On your device</span><span class="save-short" aria-hidden="true">On device</span></span><div class="history" role="group" aria-label="Edit history"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)">${icon("undo", 18)}</button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)">${icon("redo", 18)}</button></div></div><button id="help" class="icon-button" aria-label="Help and keyboard shortcuts">${icon("help")}</button></div></header>
+<header class="app-header"><a class="brand" href="#" aria-label="BareGPS Route Planner home"><img src="${import.meta.env.BASE_URL}logo.svg" alt="" width="40" height="40"><span class="brand-copy"><strong class="brand-title">BareGPS Route Planner</strong><span class="brand-subtitle">GPX Creator and Editor</span></span></a><div class="header-right"><div class="device-status"><span id="save-state" class="save-state" role="status" title="Your workspace is kept on this device. Use Save section or Save route to export a GPX file."><span class="save-full">On your device</span><span class="save-short" aria-hidden="true">On device</span></span><div class="history" role="group" aria-label="Edit history"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)">${icon("undo", 18)}</button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)">${icon("redo", 18)}</button></div></div><div class="header-utilities"><button id="help" class="icon-button" aria-label="Help and keyboard shortcuts">${icon("help")}</button><button id="settings" class="icon-button" aria-label="Settings" title="Settings">${icon("settings", 19)}</button></div></div></header>
 <main>
   <span id="track-count" class="sr-only">Your workspace</span>
   <section id="map-panel" class="map-panel" aria-label="Track map">
     <div class="mode-tabs" role="tablist" aria-label="Route workspace"><button id="create-tab" role="tab" aria-selected="true" aria-controls="create-map-view">Create</button><button id="edit-tab" role="tab" aria-selected="false" aria-controls="edit-map-view" tabindex="-1">Edit</button><span id="mode-caption">Work with your GPX tracks</span></div>
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
     <div id="create-tools" class="create-tools" role="group" aria-label="Route drawing controls" hidden><div class="drawing-modes" role="group" aria-label="Drawing mode"><button id="draw-add" aria-pressed="true">Add points</button><button id="draw-insert" aria-pressed="false">Insert point</button></div><button id="create-close" class="small-button">Close loop</button></div>
-    <div id="edit-map-view" role="tabpanel" aria-labelledby="edit-tab"><div id="map"></div></div>
-    <div id="create-map-view" role="tabpanel" aria-labelledby="create-tab" hidden><div id="create-map" aria-label="Create a walking route"></div><p class="create-map-hint" id="create-map-hint">Tap the map to place your starting point.</p></div>
+    <div id="edit-map-view" role="tabpanel" aria-labelledby="edit-tab"><div id="map"></div><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
+    <div id="create-map-view" role="tabpanel" aria-labelledby="create-tab" hidden><div id="create-map" aria-label="Create a walking route"></div><span id="create-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span><p class="create-map-hint" id="create-map-hint">Tap the map to place your starting point.</p></div>
     <div id="map-empty" class="map-empty"><button id="empty-import" class="button primary">${icon("plus", 18)}Open GPX files</button><button id="demo" class="text-button">Explore with sample tracks ${icon("chevron", 14)}</button></div>
     <div id="create-map-error" class="map-error" hidden>Map tiles couldn’t load. You can still shape and save your route.<button id="retry-create-map" class="text-button">Retry</button></div>
     <div id="map-error" class="map-error" hidden>Map tiles couldn’t load. Your tracks and editing are still available.<button id="retry-map" class="text-button">Retry</button></div>
@@ -101,7 +109,7 @@ document.querySelector("#app")!.innerHTML = `
   <section id="create-card" class="card create-card" aria-label="Created route waypoints" hidden>
     <div class="card-heading"><h2>Your new route <span id="waypoint-count" class="badge">0</span></h2><span class="badge soft">TAP → SHAPE → SAVE</span></div>
     <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label><label class="line-color">Line colour<input id="create-color" type="color" value="#16724d"></label></div>
-    <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><thead><tr><th scope="col">Point</th><th scope="col">Latitude</th><th scope="col">Longitude</th><th scope="col">Leg</th><th scope="col">Total</th><th scope="col">Height</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
+    <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><thead><tr><th scope="col">Point</th><th id="coordinate-heading" scope="col" colspan="2">Lat/Long (WGS84)</th><th scope="col">Leg</th><th scope="col">Total</th><th scope="col">Height</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
   </section>
   <footer><span>Your files stay on your device. Map & terrain requests use the internet.</span></footer>
@@ -139,6 +147,18 @@ const createMap = new CreateMap(
     $("create-map-error").hidden = mode !== "create";
   },
 );
+for (const [name, view] of [
+  ["edit", map],
+  ["create", createMap],
+] as const) {
+  view.map.on("moveend", () => updateMapCoordinates(name, view));
+}
+function updateMapCoordinates(name: string, view: TrackMap) {
+  const centre = view.map.getCenter().wrap();
+  $(name + "-coordinates").textContent =
+    `Centre · ${formatCoordinate({ lat: centre.lat, lon: centre.lng }, coordinateSystem)}`;
+  $(name + "-coordinates").title = coordinateSystems[coordinateSystem];
+}
 const active = () =>
   [...workspace.tracks, ...(workspace.route ? [workspace.route] : [])].find(
     (t) => t.id === workspace.activeId,
@@ -818,6 +838,8 @@ function setMode(next: "edit" | "create") {
 }
 function renderMode() {
   const creating = mode === "create";
+  updateMapCoordinates("edit", map);
+  updateMapCoordinates("create", createMap);
   document.body.classList.toggle("creating", creating);
   $("edit-map-view").hidden = creating;
   $("create-map-view").hidden = !creating;
@@ -870,13 +892,14 @@ function renderCreated() {
   $<HTMLButtonElement>("create-close").disabled =
     busy || points.length < 3 || closed;
   $("create-close").textContent = closed ? "Loop closed" : "Close loop";
+  $("coordinate-heading").textContent = coordinateSystems[coordinateSystem];
   let total = 0;
   $("waypoint-rows").innerHTML = points.length
     ? points
         .map((point, i) => {
           const leg = i ? analyticsDistance(points[i - 1], point) : 0;
           total += leg;
-          return `<tr><th scope="row"><button class="text-button" data-focus-point="${i}" aria-label="Show point ${i + 1} on map">${i + 1}${i === 0 ? " · Start" : i === points.length - 1 ? " · End" : ""}</button></th><td>${point.lat.toFixed(5)}</td><td>${point.lon.toFixed(5)}</td><td>${km(leg)} km</td><td>${km(total)} km</td><td>${point.ele === undefined ? "—" : metres(point.ele) + " m"}</td><td><button class="icon-button" data-remove-point="${i}" aria-label="Remove point ${i + 1}">${icon("trash", 16)}</button></td></tr>`;
+          return `<tr><th scope="row"><button class="text-button" data-focus-point="${i}" aria-label="Show point ${i + 1} on map">${i + 1}${i === 0 ? " · Start" : i === points.length - 1 ? " · End" : ""}</button></th><td colspan="2">${esc(formatCoordinate(point, coordinateSystem))}</td><td>${km(leg)} km</td><td>${km(total)} km</td><td>${point.ele === undefined ? "—" : metres(point.ele) + " m"}</td><td><button class="icon-button" data-remove-point="${i}" aria-label="Remove point ${i + 1}">${icon("trash", 16)}</button></td></tr>`;
         })
         .join("")
     : '<tr><td colspan="7" class="waypoint-empty">Your points will appear here. Tap the map to begin.</td></tr>';
@@ -1126,9 +1149,37 @@ function history(back: boolean) {
 }
 $("undo").onclick = () => history(true);
 $("redo").onclick = () => history(false);
+$("settings").onclick = () => {
+  openDialog(
+    `${dialogHeader("Settings")}<label class="field-label" for="coordinate-system">Coordinate system</label><select id="coordinate-system" class="text-input">${Object.entries(
+      coordinateSystems,
+    )
+      .map(
+        ([value, label]) =>
+          `<option value="${value}" ${value === coordinateSystem ? "selected" : ""}>${label}</option>`,
+      )
+      .join(
+        "",
+      )}</select><p class="dialog-note">Used for route points and the map centre in Create and Edit. GPX files always use WGS84 Lat/Long. This choice is remembered on this device.</p><p class="dialog-note">Irish and British National Grid references use approximate datum conversions. ITM uses ETRS89; global formats use WGS84, including USNG. UTM, MGRS and USNG cover 80°S to 84°N. Regional grids show an out-of-area message elsewhere.</p><div class="dialog-actions"><button class="button primary" data-close>Done</button></div>`,
+  );
+  $("coordinate-system").onchange = async (event) => {
+    const value = (event.target as HTMLSelectElement).value;
+    if (!isCoordinateSystem(value)) return;
+    coordinateSystem = value;
+    render();
+    try {
+      await set(COORDINATE_KEY, value);
+    } catch {
+      notification(
+        "Coordinate format changed for this session, but could not be saved on this device.",
+        true,
+      );
+    }
+  };
+};
 $("help").onclick = () =>
   openDialog(
-    `${dialogHeader("A route that’s yours", "A quick guide to BareGPS Route Planner")}<h3>Create a route</h3><ol class="help-list"><li><strong>Add points.</strong> Tap the map to place the start and each next point. Add points always extends the route, even beside an existing line.</li><li><strong>Insert a point.</strong> Choose Insert point, then tap the chosen route line. The new point goes between its neighbours and Add points resumes automatically.</li><li><strong>Move or remove points.</strong> Drag any numbered marker to reshape the route. The grid shows walking order, coordinates, leg and total distances, and available heights. Tap a point number to locate it; use its bin button to remove it.</li><li><strong>Close a loop.</strong> Close loop joins the last point precisely to the start, including that return leg in distance. Undo can reopen the loop.</li><li><strong>Check the route.</strong> Lines connect points directly and do not automatically follow paths. Check that your route is walkable.</li><li><strong>Fetch terrain.</strong> With at least two points, fetch heights sampled along every leg for estimated ascent and descent. Coordinates are sent to Open Topo Data. Moving, adding or removing points clears previous terrain estimates; fetch again after changes.</li><li><strong>Save.</strong> Choose a name and colour, then Save route exports GPX. Undo/redo are below the device status in the title. Edit and Create preserve separate work and map positions. Irish demonstration tracks are optional and available from the welcome screen’s sample button.</li></ol><h3>Edit GPX tracks</h3><ol class="help-list"><li><strong>Open your files.</strong> Choose one or more GPX tracks or routes from Files. Multiple tracks in one file are supported.</li><li><strong>Choose a section.</strong> Drag A and B on the map or use the sliders. Distance and ascent update as you go.</li><li><strong>Shape your route.</strong> Save the section, split it into two tracks, reverse direction, or add it to a joined route. Add sections in walking order.</li><li><strong>Check connections.</strong> Dashed lines connect separated sections. Their distance and ascent count. Fetch terrain to include hills between endpoints.</li><li><strong>Save to Files.</strong> Save the current section or your complete joined route as GPX. Your originals stay untouched.</li></ol><p class="dialog-note">Undo / redo: ⌘ or Ctrl + Z / Shift + Z. Escape collapses the map. Edits are saved on this device. Ascent sums elevation gains; missing heights are marked as partial. GPX connection markers and track colours round-trip in BareGPS.</p><button class="button primary full" data-close>Let’s go</button>`,
+    `${dialogHeader("A route that’s yours", "A quick guide to BareGPS Route Planner")}<h3>Create a route</h3><ol class="help-list"><li><strong>Add points.</strong> Tap the map to place the start and each next point. Add points always extends the route, even beside an existing line.</li><li><strong>Insert a point.</strong> Choose Insert point, then tap the chosen route line. The new point goes between its neighbours and Add points resumes automatically.</li><li><strong>Move or remove points.</strong> Drag any numbered marker to reshape the route. The grid shows walking order, coordinates, leg and total distances, and available heights. Tap a point number to locate it; use its bin button to remove it.</li><li><strong>Close a loop.</strong> Close loop joins the last point precisely to the start, including that return leg in distance. Undo can reopen the loop.</li><li><strong>Check the route.</strong> Lines connect points directly and do not automatically follow paths. Check that your route is walkable.</li><li><strong>Fetch terrain.</strong> With at least two points, fetch heights sampled along every leg for estimated ascent and descent. Coordinates are sent to Open Topo Data. Moving, adding or removing points clears previous terrain estimates; fetch again after changes.</li><li><strong>Save.</strong> Choose a name and colour, then Save route exports GPX. Undo/redo are below the device status in the title. Edit and Create preserve separate work and map positions. Irish demonstration tracks are optional and available from the welcome screen’s sample button.</li></ol><p class="dialog-note">Use the cog beneath ? to choose the coordinate system for route points and the map centre. This display setting is remembered on this device; exported GPX remains WGS84 Lat/Long.</p><h3>Edit GPX tracks</h3><ol class="help-list"><li><strong>Open your files.</strong> Choose one or more GPX tracks or routes from Files. Multiple tracks in one file are supported.</li><li><strong>Choose a section.</strong> Drag A and B on the map or use the sliders. Distance and ascent update as you go.</li><li><strong>Shape your route.</strong> Save the section, split it into two tracks, reverse direction, or add it to a joined route. Add sections in walking order.</li><li><strong>Check connections.</strong> Dashed lines connect separated sections. Their distance and ascent count. Fetch terrain to include hills between endpoints.</li><li><strong>Save to Files.</strong> Save the current section or your complete joined route as GPX. Your originals stay untouched.</li></ol><p class="dialog-note">Undo / redo: ⌘ or Ctrl + Z / Shift + Z. Escape collapses the map. Edits are saved on this device. Ascent sums elevation gains; missing heights are marked as partial. GPX connection markers and track colours round-trip in BareGPS.</p><button class="button primary full" data-close>Let’s go</button>`,
   );
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && expanded && !$<HTMLDialogElement>("dialog").open)
@@ -1168,6 +1219,14 @@ async function pendingFiles() {
   }
 }
 async function init() {
+  try {
+    const savedCoordinates = await get(COORDINATE_KEY);
+    if (isCoordinateSystem(savedCoordinates))
+      coordinateSystem = savedCoordinates;
+  } catch {
+    /* Default coordinates remain available without storage. */
+  }
+
   try {
     const saved = await get(STORAGE_KEY);
     if (saved) {

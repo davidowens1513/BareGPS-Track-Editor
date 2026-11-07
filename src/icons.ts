@@ -1,4 +1,6 @@
 const paths: Record<string, string> = {
+  settings: '<path d="m9 3-.5 2a7 7 0 0 0-1.5.9l-2-.6-2 3.4 1.5 1.4a7 7 0 0 0 0 1.8L3 13.3l2 3.4 2-.6a7 7 0 0 0 1.5.9l.5 2h4l.5-2a7 7 0 0 0 1.5-.9l2 .6 2-3.4-1.5-1.4a7 7 0 0 0 0-1.8L19 8.7l-2-3.4-2 .6a7 7 0 0 0-1.5-.9L13 3Z"/><circle cx="11" cy="11" r="3"/>',
+
   import: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/>',
   export: '<path d="M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4"/>',
   expand: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
