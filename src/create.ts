@@ -40,8 +40,8 @@ export function insertWaypoint(
     throw new Error(
       "That point is too close to its neighbour. Drag the existing marker instead.",
     );
-  const points = route.points.map(({ lat, lon }) => ({ lat, lon }));
-  points.splice(index, 0, { lat: point.lat, lon: point.lon });
+  const points = route.points.map(({ lat, lon, name }) => ({ lat, lon, name }));
+  points.splice(index, 0, { lat: point.lat, lon: point.lon, name: point.name });
   return { ...route, points };
 }
 export function moveWaypoint(route: Track, index: number, point: Point): Track {
@@ -54,8 +54,8 @@ export function moveWaypoint(route: Track, index: number, point: Point): Track {
     )
   )
     throw new Error("Keep a little space between neighbouring points.");
-  const points = route.points.map(({ lat, lon }) => ({ lat, lon }));
-  points[index] = { lat: point.lat, lon: point.lon };
+  const points = route.points.map(({ lat, lon, name }) => ({ lat, lon, name }));
+  points[index] = { ...points[index], lat: point.lat, lon: point.lon };
   return { ...route, points };
 }
 export function removeWaypoint(route: Track, index: number): Track {
@@ -65,7 +65,7 @@ export function removeWaypoint(route: Track, index: number): Track {
     ...route,
     points: route.points
       .filter((_, i) => i !== index)
-      .map(({ lat, lon }) => ({ lat, lon })),
+      .map(({ lat, lon, name }) => ({ lat, lon, name })),
   };
 }
 
@@ -98,8 +98,16 @@ export function closeRoute(route: Track): Track {
   const first = route.points[0],
     last = route.points.at(-1)!;
   if (distance(first, last) < 0.5) {
-    const points = route.points.map(({ lat, lon }) => ({ lat, lon }));
-    points[points.length - 1] = { lat: first.lat, lon: first.lon };
+    const points = route.points.map(({ lat, lon, name }) => ({
+      lat,
+      lon,
+      name,
+    }));
+    points[points.length - 1] = {
+      ...points.at(-1)!,
+      lat: first.lat,
+      lon: first.lon,
+    };
     return { ...route, points };
   }
   return insertWaypoint(route, route.points.length, first);

@@ -13,6 +13,8 @@ The app opens in **Create**, the left tab. An empty map starts at Carrauntoohil 
 - **Add points**, beneath the map, adds a starting point and subsequent points in walking order. Every tap extends the route, including taps near an existing line.
 - **Insert point** inserts one point between neighbouring points on the chosen line, then returns to Add points.
 - Drag numbered markers to move points. Use the grid to inspect coordinates, leg distance, total distance and available heights. A point's number locates it on the map; its bin button removes it.
+- Add optional point names in the **Name (Opt)** column. Names stay attached as points move and are included in exported GPX files.
+- **Share Routecard** shares point names, coordinates, distances and heights as text for messages. Unnamed points retain their Point number; browsers without sharing offer a copyable routecard.
 - **Close loop** joins the last point precisely to the start and includes the return leg in distance.
 - **Fetch terrain** estimates ascent and descent along the route. Moving, adding or removing points clears terrain estimates; fetch again after reshaping.
 - Choose a route name and **Line colour**, then **Save route** exports a GPX file.
@@ -41,7 +43,7 @@ Metrics show **Distance(km)**, **Ascent(m)** and **Descent(m)**, with labels and
 
 The round **Line colour** buttons in Create and Edit open a spectrum picker with preset swatches, a hex field and a preview. **Apply colour** makes one undoable change; **Cancel** leaves the existing colour intact.
 
-The green BareGPS logo and title remain in the header. Help and Settings carry the same logo. The **?** button opens guidance; the cog beneath it opens Settings.
+The green BareGPS logo and title remain in the header. Help and Settings carry the same logo. The **?** button opens guidance; the cog beneath it opens Grid references with matching branded guidance.
 
 ## Coordinate display
 
@@ -71,7 +73,7 @@ The **Saved** header status refers to automatic workspace recovery in IndexedDB 
 
 Invalid XML, unsupported entities, missing points, invalid coordinates/elevations and file-size limits produce errors. Valid files in a mixed batch can import while invalid files are identified individually. Save failures, cancelled pickers, unavailable storage, missing maps, service outages and unavailable location have explicit handling. Failed tile loading does not disable editing or export; Retry reloads tiles. Restored workspace data is validated before use.
 
-Limits include 15 MB per GPX file, 20 files / 30 MB per picker batch, 150,000 points per imported file or joined route, 100 workspace tracks and 450,000 total workspace points. Create supports up to 5,000 waypoints. Terrain sampling is limited to 5,000 new locations per operation and 135 km per unsampled connector.
+Limits include 15 MB per GPX file, 20 files / 30 MB per picker batch, 150,000 points per imported file or joined route, 100 workspace tracks and 450,000 total workspace points. Create supports up to 1,000 waypoints. Terrain sampling is limited to 5,000 new locations per operation and 135 km per unsampled connector.
 
 ## Run locally
 
@@ -129,7 +131,7 @@ Native document-picker tests are in `android/app/src/androidTest` and `ios/App/A
 
 The browser Preview runs the same application at [appsbyonzy.dev/tools/baregps-route-planner/](https://appsbyonzy.dev/tools/baregps-route-planner/). Build it with `npm run build:web` and copy `web-dist/` into the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies validated terrain requests; `_routes.json` limits execution to that endpoint. The rest of the website and its downloads are static.
 
-The public platform bundles are v0.2.4 in `releases/bundles/0.2.4/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
+The public platform bundles are v0.2.5 in `releases/bundles/0.2.5/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
 
 ## Source layout and dependencies
 

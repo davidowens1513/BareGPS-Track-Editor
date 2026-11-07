@@ -13,7 +13,7 @@ import {
   exportGPX,
   parseGPX,
 } from "../src/model";
-import { enrichTerrain } from "../src/terrain";
+import { enrichTerrain, sampleGaps } from "../src/terrain";
 const a = { lat: 53.01, lon: -6.33 },
   b = { lat: 53.012, lon: -6.328 },
   mid = { lat: 53.011, lon: -6.329 };
@@ -155,4 +155,28 @@ describe("circular route drawing", () => {
     );
     expect(() => closeRoute(r)).toThrow("1,000");
   });
+});
+
+it("keeps optional point names through route changes and GPX export", () => {
+  const original = route();
+  original.points[0].name = 'Gate & <bridge> "west"';
+  original.points[1].name = "Summit";
+  const inserted = insertWaypoint(original, 1, mid);
+  const moved = moveWaypoint(inserted, 2, { lat: 53.013, lon: -6.327 });
+  const removed = removeWaypoint(moved, 1);
+  expect(removed.points.map((p) => p.name)).toEqual([
+    original.points[0].name,
+    "Summit",
+  ]);
+  const restored = parseGPX(exportGPX(removed), "named.gpx")[0];
+  expect(restored.points.map((p) => p.name)).toEqual(
+    removed.points.map((p) => p.name),
+  );
+  const sampled = sampleGaps({
+    ...removed,
+    points: removed.points.map((p, i) => ({ ...p, gapBefore: i > 0 })),
+  });
+  expect(sampled.points.filter((p) => p.name).map((p) => p.name)).toEqual(
+    removed.points.map((p) => p.name),
+  );
 });

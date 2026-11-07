@@ -1,10 +1,10 @@
 BAREGPS ROUTE PLANNER - ANDROID BUNDLE
 GPX Creator and Editor
-Version 0.2.4 | 7 November 2026
+Version 0.2.5 | 7 November 2026
 
 1. WHAT IS INCLUDED
 
-BareGPS-Route-Planner-0.2.4.apk is the installable Android app.
+BareGPS-Route-Planner-0.2.5.apk is the installable Android app.
 This guide and SHA256SUMS.txt are included in the Android ZIP bundle.
 
 This is a development build, signed with the project's development key.
@@ -21,7 +21,7 @@ Location permission is not required to edit tracks.
 3. INSTALL THE APK
 
 Download the .apk directly, or unzip the Android Bundle and open the APK.
-In Files / My Files / Downloads, tap BareGPS-Route-Planner-0.2.4.apk.
+In Files / My Files / Downloads, tap BareGPS-Route-Planner-0.2.5.apk.
 If Android asks, allow installation from the browser or Files app you used,
 then return to the APK and choose Install. Open BareGPS Route Planner.
 You can turn off that install permission again afterwards.
@@ -110,3 +110,12 @@ and accuracy circle mark the position; it never adds a route point. There is
 no background tracking. Zoom controls sit at the lower left above the scale.
 Metrics are centred and show Distance(km), Ascent(m), Descent(m); empty ascent
 and descent show 0. Fetch terrain when heights are needed for a created route.
+
+OPTIONAL POINT NAMES AND ROUTECARDS
+
+In Create, click Name (Opt) beside a point to add or edit its name.
+Names are preserved in GPX exports. Unnamed points retain their number.
+Share Routecard shares a text summary for messages, including point names,
+coordinates, leg and total distances, and available heights. If device sharing
+is unavailable in the browser, copy the routecard from the preview.
+Use the cog beneath ? to choose grid references; changes apply immediately.

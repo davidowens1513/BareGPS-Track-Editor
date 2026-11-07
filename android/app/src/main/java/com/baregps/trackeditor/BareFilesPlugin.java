@@ -49,6 +49,20 @@ public class BareFilesPlugin extends Plugin {
             call.resolve(result);
         } catch (org.json.JSONException e) { call.reject("Could not read incoming GPX files. Please open them again from Files.", e); }
     }
+    @PluginMethod public void shareText(PluginCall call) {
+        String text = call.getString("text");
+        if (text == null) { call.reject("Could not prepare the routecard."); return; }
+        getActivity().runOnUiThread(() -> {
+            try {
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setType("text/plain");
+                intent.putExtra(Intent.EXTRA_SUBJECT, call.getString("title", "Routecard"));
+                intent.putExtra(Intent.EXTRA_TEXT, text);
+                getActivity().startActivity(Intent.createChooser(intent, "Share Routecard"));
+                call.resolve();
+            } catch (Exception e) { call.reject("Could not share the routecard.", e); }
+        });
+    }
     @PluginMethod public void pick(PluginCall call) {
         if (actionOpen) { call.reject("A file action is already open."); return; }
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);

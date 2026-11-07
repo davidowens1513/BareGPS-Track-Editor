@@ -1,6 +1,6 @@
 BAREGPS ROUTE PLANNER - iOS BUNDLE
 GPX Creator and Editor
-Version 0.2.4 | 7 November 2026
+Version 0.2.5 | 7 November 2026
 
 Will be available through App Store
 
@@ -97,3 +97,12 @@ and accuracy circle mark the position; it never adds a route point. There is
 no background tracking. Zoom controls sit at the lower left above the scale.
 Metrics are centred and show Distance(km), Ascent(m), Descent(m); empty ascent
 and descent show 0. Fetch terrain when heights are needed for a created route.
+
+OPTIONAL POINT NAMES AND ROUTECARDS
+
+In Create, click Name (Opt) beside a point to add or edit its name.
+Names are preserved in GPX exports. Unnamed points retain their number.
+Share Routecard shares a text summary for messages, including point names,
+coordinates, leg and total distances, and available heights. If device sharing
+is unavailable in the browser, copy the routecard from the preview.
+Use the cog beneath ? to choose grid references; changes apply immediately.

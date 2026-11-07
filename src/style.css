@@ -2195,12 +2195,66 @@ dialog p {
   bottom: var(--map-attribution-height, 0px);
 }
 
-.analytics { width: 100%; }
-.metric > span:first-child { min-width: 0; }
-.metric > span:first-child svg { flex-shrink: 0; }
+.analytics {
+  width: 100%;
+}
+.metric > span:first-child {
+  min-width: 0;
+}
+.metric > span:first-child svg {
+  flex-shrink: 0;
+}
 .selection-metric > strong,
-.metric-note { overflow-wrap: anywhere; }
+.metric-note {
+  overflow-wrap: anywhere;
+}
 @media (max-width: 640px) {
-  .metric { padding-inline: 6px; }
-  .metric > span:first-child { gap: 3px; letter-spacing: 0; }
+  .metric {
+    padding-inline: 6px;
+  }
+  .metric > span:first-child {
+    gap: 3px;
+    letter-spacing: 0;
+  }
+}
+
+.point-name {
+  width: 150px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+.point-name:focus {
+  outline: 2px solid #16724d;
+  outline-offset: 1px;
+}
+
+.routecard-text {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.coordinate-guide-heading {
+  margin-top: 24px;
+}
+.coordinate-details {
+  margin: 0 0 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #57704a;
+}
+.coordinate-details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.coordinate-details p {
+  margin: 10px 0 0;
 }

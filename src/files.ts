@@ -11,6 +11,7 @@ export interface NativeFile {
 export const NativeFiles = registerPlugin<{
   pick(): Promise<{ files: NativeFile[] }>;
   save(options: { name: string; data: string }): Promise<{ saved: boolean }>;
+  shareText(options: { title: string; text: string }): Promise<void>;
   pending(): Promise<{ files: NativeFile[]; errors?: string[] }>;
   addListener(
     event: "filesOpened",
@@ -115,4 +116,17 @@ export function isCancelled(error: unknown) {
       "code" in error &&
       error.code === "CANCELLED")
   );
+}
+
+export async function shareRoutecard(
+  title: string,
+  text: string,
+): Promise<boolean> {
+  if (Capacitor.isNativePlatform()) {
+    await NativeFiles.shareText({ title, text });
+    return true;
+  }
+  if (typeof navigator.share !== "function") return false;
+  await navigator.share({ title, text });
+  return true;
 }

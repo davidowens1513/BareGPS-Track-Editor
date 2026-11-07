@@ -52,7 +52,7 @@ final class IncomingGPX {
 class BareFilesPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate {
     let identifier = "BareFilesPlugin"
     let jsName = "BareFiles"
-    let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "pick", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "save", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "pending", returnType: CAPPluginReturnPromise)]
+    let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "shareText", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "pick", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "save", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "pending", returnType: CAPPluginReturnPromise)]
     private var operation: CAPPluginCall?
     private var exporting = false
     private var temporaryURL: URL?
@@ -75,6 +75,24 @@ class BareFilesPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate {
             let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
             picker.allowsMultipleSelection = true; picker.delegate = self
             self.bridge?.viewController?.present(picker, animated: true)
+        }
+    }
+    @objc func shareText(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let text = call.getString("text"), let presenter = self.bridge?.viewController else {
+                call.reject("Could not prepare the routecard."); return
+            }
+            let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+            if let popover = sheet.popoverPresentationController {
+                popover.sourceView = presenter.view
+                popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            sheet.completionWithItemsHandler = { _, _, _, error in
+                if let error = error { call.reject("Could not share routecard: \(error.localizedDescription)") }
+                else { call.resolve() }
+            }
+            presenter.present(sheet, animated: true)
         }
     }
     @objc func save(_ call: CAPPluginCall) {

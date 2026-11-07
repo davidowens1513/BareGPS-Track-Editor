@@ -1,6 +1,7 @@
 export interface Point {
   lat: number;
   lon: number;
+  name?: string;
   ele?: number;
   time?: string;
   gapBefore?: boolean;
@@ -247,6 +248,7 @@ export function parseGPX(xml: string, filename: string): Track[] {
           lat,
           lon,
           ele,
+          name: childText(el, "name") || undefined,
           time: time && Number.isFinite(Date.parse(time)) ? time : undefined,
           gapBefore: (points.length > 0 && (i === 0 || gap)) || undefined,
           terrain: terrain || undefined,
@@ -293,7 +295,7 @@ const escapeXML = (s: string) =>
       })[c]!,
   );
 export function exportGPX(track: Track): string {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BareGPS Route Planner" xmlns="http://www.topografix.com/GPX/1/1" xmlns:b="https://baregps.app/gpx/1"><metadata><name>${escapeXML(track.name)}</name><desc>Dashed gaps are straight-line walking connections included in distance and ascent. Elevation may be estimated.</desc></metadata><trk><name>${escapeXML(track.name)}</name><extensions><b:color>${track.color}</b:color></extensions><trkseg>\n${track.points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele !== undefined ? `<ele>${p.ele}</ele>` : ""}${p.time ? `<time>${escapeXML(p.time)}</time>` : ""}${p.gapBefore ? `<extensions><b:gapBefore>true</b:gapBefore>${p.terrain ? "<b:terrain>true</b:terrain>" : ""}</extensions>` : ""}</trkpt>`).join("\n")}\n</trkseg></trk></gpx>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BareGPS Route Planner" xmlns="http://www.topografix.com/GPX/1/1" xmlns:b="https://baregps.app/gpx/1"><metadata><name>${escapeXML(track.name)}</name><desc>Dashed gaps are straight-line walking connections included in distance and ascent. Elevation may be estimated.</desc></metadata><trk><name>${escapeXML(track.name)}</name><extensions><b:color>${track.color}</b:color></extensions><trkseg>\n${track.points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele !== undefined ? `<ele>${p.ele}</ele>` : ""}${p.time ? `<time>${escapeXML(p.time)}</time>` : ""}${p.name ? `<name>${escapeXML(p.name)}</name>` : ""}${p.gapBefore ? `<extensions><b:gapBefore>true</b:gapBefore>${p.terrain ? "<b:terrain>true</b:terrain>" : ""}</extensions>` : ""}</trkpt>`).join("\n")}\n</trkseg></trk></gpx>\n`;
 }
 export function validateWorkspace(value: unknown): value is Workspace {
   if (!value || typeof value !== "object") return false;
@@ -340,6 +342,7 @@ export function validateWorkspace(value: unknown): value is Workspace {
             Math.abs(p.lon) <= 180 &&
             (p.ele === undefined || Number.isFinite(p.ele)) &&
             (p.time === undefined || typeof p.time === "string") &&
+            (p.name === undefined || typeof p.name === "string") &&
             (p.gapBefore === undefined || typeof p.gapBefore === "boolean") &&
             (p.terrain === undefined || typeof p.terrain === "boolean"),
         ),

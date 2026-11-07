@@ -22,6 +22,7 @@ import {
 import {
   pickFiles,
   saveTrack,
+  shareRoutecard,
   isCancelled,
   NativeFiles,
   decode,
@@ -29,6 +30,7 @@ import {
 } from "./files";
 import { TrackMap, CreateMap } from "./map";
 import { icon } from "./icons";
+import { routecardText } from "./routecard";
 import { demoTracks, isDemoTrack } from "./demo";
 import "vanilla-colorful/hex-color-picker.js";
 import type { HexColorPicker } from "vanilla-colorful/hex-color-picker.js";
@@ -116,8 +118,8 @@ document.querySelector("#app")!.innerHTML = `
   <section id="create-card" class="card create-card" aria-label="Created route waypoints" hidden>
     <div class="card-heading"><h2>Your new route <span id="waypoint-count" class="badge">0</span></h2><span class="badge soft">TAP → SHAPE → SAVE</span></div>
     <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label><div class="line-color"><span>Line colour</span><button id="create-color" class="color-trigger" style="--line-colour:#16724d" aria-label="Choose route line colour" title="Choose route line colour"></button></div></div>
-    <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><thead><tr><th scope="col">Point</th><th id="coordinate-heading" scope="col" colspan="2">Lat/Long (WGS84)</th><th scope="col">Leg</th><th scope="col">Total</th><th scope="col">Height</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
-    <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
+    <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><thead><tr><th scope="col">Point</th><th scope="col">Name (Opt)</th><th id="coordinate-heading" scope="col" colspan="2">Lat/Long (WGS84)</th><th scope="col">Leg</th><th scope="col">Total</th><th scope="col">Height</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
+    <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-share" class="button secondary">${icon("export", 17)}Share Routecard</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
   </section>
   <footer><span>Your files stay on your device. Map & terrain requests use the internet.</span></footer>
 </main>
@@ -681,7 +683,14 @@ function render() {
       busy &&
       !b.closest("#dialog") &&
       !b.closest("#notice") &&
-      !["expand", "help", "retry-map", "retry-create-map", "fit"].includes(b.id)
+      ![
+        "expand",
+        "help",
+        "settings",
+        "retry-map",
+        "retry-create-map",
+        "fit",
+      ].includes(b.id)
     )
       b.disabled = true;
   });
@@ -1026,10 +1035,40 @@ function renderCreated() {
         .map((point, i) => {
           const leg = i ? analyticsDistance(points[i - 1], point) : 0;
           total += leg;
-          return `<tr><th scope="row"><button class="text-button" data-focus-point="${i}" aria-label="Show point ${i + 1} on map">${i + 1}${i === 0 ? " · Start" : i === points.length - 1 ? " · End" : ""}</button></th><td colspan="2">${esc(formatCoordinate(point, coordinateSystem))}</td><td>${km(leg)} km</td><td>${km(total)} km</td><td>${point.ele === undefined ? "—" : metres(point.ele) + " m"}</td><td><button class="icon-button" data-remove-point="${i}" aria-label="Remove point ${i + 1}">${icon("trash", 16)}</button></td></tr>`;
+          return `<tr><th scope="row"><button class="text-button" data-focus-point="${i}" aria-label="Show point ${i + 1} on map">${i + 1}${i === 0 ? " · Start" : i === points.length - 1 ? " · End" : ""}</button></th><td><input class="point-name" data-point-name="${i}" aria-label="Name for point ${i + 1} (optional)" maxlength="120" placeholder="Add name" value="${esc(point.name || "")}" ${busy ? "disabled" : ""}></td><td colspan="2">${esc(formatCoordinate(point, coordinateSystem))}</td><td>${km(leg)} km</td><td>${km(total)} km</td><td>${point.ele === undefined ? "—" : metres(point.ele) + " m"}</td><td><button class="icon-button" data-remove-point="${i}" aria-label="Remove point ${i + 1}">${icon("trash", 16)}</button></td></tr>`;
         })
         .join("")
-    : '<tr><td colspan="7" class="waypoint-empty">Your points will appear here. Tap the map to begin.</td></tr>';
+    : '<tr><td colspan="8" class="waypoint-empty">Your points will appear here. Tap the map to begin.</td></tr>';
+  $("waypoint-rows")
+    .querySelectorAll<HTMLInputElement>("[data-point-name]")
+    .forEach((input) => {
+      let started = false;
+      input.onfocus = () => {
+        started = false;
+      };
+      input.oninput = () => {
+        if (busy) return;
+        if (!started) {
+          createUndo.push(createdSnapshot());
+          if (createUndo.length > 30) createUndo.shift();
+          createRedo = [];
+          started = true;
+        }
+        const point = draft().points[Number(input.dataset.pointName)];
+        point.name = input.value || undefined;
+        if (workspace.createdTerrain) {
+          for (const p of workspace.createdTerrain.points) {
+            if (p.lat === point.lat && p.lon === point.lon) p.name = point.name;
+          }
+        }
+        persist();
+        $<HTMLButtonElement>("undo").disabled = false;
+        $<HTMLButtonElement>("redo").disabled = true;
+      };
+      input.onkeydown = (event) => {
+        if (event.key === "Enter") input.blur();
+      };
+    });
   $("waypoint-rows")
     .querySelectorAll<HTMLButtonElement>("[data-remove-point]")
     .forEach((button) => {
@@ -1051,6 +1090,7 @@ function renderCreated() {
       };
     });
   $<HTMLButtonElement>("create-save").disabled = busy || points.length < 2;
+  $<HTMLButtonElement>("create-share").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-terrain").disabled =
     busy || points.length < 2 || !!workspace.createdTerrain;
   $<HTMLButtonElement>("create-clear").disabled = busy || !points.length;
@@ -1146,6 +1186,36 @@ $("retry-create-map").onclick = () => {
   $("create-map-error").hidden = true;
   createMap.retryTiles();
 };
+$("create-share").onclick = async () => {
+  if (busy || draft().points.length < 2) return;
+  const title = `${draft().name} — Routecard`;
+  const text = routecardText(
+    draft(),
+    coordinateSystem,
+    workspace.createdTerrain,
+  );
+  try {
+    if (await shareRoutecard(title, text)) return;
+  } catch (error) {
+    if (isCancelled(error)) return;
+  }
+  openDialog(
+    `${dialogHeader("Share Routecard")}<p>Copy this routecard into a message.</p><textarea id="routecard-text" class="text-input routecard-text" aria-label="Routecard text" readonly>${esc(text)}</textarea><div class="dialog-actions"><button class="button secondary" data-close>Done</button><button id="copy-routecard" class="button primary">Copy routecard</button></div><p id="routecard-copy-status" role="status"></p>`,
+  );
+  $("copy-routecard").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      $("routecard-copy-status").textContent =
+        "Routecard copied. Paste it into your message.";
+    } catch {
+      const field = $<HTMLTextAreaElement>("routecard-text");
+      field.focus();
+      field.select();
+      $("routecard-copy-status").textContent =
+        "Text selected. Use your device’s Copy command, then paste into your message.";
+    }
+  };
+};
 $("create-terrain").onclick = () => {
   if (busy || draft().points.length < 2) return;
   openDialog(
@@ -1185,7 +1255,12 @@ $("create-terrain").onclick = () => {
       createRedo = [];
       workspace.createdTerrain = {
         ...sampled,
-        points: sampled.points.map(({ lat, lon, ele }) => ({ lat, lon, ele })),
+        points: sampled.points.map(({ lat, lon, ele, name }) => ({
+          lat,
+          lon,
+          ele,
+          name,
+        })),
       };
       workspace.created = {
         ...route,
@@ -1291,7 +1366,7 @@ $("undo").onclick = () => history(true);
 $("redo").onclick = () => history(false);
 $("settings").onclick = () => {
   openDialog(
-    `${dialogHeader("Settings", "", true)}<label class="field-label" for="coordinate-system">Coordinate system</label><select id="coordinate-system" class="text-input">${Object.entries(
+    `${dialogHeader("Grid references", "Choose how coordinates appear on your route", true)}<label class="field-label" for="coordinate-system">Coordinate system</label><select id="coordinate-system" class="text-input" aria-describedby="coordinate-use">${Object.entries(
       coordinateSystems,
     )
       .map(
@@ -1300,7 +1375,7 @@ $("settings").onclick = () => {
       )
       .join(
         "",
-      )}</select><p class="dialog-note">Used for route points and the map centre in Create and Edit. GPX files always use WGS84 Lat/Long. This choice is remembered on this device.</p><p class="dialog-note">Irish and British National Grid references use approximate datum conversions. ITM uses ETRS89; global formats use WGS84, including USNG. UTM, MGRS and USNG cover 80°S to 84°N. Regional grids show an out-of-area message elsewhere.</p><div class="dialog-actions"><button class="button primary" data-close>Done</button></div>`,
+      )}</select><h3 class="coordinate-guide-heading">Your coordinates, your way</h3><ol class="help-list" id="coordinate-use"><li><strong>Choose a format.</strong> Route points and the map centre use your choice in Create and Edit. Shared routecards use it too.</li><li><strong>Keep your preference.</strong> Changes apply straight away and are remembered on this device.</li><li><strong>Save your route.</strong> GPX files always use WGS84 Lat/Long, whichever display format you choose.</li></ol><details class="coordinate-details"><summary>Grid coverage and accuracy</summary><p>Irish and British National Grid references use approximate datum conversions. ITM uses ETRS89; global formats use WGS84, including USNG.</p><p>UTM, MGRS and USNG cover 80°S to 84°N. Regional grids show an out-of-area message elsewhere.</p></details><button class="button primary full" data-close>Done</button>`,
   );
   $("coordinate-system").onchange = async (event) => {
     const value = (event.target as HTMLSelectElement).value;
