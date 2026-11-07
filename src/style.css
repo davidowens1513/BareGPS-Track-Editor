@@ -247,8 +247,8 @@ h3 {
   scroll-margin-top: calc(var(--header-height) + 15px);
 }
 .map-toolbar {
-  height: 49px;
-  padding: 0 14px 0 18px;
+  height: 32px;
+  padding: 0 10px;
   background: #fff;
   display: flex;
   align-items: center;
@@ -1666,21 +1666,22 @@ dialog p {
   align-items: center;
   gap: 4px;
   background: #f7f9f3;
-  padding: 7px 12px;
+  height: 34px;
+  padding: 2px 8px;
   border-bottom: 1px solid var(--border);
 }
 .mode-tabs [role="tab"] {
   border: 1px solid transparent;
   border-radius: 7px;
   background: transparent;
-  padding: 10px 24px;
+  padding: 4px 19px;
   font-weight: 600;
-  color: #71836a;
+  color: #b3261e;
 }
 .mode-tabs [aria-selected="true"] {
   background: white;
   border-color: #dce6d4;
-  color: var(--green);
+  color: #b3261e;
   box-shadow: 0 1px 3px #25402b08;
 }
 #mode-caption {
@@ -1838,10 +1839,10 @@ dialog p {
     text-align: right;
   }
   .mode-tabs {
-    padding: 6px 8px;
+    padding: 2px 8px;
   }
   .mode-tabs [role="tab"] {
-    padding: 10px 19px;
+    padding: 4px 15px;
   }
   .map-empty {
     top: 95px;
@@ -1886,7 +1887,7 @@ dialog p {
   gap: 8px;
   padding: 5px 12px;
   height: 46px;
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   background: #f7f9f3;
 }
 .drawing-modes {
@@ -1911,9 +1912,7 @@ dialog p {
 .creating .map-error {
   top: 158px;
 }
-.map-expanded.creating #create-map-view {
-  height: calc(100% - 147px);
-}
+
 .brand {
   min-width: 0;
 }
@@ -1946,9 +1945,6 @@ dialog p {
   }
   .creating .map-error {
     top: 148px;
-  }
-  .map-expanded.creating #create-map-view {
-    height: calc(100% - 141px);
   }
 }
 
@@ -2101,4 +2097,39 @@ dialog p {
 }
 .map-locate[aria-busy="true"] {
   opacity: 0.55;
+}
+
+/* Keep the workspace bars flush and reserve the remaining expanded area for the map. */
+.map-toolbar,
+.map-expanded .map-toolbar {
+  height: 32px;
+}
+.map-actions .icon-button {
+  height: 28px;
+}
+.map-actions .small-button {
+  min-height: 24px;
+  padding-block: 3px;
+}
+.map-empty {
+  top: 66px;
+}
+.map-error,
+.creating .map-error {
+  top: 74px;
+}
+.map-expanded .map-panel {
+  display: flex;
+  flex-direction: column;
+}
+.map-expanded .mode-tabs,
+.map-expanded .map-toolbar,
+.map-expanded .create-tools {
+  flex-shrink: 0;
+}
+.map-expanded #edit-map-view,
+.map-expanded #create-map-view {
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }
