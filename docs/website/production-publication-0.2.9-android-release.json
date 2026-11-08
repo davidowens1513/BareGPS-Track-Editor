@@ -1,0 +1,237 @@
+{
+  "published_at": "2026-11-08T20:56:56.841882+00:00",
+  "app": "BareGPS Route Planner",
+  "version": "0.2.9",
+  "android_build": 41,
+  "ios_build_unchanged": 40,
+  "website": "https://appsbyonzy.dev/#tools",
+  "app_source_commit": "65549550bcdfcd460292df9e970fa4bc2d679d16",
+  "app_bundle_commit": "6bb8d89c602accea3187eef7c2efcc791c5bba4a",
+  "website_source_commit": "921242685e894f3a7c155ccde200b18fde88d8e5",
+  "android_signing": {
+    "build": 41,
+    "release_signed": true,
+    "debuggable": false,
+    "signing_certificate_sha256": "8176a4bb5fb5fb0b672346343558c4bb58433e71dda5ebd5dd9aad1bd2c283d9"
+  },
+  "public_apk_sha256": "c9b369dd28863c219beb46fe23c11b237c86f41e726c7700bc6ac03571b73caf",
+  "public_signature_verified": true,
+  "public_debuggable": false,
+  "public_manifest_and_checksums_match": true,
+  "legacy_redirects": [
+    {
+      "from": "tools/baregps-track-editor/0.1.1/android/BareGPS-Track-Editor-0.1.1.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.1.1/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.1.1/android/BareGPS-Track-Editor-android-Bundle-0.1.1.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.0/android/BareGPS-Track-Creator-and-Editor-0.2.0.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.0/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.0/android/BareGPS-Track-Creator-and-Editor-android-Bundle-0.2.0.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.1/android/BareGPS-Route-Planner-0.2.1.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.1/android/BareGPS-Route-Planner-android-Bundle-0.2.1.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.1/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.2/android/BareGPS-Route-Planner-0.2.2.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.2/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.2/android/BareGPS-Route-Planner-android-Bundle-0.2.2.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.3/android/BareGPS-Route-Planner-0.2.3.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.3/android/BareGPS-Route-Planner-android-Bundle-0.2.3.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.3/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.4/android/BareGPS-Route-Planner-android-Bundle-0.2.4.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.4/android/BareGPS-Route-Planner-0.2.4.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.4/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.5/android/BareGPS-Route-Planner-android-Bundle-0.2.5.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.5/android/BareGPS-Route-Planner-0.2.5.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.5/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.6/android/BareGPS-Route-Planner-android-Bundle-0.2.6.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.6/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.6/android/BareGPS-Route-Planner-0.2.6.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.7/android/BareGPS-Route-Planner-android-Bundle-0.2.7.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.7/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.7/android/BareGPS-Route-Planner-0.2.7.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.7-build22/android/BareGPS-Route-Planner-android-Bundle-0.2.7.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.7-build22/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.7-build22/android/BareGPS-Route-Planner-0.2.7.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.8/android/instructions.txt",
+      "to": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.8/android/BareGPS-Route-Planner-0.2.8.apk",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+      "status": 302
+    },
+    {
+      "from": "tools/baregps-track-editor/0.2.8/android/BareGPS-Route-Planner-android-Bundle-0.2.8.zip",
+      "to": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+      "status": 302
+    }
+  ],
+  "downloads": {
+    "base_url": "https://appsbyonzy.dev",
+    "existing_links_preserved": true,
+    "tools_after_openbaremap": true,
+    "platform_bundles_valid": true,
+    "downloads": [
+      {
+        "path": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-0.2.9.apk",
+        "bytes": 4014669,
+        "sha256": "c9b369dd28863c219beb46fe23c11b237c86f41e726c7700bc6ac03571b73caf"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.9/android/BareGPS-Route-Planner-android-Bundle-0.2.9.zip",
+        "bytes": 3628649,
+        "sha256": "4eccc5354202e50221dd161e53f83a0c28d41a0542500aa1a81cd888967cadae"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.9/android/instructions.txt",
+        "bytes": 6417,
+        "sha256": "506489dc1cd9ced962c2d235976794cc18cc421436628ad9fcd6259e2b0fc6f4"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.9/ios/BareGPS-Route-Planner-ios-Bundle-0.2.9.zip",
+        "bytes": 1008322,
+        "sha256": "8653f71b714e4bca21bbc0d583a3e1fab3e579c19bba53aaa0644bc0ceb91d70"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.9/ios/instructions.txt",
+        "bytes": 5981,
+        "sha256": "e21abda25e90d77f3297faab502530bdf74a23605912eb238fe2085bf8a969e4"
+      }
+    ]
+  },
+  "validation": {
+    "release_build": "passed",
+    "signature_and_package_flags": "passed against downloaded public APK",
+    "debug_packaging_negative_test": "passed",
+    "missing_signing_configuration_negative_test": "passed",
+    "isolated_emulator_install_and_cold_launch": "passed",
+    "native_phone_changes": "none",
+    "ios_download_bytes": "unchanged"
+  },
+  "migration": "Earlier debug-signed installations must preserve/export work before uninstall/reinstall. See public Android instructions.",
+  "private_signing_material": "Not included in Git or public downloads.",
+  "deployment": "Cloudflare Pages production upload showed Success; 104 files uploaded",
+  "homepage_release_labels_verified": true,
+  "preview_available": true,
+  "terrain_endpoint_checked": "OK",
+  "final_live_check_at": "2026-11-08T20:58:18.266892+00:00"
+}
