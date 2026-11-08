@@ -15,10 +15,10 @@
   "native_builds": "Android and signed physical iPhone builds passed",
   "phones": {
     "Samsung Galaxy A07": "v0.2.6 build 12 update installed and launch returned Status ok",
-    "iPhone 14": "Signed v0.2.6 build 12 update installed; launch verification blocked by device lock"
+    "iPhone 14": "Signed v0.2.6 build 12 update installed and launched successfully after user confirmed the phone was unlocked"
   },
   "installation_method": "Update in place; no uninstall or data clearing",
-  "iphone_launch_retry": "Automatic approval review rejected retry without evidence the phone had been unlocked; no bypass attempted.",
+  "iphone_launch_retry": "Succeeded after user confirmed unlock and authorized the retry.",
   "native_sharing_limit": "Native sharing bridges compiled; sending a PDF to another physical-device app was not separately automated.",
   "downloads": {
     "base_url": "https://appsbyonzy.dev",
@@ -78,5 +78,6 @@
       }
     ],
     "status": "OK"
-  }
+  },
+  "iphone_launch_verified_at": "2026-11-08T07:24:35.761341+00:00"
 }
