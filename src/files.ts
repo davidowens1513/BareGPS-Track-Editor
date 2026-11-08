@@ -11,6 +11,7 @@ export interface NativeFile {
 export const NativeFiles = registerPlugin<{
   pick(): Promise<{ files: NativeFile[] }>;
   save(options: { name: string; data: string }): Promise<{ saved: boolean }>;
+  shareFile(options: { name: string; data: string }): Promise<void>;
   shareText(options: { title: string; text: string }): Promise<void>;
   pending(): Promise<{ files: NativeFile[]; errors?: string[] }>;
   addListener(
@@ -129,4 +130,31 @@ export async function shareRoutecard(
   if (typeof navigator.share !== "function") return false;
   await navigator.share({ title, text });
   return true;
+}
+
+export async function sharePDF(title: string, blob: Blob) {
+  const name =
+    (title
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
+      .trim()
+      .slice(0, 80) || "Route Card") + "-route-card.pdf";
+  if (Capacitor.isNativePlatform()) {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192)
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    await NativeFiles.shareFile({ name, data: btoa(binary) });
+    return;
+  }
+  const file = new File([blob], name, { type: "application/pdf" });
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ title, files: [file] });
+    return;
+  }
+  const url = URL.createObjectURL(blob),
+    link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }

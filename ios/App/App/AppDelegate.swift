@@ -52,7 +52,7 @@ final class IncomingGPX {
 class BareFilesPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate {
     let identifier = "BareFilesPlugin"
     let jsName = "BareFiles"
-    let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "shareText", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "pick", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "save", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "pending", returnType: CAPPluginReturnPromise)]
+    let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "shareFile", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "shareText", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "pick", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "save", returnType: CAPPluginReturnPromise), CAPPluginMethod(name: "pending", returnType: CAPPluginReturnPromise)]
     private var operation: CAPPluginCall?
     private var exporting = false
     private var temporaryURL: URL?
@@ -75,6 +75,28 @@ class BareFilesPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate {
             let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
             picker.allowsMultipleSelection = true; picker.delegate = self
             self.bridge?.viewController?.present(picker, animated: true)
+        }
+    }
+    @objc func shareFile(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let encoded = call.getString("data"), let data = Data(base64Encoded: encoded), let name = call.getString("name"), let presenter = self.bridge?.viewController else { call.reject("Could not prepare PDF."); return }
+            do {
+                let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                let url = directory.appendingPathComponent((name as NSString).lastPathComponent)
+                try data.write(to: url, options: .atomic)
+                let sheet = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                if let popover = sheet.popoverPresentationController {
+                    popover.sourceView = presenter.view
+                    popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                    popover.permittedArrowDirections = []
+                }
+                sheet.completionWithItemsHandler = { _, _, _, error in
+                    try? FileManager.default.removeItem(at: directory)
+                    if let error = error { call.reject("Could not share PDF: \(error.localizedDescription)") } else { call.resolve() }
+                }
+                presenter.present(sheet, animated: true)
+            } catch { call.reject("Could not prepare PDF: \(error.localizedDescription)") }
         }
     }
     @objc func shareText(_ call: CAPPluginCall) {

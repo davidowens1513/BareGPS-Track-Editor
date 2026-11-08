@@ -49,6 +49,27 @@ public class BareFilesPlugin extends Plugin {
             call.resolve(result);
         } catch (org.json.JSONException e) { call.reject("Could not read incoming GPX files. Please open them again from Files.", e); }
     }
+    @PluginMethod public void shareFile(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                String data = call.getString("data"), name = call.getString("name");
+                if (data == null || name == null) { call.reject("Could not prepare PDF."); return; }
+                File directory = new File(getContext().getCacheDir(), "routecards");
+                directory.mkdirs();
+                File file = File.createTempFile("route-card-", ".pdf", directory);
+                try (FileOutputStream stream = new FileOutputStream(file)) { stream.write(Base64.decode(data, Base64.DEFAULT)); }
+                Uri uri = androidx.core.content.FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", file);
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setType("application/pdf");
+                intent.putExtra(Intent.EXTRA_STREAM, uri);
+                intent.putExtra(Intent.EXTRA_SUBJECT, name);
+                intent.setClipData(android.content.ClipData.newRawUri("Route Card", uri));
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                getActivity().startActivity(Intent.createChooser(intent, "Share PDF"));
+                call.resolve();
+            } catch (Exception e) { call.reject("Could not share PDF.", e); }
+        });
+    }
     @PluginMethod public void shareText(PluginCall call) {
         String text = call.getString("text");
         if (text == null) { call.reject("Could not prepare the routecard."); return; }

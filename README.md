@@ -12,12 +12,13 @@ The app opens in **Create**, the left tab. An empty map starts at Carrauntoohil 
 
 - **Add points**, beneath the map, adds a starting point and subsequent points in walking order. Every tap extends the route, including taps near an existing line.
 - **Insert point** inserts one point between neighbouring points on the chosen line, then returns to Add points.
-- Drag numbered markers to move points. Use the grid to inspect coordinates, leg distance, total distance and available heights. A point's number locates it on the map; its bin button removes it.
-- Add optional point names in the **Name (Opt)** column. Names stay attached as points move and are included in exported GPX files.
-- **Share Routecard** shares point names, coordinates, distances and heights as text for messages. Unnamed points retain their Point number; browsers without sharing offer a copyable routecard.
+- Drag numbered markers to move points. The centred **Route Card** lists Point, Name, the selected grid reference and Height, with a fifth-column bin button to remove points. Tap a point number to locate it on the map.
+- Add optional names of up to **10 characters** in the **Name** column. Names stay attached as points move and are included in exported GPX files.
+- **Expand Route Card** opens a fullscreen table with Distance, Cumul Distance, Ascent and Cumul Ascent. Names remain editable; deletion is available only in the main list. The expanded table uses a smaller type size; swipe sideways if needed. Cell borders, centred headings, units on separate heading lines and right-aligned measurements help comparison. Missing height/ascent data is shown as a dash.
+- In the expanded card, **Share Text** shares a message summary and **Share PDF** shares a paginated landscape route card. Both use the selected coordinate format and include point names, heights, distances and ascent. Unnamed points retain their Point number in text summaries. Browsers without text sharing offer a copyable preview; browsers without PDF sharing download the PDF.
 - **Close loop** joins the last point precisely to the start and includes the return leg in distance.
 - **Fetch terrain** estimates ascent and descent along the route. Moving, adding or removing points clears terrain estimates; fetch again after reshaping.
-- Choose a route name and **Line colour**, then **Save route** exports a GPX file.
+- Choose a route name, set **Created Route Colour** in Settings, then **Save route** exports a GPX file. **Fetch terrain**, **Clear route** and **Save route** are equal-width buttons on the main card.
 
 Lines connect points directly; the app does not automatically follow roads or paths. Undo and Redo are beneath the device-save status in the title panel. Create's undo history is separate from Edit's.
 
@@ -41,13 +42,13 @@ Both maps use OpenTopoMap. The crosshair at the upper right requests one current
 
 Metrics show **Distance(km)**, **Ascent(m)** and **Descent(m)**, with labels and values centred in their columns. Empty ascent and descent display **0**. Where elevation is unavailable, the profile explains that heights are needed; displayed zero does not supply missing GPX heights. Terrain and partial-elevation totals are identified where applicable.
 
-The round **Line colour** buttons in Create and Edit open a spectrum picker with preset swatches, a hex field and a preview. **Apply colour** makes one undoable change; **Cancel** leaves the existing colour intact.
+The cog beneath **?** opens **Settings**, with two sections: **Grid references** and **Created Route Colour**. The created-route colour control uses the same spectrum, preset swatches, hex field and preview as the **Line colour** picker in Edit. **Apply colour** makes one undoable change and preserves fetched terrain. Settings stays open after applying a colour. Editing an imported track’s colour does not change the created route. The metrics panel contains only route metrics.
 
-The green BareGPS logo and title remain in the header. Help and Settings carry the same logo. The **?** button opens guidance; the cog beneath it opens Grid references with matching branded guidance.
+The green BareGPS logo and title remain in the header. **About** and **Settings** carry the same logo. The **?** button opens **About**, with route-creation and editing guidance, a dedicated Grid references section covering display formats and accuracy, and Created route colour guidance.
 
 ## Coordinate display
 
-Settings offers Lat/Long (WGS84), Irish National Grid, British National Grid, Irish Transverse Mercator (ITM), MGRS, UTM and USNG (WGS84). The choice is remembered on the device and applies to the Create waypoint grid and map-centre coordinates in both views. GPX storage and export, geometry calculations and terrain requests use WGS84 regardless of the display format.
+Settings offers Lat/Long (WGS84), Irish National Grid, British National Grid, Irish Transverse Mercator (ITM), MGRS, UTM and USNG (WGS84). The choice is remembered on the device and applies to the Create Route Card, shared text/PDF route cards and map-centre coordinates in both views. Column headings use short format labels such as Irish Grid and British Grid. GPX storage and export, geometry calculations and terrain requests use WGS84 regardless of the display format.
 
 Irish and British National Grid use approximate Helmert datum transformations. ITM uses ETRS89 with a null WGS84 transformation for walking-scale display. Regional formats identify positions outside their coverage. UTM, MGRS and USNG cover 80°S to 84°N. UTM zones include Norway/Svalbard exceptions and the date-line boundary. MGRS and USNG use full, spaced one-metre WGS84 references; the reference precision does not imply equivalent GPS accuracy.
 
@@ -131,7 +132,7 @@ Native document-picker tests are in `android/app/src/androidTest` and `ios/App/A
 
 The browser Preview runs the same application at [appsbyonzy.dev/tools/baregps-route-planner/](https://appsbyonzy.dev/tools/baregps-route-planner/). Build it with `npm run build:web` and copy `web-dist/` into the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies validated terrain requests; `_routes.json` limits execution to that endpoint. The rest of the website and its downloads are static.
 
-The public platform bundles are v0.2.5 in `releases/bundles/0.2.5/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
+The public platform bundles are v0.2.6 in `releases/bundles/0.2.6/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
 
 ## Source layout and dependencies
 
@@ -141,7 +142,8 @@ The public platform bundles are v0.2.5 in `releases/bundles/0.2.5/`, linked from
 - `src/map.ts`: map rendering, draggable markers, current-position layers and framing.
 - `src/coordinates.ts` and `src/location.ts`: coordinate formatting and one-shot location access.
 - `src/terrain.ts`: sampling and terrain lookup.
-- `src/files.ts`: browser/native file operations.
+- `src/files.ts`: browser/native file and sharing operations.
+- `src/routecard.ts` and `src/routecard-pdf.ts`: shared route-card calculations, text summaries and paginated PDFs.
 - `android/.../BareFilesPlugin.java` and `ios/App/App/AppDelegate.swift`: native Files bridges; iOS `SceneDelegate.swift` handles incoming documents.
 
 Maps use [OpenTopoMap](https://opentopomap.org/) with attribution to [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), SRTM and OpenTopoMap (CC-BY-SA). Terrain uses [Open Topo Data](https://www.opentopodata.org/) and its [Mapzen dataset](https://www.opentopodata.org/datasets/mapzen/). Mapping uses [Leaflet](https://leafletjs.com/), mobile packaging uses [Capacitor](https://capacitorjs.com/), current position uses its [geolocation plugin](https://capacitorjs.com/docs/apis/geolocation), and the spectrum picker uses [vanilla-colorful](https://github.com/web-padawan/vanilla-colorful).

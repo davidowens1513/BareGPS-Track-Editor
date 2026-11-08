@@ -1,6 +1,6 @@
 {
   "name": "baregps-track-editor",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,6 +19,8 @@
     "@capacitor/core": "^8.0.0",
     "@capacitor/geolocation": "^8.2.4",
     "idb-keyval": "^6.2.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "leaflet": "^1.9.4",
     "mgrs": "^2.2.0",
     "proj4": "^2.22.0",

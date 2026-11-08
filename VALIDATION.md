@@ -54,3 +54,9 @@ Optional Create point names survive point changes, local recovery, undo/redo and
 55 unit tests, TypeScript, formatting, native Android and signed iPhone builds passed. All 22 browser checks passed in a sequential run after an intermittent phone drag failure in the parallel run. Native text-sharing bridges compile; sending a routecard through another app was not separately tested on the physical devices.
 
 The Samsung Galaxy A07 and iPhone 14 received update installs and launched successfully, without uninstalling or clearing data. The public preview assets match the production build, download checksums match all five platform files, previous links remain available, and the live terrain proxy returned OK. The release record is in docs/website/production-publication-0.2.5.json.
+
+## Version 0.2.6 verification — 8 November 2026
+
+The centred main Route Card has editable names of up to 10 characters, selected grid coordinates, height and a fifth-column bin. The expanded card adds distance and cumulative distance, ascent and cumulative ascent, with smaller cells, centred unit headings, cell borders, and text/PDF sharing. Route Card ascent includes fetched samples, with missing elevation marked unavailable. Settings contains Grid references and Created Route Colour; About contains the grid guidance. Metrics use their original layout.
+
+56 unit tests and all 24 desktop/phone browser checks passed. The browser checks include point-name recovery, delete/undo, main/expanded columns, generated PDF download, Settings colour application and About guidance. Formatting, TypeScript, Android and signed iPhone builds passed. Main/expanded phone layouts and a generated route-card PDF were visually reviewed during implementation. Native PDF sharing bridges compile; sending the PDF to another app on physical phones was not separately automated.

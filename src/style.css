@@ -2258,3 +2258,321 @@ dialog p {
 .coordinate-details p {
   margin: 10px 0 0;
 }
+
+/* The compact route card always fits its four permanent columns. */
+#create-card .card-extra {
+  display: none;
+}
+#create-card .waypoint-table {
+  table-layout: fixed;
+  white-space: normal;
+  font-size: 11px;
+  width: calc(186px + 14ch);
+  max-width: 100%;
+}
+#create-card .grid-col {
+  width: calc(14ch + 8px);
+}
+#coordinate-heading {
+  white-space: nowrap;
+}
+#create-card .point-col {
+  width: 42px;
+}
+#create-card .name-col {
+  width: 85px;
+}
+#create-card .height-col {
+  width: 51px;
+}
+#create-card .waypoint-table th,
+#create-card .waypoint-table td {
+  padding: 9px 4px;
+  font-size: 11px;
+}
+#create-card .point-name {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 3px;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+#create-card .grid-reference {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+#create-card .create-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+#create-card .create-buttons .button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  padding: 10px 4px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+#create-card .create-buttons .button svg {
+  width: 14px;
+  flex-shrink: 0;
+}
+.card-expanded {
+  overflow: hidden;
+}
+.card-expanded #create-card {
+  position: fixed;
+  inset: calc(var(--header-height) + env(safe-area-inset-top)) 0 0;
+  z-index: 1090;
+  margin: 0;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.card-expanded #create-card .card-heading {
+  flex-shrink: 0;
+}
+.card-expanded #create-card .waypoint-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.card-expanded #create-card .waypoint-table {
+  width: calc(303px + 6ch + max(45px, calc(80px - 5ch)));
+  max-width: none;
+  min-width: 0;
+}
+.card-expanded #create-card .point-col {
+  width: 32px;
+}
+.card-expanded #create-card .name-col {
+  width: calc(85px - 4ch);
+}
+.card-expanded #create-card .grid-col {
+  width: calc(12ch + 8px);
+}
+.card-expanded #create-card .height-col {
+  width: calc(51px - 2ch);
+}
+.card-expanded #create-card col.distance-col {
+  width: 45px;
+}
+.card-expanded #create-card col.cumulative-distance-col {
+  width: max(45px, calc(80px - 5ch));
+}
+.card-expanded #create-card col.ascent-col {
+  width: 40px;
+}
+.card-expanded #create-card col.cumulative-ascent-col {
+  width: 42px;
+}
+.card-expanded #create-card col.card-extra {
+  display: table-column;
+}
+.card-expanded #create-card th.card-extra,
+.card-expanded #create-card td.card-extra {
+  display: table-cell;
+}
+.card-expanded #create-card .card-share-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 4px;
+}
+.card-expanded #create-card .card-share-actions .button {
+  flex: 1;
+  justify-content: center;
+}
+.card-expanded #create-card .create-buttons {
+  flex-shrink: 0;
+}
+
+.card-expanded #create-card .card-scroll-hint {
+  display: block;
+  margin: 8px 16px 0;
+  color: #57704a;
+  font-size: 11px;
+}
+@media (min-width: 900px) {
+  .card-expanded #create-card .card-scroll-hint {
+    display: none;
+  }
+}
+
+.settings-colour-heading {
+  margin-top: 24px;
+  margin-bottom: 14px;
+}
+#grid-settings-heading {
+  margin-bottom: 14px;
+}
+
+#create-card .waypoint-table th,
+#create-card .waypoint-table td {
+  border: 1px solid var(--border);
+  text-align: left;
+}
+#create-card .waypoint-table tbody th,
+#create-card .waypoint-table tbody td:nth-child(4),
+#create-card .waypoint-table tbody td:nth-child(5),
+#create-card .waypoint-table tbody td:nth-child(6),
+#create-card .waypoint-table tbody td:nth-child(7),
+#create-card .waypoint-table tbody td:nth-child(8) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+#create-card .waypoint-table .point-name,
+#create-card .waypoint-table .grid-reference {
+  text-align: left;
+}
+
+#create-card .waypoint-table thead th {
+  text-align: center;
+}
+.heading-unit {
+  display: block;
+}
+.card-expanded #create-card .card-cell-unit {
+  display: none;
+}
+.card-expanded #create-card .waypoint-table th,
+.card-expanded #create-card .waypoint-table td {
+  padding-inline: 2px;
+  overflow-wrap: anywhere;
+}
+.card-expanded #create-card .waypoint-table thead th {
+  font-size: 9px;
+}
+.card-expanded #create-card #coordinate-heading {
+  white-space: normal;
+}
+
+.card-expanded #create-card .waypoint-table tbody td:nth-child(n + 4) {
+  white-space: nowrap;
+}
+.card-expanded #create-card .waypoint-table thead th:first-child {
+  white-space: nowrap;
+}
+
+body:not(.card-expanded) #create-card .waypoint-table {
+  margin-inline: auto;
+}
+
+body:not(.card-expanded) #create-card .waypoint-table {
+  font-size: 12.375px;
+  width: calc(239.25px + 14ch);
+}
+body:not(.card-expanded) #create-card .point-col {
+  width: 47.25px;
+}
+body:not(.card-expanded) #create-card .name-col {
+  width: 95.625px;
+}
+body:not(.card-expanded) #create-card .grid-col {
+  width: calc(14ch + 9px);
+}
+body:not(.card-expanded) #create-card .height-col {
+  width: 57.375px;
+}
+body:not(.card-expanded) #create-card .waypoint-table th,
+body:not(.card-expanded) #create-card .waypoint-table td {
+  font-size: 12.375px;
+  padding: 10.125px 4.5px;
+}
+body:not(.card-expanded) #create-card .point-name {
+  font-size: 12.375px;
+  padding: 7.875px 3.375px;
+}
+
+/* Scale the expanded listing independently of the compact card. */
+.card-expanded #create-card .waypoint-table {
+  font-size: 10.175px;
+  width: calc(280.275px + 6ch + max(41.625px, calc(74px - 5ch)));
+}
+.card-expanded #create-card .point-col {
+  width: 29.6px;
+}
+.card-expanded #create-card .name-col {
+  width: calc(78.625px - 4ch);
+}
+.card-expanded #create-card .grid-col {
+  width: calc(12ch + 7.4px);
+}
+.card-expanded #create-card .height-col {
+  width: calc(47.175px - 2ch);
+}
+.card-expanded #create-card col.distance-col {
+  width: 41.625px;
+}
+.card-expanded #create-card col.cumulative-distance-col {
+  width: max(41.625px, calc(74px - 5ch));
+}
+.card-expanded #create-card col.ascent-col {
+  width: 37px;
+}
+.card-expanded #create-card col.cumulative-ascent-col {
+  width: 38.85px;
+}
+.card-expanded #create-card .waypoint-table th,
+.card-expanded #create-card .waypoint-table td {
+  font-size: 10.175px;
+  padding: 8.325px 1.85px;
+}
+.card-expanded #create-card .waypoint-table thead th {
+  font-size: 8.325px;
+}
+.card-expanded #create-card .point-name {
+  font-size: 10.175px;
+  padding: 6.475px 2.775px;
+}
+@media (max-width: 350px) {
+  body:not(.card-expanded) #create-card .waypoint-table {
+    width: 100%;
+  }
+  body:not(.card-expanded) #create-card .point-col {
+    width: 42px;
+  }
+  body:not(.card-expanded) #create-card .name-col {
+    width: 85px;
+  }
+  body:not(.card-expanded) #create-card .grid-col {
+    width: auto;
+  }
+  body:not(.card-expanded) #create-card .height-col {
+    width: 51px;
+  }
+}
+
+#create-card col.compact-delete {
+  width: 30px;
+}
+#create-card .waypoint-table td.compact-delete {
+  padding-inline: 0;
+  text-align: center;
+}
+#create-card .compact-delete .icon-button {
+  width: 28px;
+  height: 32px;
+}
+.card-expanded #create-card .compact-delete {
+  display: none;
+}
+#create-card .waypoint-table tbody td:nth-child(9) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 350px) {
+  body:not(.card-expanded) #create-card .point-col {
+    width: 34px;
+  }
+  body:not(.card-expanded) #create-card .name-col {
+    width: 70px;
+  }
+  body:not(.card-expanded) #create-card .height-col {
+    width: 42px;
+  }
+  #create-card col.compact-delete {
+    width: 28px;
+  }
+}
