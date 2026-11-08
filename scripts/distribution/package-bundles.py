@@ -4,6 +4,8 @@ from pathlib import Path
 import argparse
 import hashlib
 import json
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -13,14 +15,26 @@ root = Path(__file__).resolve().parents[2]
 version = json.loads((root / 'package.json').read_text())['version']
 parser=argparse.ArgumentParser()
 parser.add_argument('output',nargs='?',type=Path,default=root/'releases'/'bundles'/version)
-parser.add_argument('--apk',type=Path,default=root/'android/app/build/outputs/apk/debug/app-debug.apk')
+parser.add_argument('--apk',type=Path,default=root/'android/app/build/outputs/apk/release/app-release.apk')
+parser.add_argument('--platform',choices=['both','android','ios'],default='both')
 args=parser.parse_args()
 output=args.output.resolve()
 filename_prefix='BareGPS-Route-Planner'
 output.mkdir(parents=True,exist_ok=True)
 commit = subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
 apk=args.apk.resolve()
-assert apk.is_file(), 'Build and validate the Android APK first.'
+assert apk.is_file(), 'Build and validate the signed Android release APK first.'
+sdk = Path(os.environ.get('ANDROID_HOME', Path.home() / 'Library/Android/sdk'))
+build_tools = sorted((sdk / 'build-tools').glob('*'), key=lambda path: tuple(int(part) for part in path.name.split('.') if part.isdigit()))
+assert build_tools, 'Android build tools are required to verify the public APK.'
+tools = build_tools[-1]
+certificate = subprocess.check_output([str(tools / 'apksigner'), 'verify', '--verbose', '--print-certs', str(apk)], text=True)
+assert 'CN=Android Debug' not in certificate, 'Refusing to package a debug-signed APK.'
+expected_certificate = (root/'docs/distribution/android-release-certificate.sha256').read_text().strip()
+assert re.search(r'certificate SHA-256 digest: ([0-9a-f]+)',certificate)[1] == expected_certificate, 'APK is not signed by the permanent Route Planner release identity.'
+badging = subprocess.check_output([str(tools / 'aapt'), 'dump', 'badging', str(apk)], text=True)
+assert 'application-debuggable' not in badging, 'Refusing to package a debuggable APK.'
+assert "package: name='com.baregps.trackeditor'" in badging, 'Unexpected Android application identity.'
 metadata=apk.parent/'output-metadata.json'
 if metadata.is_file():
     assert all(item['versionName']==version for item in json.loads(metadata.read_text())['elements']), 'APK version does not match package.json.'
@@ -36,7 +50,7 @@ def add_tree(archive,directory):
         if path.is_file() and allowed(path.relative_to(root)):
             archive.write(path,path.relative_to(root).as_posix())
 
-for platform in ['ios','android']:
+for platform in (['ios','android'] if args.platform=='both' else [args.platform]):
     directory=output/platform
     directory.mkdir(parents=True,exist_ok=True)
     guide=root/'docs'/'distribution'/f'{platform}-instructions.txt'
@@ -65,5 +79,5 @@ manifest={}
 for path in sorted(output.rglob('*')):
     if path.is_file() and path.name not in {'manifest.json','SHA256SUMS.txt'}:
         manifest[path.relative_to(output).as_posix()]={'bytes':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()}
-(output/'manifest.json').write_text(json.dumps({'version':version,'app_source_commit':commit,'files':manifest},indent=2)+'\n')
+(output/'manifest.json').write_text(json.dumps({'version':version,'app_source_commit':commit,'android':{'build':int(re.search(r"versionCode='(\d+)'",badging)[1]),'release_signed':True,'debuggable':False,'signing_certificate_sha256':re.search(r'certificate SHA-256 digest: ([0-9a-f]+)',certificate)[1]},'files':manifest},indent=2)+'\n')
 (output/'SHA256SUMS.txt').write_text(''.join(info['sha256']+'  '+name+'\n' for name,info in manifest.items()))

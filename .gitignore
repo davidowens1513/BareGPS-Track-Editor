@@ -20,5 +20,7 @@ ios/DerivedData/
 *.mobileprovision
 *.jks
 *.keystore
+release-signing.properties
+key.properties
 
 web-dist/

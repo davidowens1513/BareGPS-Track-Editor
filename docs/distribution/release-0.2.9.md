@@ -12,5 +12,21 @@ Validation: 75 unit tests, 92 browser checks across desktop/phone, formatting,
 TypeScript, production/native/web builds, and updates installed and launched on
 Samsung Galaxy A07 and iPhone 14. Installs preserve existing workspace data.
 
-Public downloads include the Android development APK/bundle and iOS Xcode
+Public downloads now include the Android release-signed APK/bundle (Android build 41; iOS remains build 40) and iOS Xcode
 source bundle. No public IPA or signing identities are included.
+
+## Android signing correction — 8 November 2026
+
+The public Android APK and bundled APK are replaced with a non-debuggable
+release build signed by the permanent Route Planner release identity. No
+application features or iOS binary changed. Android instructions explain that
+existing debug-signed installations must preserve their work before migration.
+Private signing material is kept outside the repository and excluded from bundles.
+Packaging now verifies APK signatures and rejects debug/debuggable packages.
+
+Verification: release assembly passed; APK Signature Scheme v2 verified against
+`android-release-certificate.sha256`; package is non-debuggable, version 0.2.9
+build 41, min SDK 24 / target SDK 36. The prior debug APK was rejected by the
+new packaging guard. The release installed and cold-launched successfully in
+an isolated read-only Android emulator. Existing phone installations were not
+uninstalled, replaced or cleared during this signing-only task.

@@ -123,7 +123,15 @@ cd android
 ./gradlew :app:assembleDebug
 ```
 
-The default output is `android/app/build/outputs/apk/debug/app-debug.apk`. Set `BAREGPS_ANDROID_BUILD_DIR` to a Mac-local directory to keep compiled files off an external project disk; Gradle caches can also remain on the Mac.
+The development output is `android/app/build/outputs/apk/debug/app-debug.apk`. Public downloads must use a non-debuggable, release-signed APK instead:
+
+```sh
+BAREGPS_ANDROID_SIGNING_PROPERTIES="/private/path/release.properties" ./gradlew :app:assembleRelease
+```
+
+The private properties file supplies `storeFile`, `storePassword`, `keyAlias` and `keyPassword`. Keep it and the permanent signing key outside this repository and public bundles, with a secure independent backup. A release build fails if signing configuration is absent. The packaging script verifies the signature and refuses debug-signed or debuggable APKs. Release output is `android/app/build/outputs/apk/release/app-release.apk`.
+
+Set `BAREGPS_ANDROID_BUILD_DIR` to a Mac-local directory to keep compiled files off an external project disk; Gradle caches can also remain on the Mac.
 
 For an unsigned iOS simulator build:
 
@@ -141,7 +149,7 @@ Native document-picker tests are in `android/app/src/androidTest` and `ios/App/A
 
 The browser Preview runs the same application at [appsbyonzy.dev/tools/baregps-route-planner/](https://appsbyonzy.dev/tools/baregps-route-planner/). Build it with `npm run build:web` and copy `web-dist/` into the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies validated terrain requests; `_routes.json` limits execution to that endpoint. The rest of the website and its downloads are static.
 
-The public platform bundles are v0.2.9 in `releases/bundles/0.2.9/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
+The public platform bundles are v0.2.9 in `releases/bundles/0.2.9/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes a release-signed, non-debuggable APK (Android build 41), a ZIP bundle and instructions. Earlier debug-signed installations require a backup/export migration before changing signing identity; see the Android instructions. iOS remains build 40. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
 
 ## Source layout and dependencies
 
