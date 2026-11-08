@@ -1,0 +1,82 @@
+{
+  "published_at": "2026-11-08T00:45:43.212911+00:00",
+  "app": "BareGPS Route Planner",
+  "version": "0.2.6",
+  "build": 12,
+  "website": "https://appsbyonzy.dev/#tools",
+  "preview": "https://appsbyonzy.dev/tools/baregps-route-planner/",
+  "deployment": "Cloudflare Pages production upload confirmed successful",
+  "app_source_commit": "879c1a4",
+  "app_bundle_commit": "0a2fb86",
+  "website_source_commit": "3073b07",
+  "unit_tests": 56,
+  "browser_checks": 24,
+  "format_and_type_checks": "passed",
+  "native_builds": "Android and signed physical iPhone builds passed",
+  "phones": {
+    "Samsung Galaxy A07": "v0.2.6 build 12 update installed and launch returned Status ok",
+    "iPhone 14": "Signed v0.2.6 build 12 update installed; launch verification blocked by device lock"
+  },
+  "installation_method": "Update in place; no uninstall or data clearing",
+  "iphone_launch_retry": "Automatic approval review rejected retry without evidence the phone had been unlocked; no bypass attempted.",
+  "native_sharing_limit": "Native sharing bridges compiled; sending a PDF to another physical-device app was not separately automated.",
+  "downloads": {
+    "base_url": "https://appsbyonzy.dev",
+    "existing_links_preserved": true,
+    "tools_after_openbaremap": true,
+    "platform_bundles_valid": true,
+    "downloads": [
+      {
+        "path": "tools/baregps-track-editor/0.2.6/android/BareGPS-Route-Planner-0.2.6.apk",
+        "bytes": 5110330,
+        "sha256": "a9a3ca23849dd733896bd95e27e27af959c61e5b17f199d9884bacc7cad5c807"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.6/android/BareGPS-Route-Planner-android-Bundle-0.2.6.zip",
+        "bytes": 4660288,
+        "sha256": "5369c2a28f5d75e0bd1c8ddf761ad5391b55ffd59711a93d707103bb9d66deb2"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.6/android/instructions.txt",
+        "bytes": 6854,
+        "sha256": "eecf3db9fa5993f476d393248c9196f4a937b08a595ed1088daf91f292dd18a7"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.6/ios/BareGPS-Route-Planner-ios-Bundle-0.2.6.zip",
+        "bytes": 963928,
+        "sha256": "753905d0948a52162e1393a84915465eda4f7bd7b0e0f204f8eda3530e2ecd17"
+      },
+      {
+        "path": "tools/baregps-track-editor/0.2.6/ios/instructions.txt",
+        "bytes": 6174,
+        "sha256": "2207e316eeb9c206948ca7c3289df7c572299ca24198e58e9a2e300924c5f6ad"
+      }
+    ]
+  },
+  "all_preview_assets_match_build": true,
+  "assets": [
+    "index.html",
+    "logo.svg",
+    "assets/index-BXukPZ-p.js",
+    "assets/routecard-pdf-BDAX1r1l.js",
+    "assets/index.es-Bz1xJNYi.js",
+    "assets/html2canvas.esm-DXEQVQnt.js",
+    "assets/purify.es-18JuyMri.js",
+    "assets/index-6fGdCZ5n.css",
+    "assets/web-Bz_MZ1wX.js"
+  ],
+  "homepage_links_v026": true,
+  "terrain": {
+    "results": [
+      {
+        "dataset": "mapzen",
+        "elevation": 1022,
+        "location": {
+          "lat": 51.99947,
+          "lng": -9.74269
+        }
+      }
+    ],
+    "status": "OK"
+  }
+}
