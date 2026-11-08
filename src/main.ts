@@ -7,7 +7,6 @@ import {
   analytics,
   COLORS,
   emptyWorkspace,
-  join,
   MAX_POINTS,
   parseGPX,
   reverse,
@@ -34,7 +33,11 @@ import {
 import { TrackMap, CreateMap } from "./map";
 import { icon } from "./icons";
 import { routecardText, routecardRows } from "./routecard";
-import { demoTracks, isDemoTrack } from "./demo";
+import {
+  addPlanSection,
+  movePlanSection,
+  buildPlannedRoute,
+} from "./route-plan";
 import "vanilla-colorful/hex-color-picker.js";
 import type { HexColorPicker } from "vanilla-colorful/hex-color-picker.js";
 import { enrichTerrain } from "./terrain";
@@ -71,7 +74,6 @@ let workspace = emptyWorkspace(),
   undo: Workspace[] = [],
   redo: Workspace[] = [];
 let editWelcome = true;
-let examplesVisible = false;
 let showAll = true,
   expanded = false,
   busy = false,
@@ -98,37 +100,38 @@ const draft = () => (workspace.created ??= newCreatedRoute());
 const createdTrack = () => workspace.createdTerrain ?? draft();
 const visibleMap = () => (mode === "create" ? createMap : map);
 const STORAGE_KEY = "baregps-workspace-v1";
+const CONNECTION_ELEVATION_NOTE =
+  "Connection distance is included. Connection ascent uses endpoint heights until you fetch terrain; intermediate hills may be missed.";
 
 document.querySelector("#app")!.innerHTML = `
 <header class="app-header"><a class="brand" href="#" aria-label="BareGPS Route Planner home"><img src="${import.meta.env.BASE_URL}logo.svg" alt="" width="40" height="40"><span class="brand-copy"><strong class="brand-title">BareGPS Route Planner</strong><span class="brand-subtitle">GPX Creator and Editor</span></span></a><div class="header-right"><div class="device-status"><span id="save-state" class="save-state" role="status" title="Your workspace is kept on this device. Use Save section or Save route to export a GPX file."><span class="save-full">On your device</span><span class="save-short" aria-hidden="true">On device</span></span><div class="history" role="group" aria-label="Edit history"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)">${icon("undo", 18)}</button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)">${icon("redo", 18)}</button></div></div><div class="header-utilities"><button id="help" class="icon-button" aria-label="About and keyboard shortcuts">${icon("help")}</button><button id="settings" class="icon-button" aria-label="Settings" title="Settings">${icon("settings", 19)}</button></div></div></header>
 <main>
   <span id="track-count" class="sr-only">Your workspace</span>
   <section id="map-panel" class="map-panel" aria-label="Track map">
-    <div class="mode-tabs" role="tablist" aria-label="Route workspace"><button id="create-tab" role="tab" aria-selected="true" aria-controls="create-map-view">Create</button><button id="edit-tab" role="tab" aria-selected="false" aria-controls="edit-map-view" tabindex="-1">Edit</button><span id="mode-caption">Work with your GPX tracks</span></div>
+    <div class="mode-tabs" role="tablist" aria-label="Route workspace"><button id="create-tab" role="tab" aria-selected="true" aria-controls="create-map-view">Create New</button><button id="edit-tab" role="tab" aria-selected="false" aria-controls="edit-map-view" tabindex="-1">Edit Existing</button><span id="mode-caption">Work with your GPX tracks</span></div>
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
     <div id="edit-map-view" role="tabpanel" aria-labelledby="edit-tab"><div id="map"></div><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
     <div id="create-map-view" role="tabpanel" aria-labelledby="create-tab" hidden><div id="create-map" aria-label="Create a walking route"></div><button id="create-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="create-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span><p class="create-map-hint" id="create-map-hint">Tap the map to place your starting point.</p></div>
     <div id="create-tools" class="create-tools" role="group" aria-label="Route drawing controls" hidden><div class="drawing-modes" role="group" aria-label="Drawing mode"><button id="draw-add" aria-pressed="true">Add points</button><button id="draw-insert" aria-pressed="false">Insert point</button></div><button id="create-close" class="small-button">Close loop</button></div>
-    <div id="map-empty" class="map-empty"><button id="empty-import" class="button primary">${icon("plus", 18)}Open GPX files</button><button id="demo" class="text-button">Explore with sample tracks ${icon("chevron", 14)}</button></div>
+    <div id="map-empty" class="map-empty"><button id="empty-import" class="button primary">${icon("plus", 18)}Open GPX files</button></div>
     <div id="create-map-error" class="map-error" hidden>Map tiles couldn’t load. You can still shape and save your route.<button id="retry-create-map" class="text-button">Retry</button></div>
     <div id="map-error" class="map-error" hidden>Map tiles couldn’t load. Your tracks and editing are still available.<button id="retry-map" class="text-button">Retry</button></div>
     <div class="map-legend" id="map-legend" hidden><span><i class="legend-solid"></i>Recorded track</span><span><i class="legend-dashed"></i>Walking connection</span></div>
   </section>
   <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} Distance(km)</span><strong id="distance">0.00</strong></div><div class="metric"><span>${icon("up", 17)} Ascent(m)</span><strong id="ascent">0</strong></div><div class="metric"><span>${icon("down", 17)} Descent(m)</span><strong id="descent">0</strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} <span id="selection-caption">SELECTED SECTION</span></span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
-  <section class="profile-card" aria-label="Elevation profile"><div class="profile-heading"><span>ELEVATION PROFILE</span><span id="profile-range">Select a track to explore its elevation</span></div><div id="profile"></div><div id="elevation-note" class="elevation-note" hidden></div></section>
+  <section class="profile-card" aria-label="Elevation profile"><div class="profile-heading"><span>ELEVATION PROFILE</span><span id="profile-range"></span></div><div id="profile"></div><div class="profile-note-slot"><div class="elevation-note profile-note-reserve" aria-hidden="true">${CONNECTION_ELEVATION_NOTE}</div><div id="elevation-note" class="elevation-note" hidden></div></div></section>
   <div id="editor" class="editor-grid">
-    <section class="card tracks-card"><div class="card-heading"><h2>Your tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote"><span>${icon("file", 14)} GPX files · originals stay untouched</span></div></section>
-    <section class="card section-card"><div class="card-heading"><h2>Edit a section</h2><span class="badge soft">A → B</span></div><div id="section-controls"></div></section>
+    <section class="card tracks-card"><div class="card-heading"><h2>Input Tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote"><span>${icon("file", 14)} GPX files · originals stay untouched</span></div></section>
+    <section class="card section-card"><div class="card-heading"><h2>Edit Input Track</h2><span class="badge soft">A → B</span></div><div id="section-controls"></div></section>
   </div>
   <section id="route-card" class="route-card"></section>
   <section id="create-card" class="card create-card" aria-label="Route Card" hidden>
     <div class="card-heading"><h2>Route Card <span id="waypoint-count" class="badge">0</span></h2><button id="expand-card" class="icon-button" aria-label="Expand Route Card" aria-expanded="false" title="Expand Route Card">${icon("expand", 18)}</button></div>
     <p id="card-source-note" class="card-source-note" hidden></p>
     <div class="create-settings"><label><span id="card-name-label">Route name</span><input id="create-name" class="text-input" maxlength="120" value="My walking route"></label></div>
-    <p class="card-scroll-hint card-extra">Swipe across for distance and ascent →</p>
     <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><colgroup><col class="point-col"><col class="name-col"><col class="grid-col"><col class="height-col"><col class="card-extra distance-col"><col class="compact-delete"><col class="card-extra cumulative-distance-col"><col class="card-extra ascent-col"><col class="card-extra cumulative-ascent-col"></colgroup><thead><tr><th scope="col">Point</th><th class="point-name-cell" scope="col">Name</th><th id="coordinate-heading" scope="col">Grid ref.</th><th scope="col">Height<span class="heading-unit">(m)</span></th><th class="card-extra distance-cell" scope="col">Distance<span class="heading-unit">(km)</span></th><th class="compact-delete" scope="col"><span class="sr-only">Delete point</span></th><th class="card-extra" scope="col">Cumul<br>Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Ascent<span class="heading-unit">(m)</span></th><th class="card-extra" scope="col">Cumul<br>Ascent<span class="heading-unit">(m)</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="card-share-actions card-extra"><button id="create-share" class="button secondary">${icon("export", 17)}Share Text</button><button id="create-pdf" class="button secondary">${icon("file", 17)}Share PDF</button></div>
-    <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
+    <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch Terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
   </section>
   <footer><span>Your files stay on your device. Map & terrain requests use the internet.</span></footer>
 </main>
@@ -223,16 +226,16 @@ async function goToCurrentPosition() {
 }
 const active = () =>
   [...workspace.tracks, ...(workspace.route ? [workspace.route] : [])].find(
-    (t) => t.id === workspace.activeId && (examplesVisible || !isDemoTrack(t)),
+    (t) => t.id === workspace.activeId,
   ) ?? null;
-const displayTracks = () =>
-  workspace.tracks.filter((t) => examplesVisible || !isDemoTrack(t));
+const displayTracks = () => workspace.tracks;
 const displayMapTracks = () => [
   ...displayTracks(),
   ...(workspace.route ? [workspace.route] : []),
 ];
 const allTracks = () => [
   ...workspace.tracks,
+  ...(workspace.routePlan ?? []),
   ...(workspace.route ? [workspace.route] : []),
 ];
 function notification(message: string, error = false) {
@@ -299,7 +302,11 @@ function boundHistory() {
   for (let i = undo.length - 1; i >= 0; i--) {
     points +=
       undo[i].tracks.reduce((n, t) => n + t.points.length, 0) +
-      (undo[i].route?.points.length ?? 0);
+      (undo[i].route?.points.length ?? 0) +
+      (undo[i].routePlan ?? []).reduce(
+        (count, track) => count + track.points.length,
+        0,
+      );
     if (i < undo.length - 1 && (points > 1000000 || undo.length - i > 20)) {
       undo.splice(0, i + 1);
       break;
@@ -379,10 +386,10 @@ function updateSelection(selection: Selection) {
   if (a) {
     a.value = String(start);
     b.value = String(end);
-    $("start-label").textContent = `Point ${start + 1}`;
-    $("end-label").textContent = `Point ${end + 1}`;
-    $("selected-label").textContent =
-      `${end - start + 1} of ${t.points.length} points`;
+    $("start-label").textContent = `pt ${start + 1}`;
+    a.setAttribute("aria-valuetext", `Point ${start + 1}`);
+    $("end-label").textContent = `pt ${end + 1}`;
+    b.setAttribute("aria-valuetext", `Point ${end + 1}`);
     $("range-fill").style.left = `${(start / (t.points.length - 1)) * 100}%`;
     $("range-fill").style.right =
       `${100 - (end / (t.points.length - 1)) * 100}%`;
@@ -447,11 +454,7 @@ function renderStats(preview?: Track) {
     : "Open a file to begin";
   $("profile-range").textContent = hasElevation
     ? `${metres(a.min!)}–${metres(a.max!)} m · ${t!.name}`
-    : t
-      ? mode === "create"
-        ? "Fetch terrain to see route elevation"
-        : "No elevation data in this section"
-      : "Select a track to explore its elevation";
+    : "";
   const note = $("elevation-note");
   note.hidden = !(a.missingEdges || a.estimatedGap);
   note.textContent =
@@ -460,7 +463,7 @@ function renderStats(preview?: Track) {
       : a.missingEdges
         ? "Elevation is missing for some points. Ascent and descent are partial; distance includes the entire section."
         : a.estimatedGap
-          ? "Connection distance is included. Connection ascent uses endpoint heights until you fetch terrain; intermediate hills may be missed."
+          ? CONNECTION_ELEVATION_NOTE
           : "";
   const profile = $("profile");
   if (!hasElevation) {
@@ -526,9 +529,7 @@ function renderTracks() {
           return `<div class="track-row ${!editWelcome && t.id === workspace.activeId ? "active" : ""}"><button class="track-select" data-id="${t.id}" aria-pressed="${!editWelcome && t.id === workspace.activeId}"><span class="track-symbol" style="--track-color:${t.color}">${icon("route", 20)}</span><span class="track-text"><strong>${esc(t.name)}</strong><small>${km(a.length)} km <span>·</span> ${t.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ↗` : "No elevation"} <span>·</span> ${t.points.length.toLocaleString()} pts</small></span>${!editWelcome && t.id === workspace.activeId ? '<span class="active-dot"></span>' : icon("chevron", 15)}</button><button class="icon-button delete-track" data-id="${t.id}" aria-label="Remove ${esc(t.name)}" title="Remove track">${icon("trash", 16)}</button></div>`;
         })
         .join("")
-    : '<div class="tracks-empty">' +
-      icon("file", 28) +
-      "<strong>A home for your tracks</strong><p>Open one or more GPX files.<br>Choose a track to start shaping your route.</p></div>";
+    : '<div class="tracks-empty"><p>Open one or more GPX files.</p></div>';
   list.querySelectorAll<HTMLButtonElement>(".track-select").forEach(
     (b) =>
       (b.onclick = () => {
@@ -557,18 +558,18 @@ function renderControls() {
   const t = editWelcome ? null : active(),
     box = $("section-controls");
   if (!t) {
-    box.innerHTML =
-      '<div class="controls-empty"><span class="selection-preview"><i>A</i><span></span><i>B</i></span><h3>Keep the good bits.</h3><p>Drag the A and B handles on the map to choose a section. Then save it, split it, or add it to your joined route.</p></div>';
+    box.innerHTML = `<div class="controls-empty"><p>Choose an input track, then use A and B to select a section to save, split or add to Route Plan.</p></div><div class="route-plan-buttons"><button class="button secondary" disabled>Add to Route Plan</button><button id="open-route-plan" class="button secondary" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button></div>`;
+    $("open-route-plan").onclick = routePlanDialog;
     return;
   }
   const { start, end } = workspace.selection;
-  box.innerHTML = `<div class="selected-title"><span class="eyebrow">${t.kind === "route" ? "JOINED ROUTE" : "SELECTED TRACK"}</span><button id="rename" class="name-button" title="Rename track">${esc(t.name)}${icon("edit", 14)}</button></div>
-  <div class="selection-settings"><div class="selection-slider"><div class="selection-labels"><span><i class="endpoint">A</i> Start <strong id="start-label">Point ${start + 1}</strong></span><span><i class="endpoint">B</i> End <strong id="end-label">Point ${end + 1}</strong></span></div>
-  <div class="range-track"><div id="range-fill" style="left:${(start / (t.points.length - 1)) * 100}%;right:${100 - (end / (t.points.length - 1)) * 100}%"></div><input id="range-start" type="range" min="0" max="${t.points.length - 1}" value="${start}" aria-label="Section start point"><input id="range-end" type="range" min="0" max="${t.points.length - 1}" value="${end}" aria-label="Section end point"></div>
-  <div class="range-caption"><span id="selected-label">${end - start + 1} of ${t.points.length} points</span><button id="reset-selection" class="text-button">Select whole track</button></div>
+  box.innerHTML = `<div class="selected-title"><span class="eyebrow">${t.kind === "route" ? "JOINED ROUTE" : "SELECTED TRACK"}</span><button id="rename" class="name-button" title="Rename track"><span class="selected-track-name">${esc(t.name)}</span>${icon("edit", 14)}</button></div>
+  <div class="selection-settings"><div class="selection-slider"><span class="range-end-label"><b>A</b><span aria-hidden="true">/</span><span id="start-label">pt ${start + 1}</span></span>
+  <div class="range-track" style="--track-colour:${t.color}"><div id="range-fill" style="left:${(start / (t.points.length - 1)) * 100}%;right:${100 - (end / (t.points.length - 1)) * 100}%"></div><input id="range-start" type="range" min="0" max="${t.points.length - 1}" value="${start}" aria-label="Section start point" aria-valuetext="Point ${start + 1}"><input id="range-end" type="range" min="0" max="${t.points.length - 1}" value="${end}" aria-label="Section end point" aria-valuetext="Point ${end + 1}"></div>
+  <span class="range-end-label"><b>B</b><span aria-hidden="true">/</span><span id="end-label">pt ${end + 1}</span></span>
   </div><div class="line-color"><span>Line colour</span><button id="track-color" class="color-trigger" style="--line-colour:${t.color}" aria-label="Choose track line colour" title="Choose track line colour"></button></div></div>
   <div class="edit-buttons"><button id="save-section" class="button secondary">${icon("export", 16)}Save section</button><button id="split" class="button secondary" ${end - start < 2 ? "disabled" : ""}>${icon("scissors", 16)}Split</button><button id="reverse" class="button secondary" title="Reverse the whole track">${icon("reverse", 16)}Reverse</button></div>
-  ${t.kind !== "route" ? `<button id="add-route" class="button primary full">${icon("join", 18)}${workspace.route ? "Append section to route" : "Start joined route with section"}</button>` : '<button id="save-copy" class="button primary full">' + icon("plus", 18) + "Keep section as a new track</button>"}
+  <div class="route-plan-buttons"><button id="add-route" class="button secondary" ${t === workspace.route ? "disabled" : ""}>Add to Route Plan</button><button id="open-route-plan" class="button secondary" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button></div>
   <p class="control-hint">Drag map handles or use the sliders. Originals are never overwritten.</p>`;
   $<HTMLInputElement>("range-start").oninput = (e) =>
     updateSelection({
@@ -586,10 +587,6 @@ function renderControls() {
         Number((e.target as HTMLInputElement).value),
       ),
     });
-  $("reset-selection").onclick = () => {
-    updateSelection({ start: 0, end: t.points.length - 1 });
-    fitMap();
-  };
   $("rename").onclick = () => rename(t);
   $("save-section").onclick = () =>
     exportTrack(
@@ -611,28 +608,158 @@ function renderControls() {
         end: t.points.length - 1 - start,
       };
     });
-  $("add-route")?.addEventListener("click", () => {
+  $("add-route").onclick = () => {
+    if (busy || t === workspace.route) return;
     if (
       commit(() => {
-        workspace.route = join(workspace.route, t, workspace.selection);
+        workspace.routePlan = addPlanSection(
+          workspace.routePlan ?? [],
+          t,
+          workspace.selection,
+        );
         ensureTrackCapacity(0, 0);
       })
     ) {
-      notification(
-        "Section added to your joined route. Choose another track to keep building.",
-      );
+      selectedPlanId = workspace.routePlan!.at(-1)!.id;
+      routePlanDialog();
     }
-  });
-  $("save-copy")?.addEventListener("click", () =>
-    commit(() => {
-      ensureTrackCapacity(1, end - start + 1);
-      workspace.tracks.push(section(t, workspace.selection));
-    }),
-  );
+  };
+  $("open-route-plan").onclick = routePlanDialog;
   $("track-color").onclick = () =>
     openColourPicker(t.color, (color) => {
       if (color !== t.color) commit(() => replace({ ...t, color }));
     });
+}
+let selectedPlanId: string | null = null;
+function routePlanDialog() {
+  if (busy) return;
+  const plan = workspace.routePlan ?? [];
+  if (!plan.some((track) => track.id === selectedPlanId))
+    selectedPlanId = plan[0]?.id ?? null;
+  const index = plan.findIndex((track) => track.id === selectedPlanId);
+  const pending =
+    !workspace.route ||
+    JSON.stringify(workspace.confirmedPlan ?? []) !==
+      JSON.stringify(plan.map((track) => track.id));
+  openDialog(
+    `${dialogHeader("Route Plan", "Select a section, then move it up or down to set the walking order.", true)}
+    <p class="dialog-note">${pending ? "Confirm Route builds the route in this order. The Route Card is unchanged until you confirm." : "This order is confirmed. Changes take effect when you confirm again."}</p>
+    <div class="plan-scroll" role="region" aria-label="Route Plan sections" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Section</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No sections yet. Select A–B in an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
+    <div class="plan-row-actions"><button id="plan-up" class="button secondary compact" ${index <= 0 ? "disabled" : ""}>Move up</button><button id="plan-down" class="button secondary compact" ${index < 0 || index === plan.length - 1 ? "disabled" : ""}>Move down</button><button id="plan-remove" class="button secondary compact" ${index < 0 ? "disabled" : ""}>Remove</button></div>
+    <div class="dialog-actions"><button class="button secondary" data-close>Keep adding</button><button id="confirm-route-plan" class="button primary" ${!plan.length ? "disabled" : ""}>Confirm Route</button></div>`,
+    "plan",
+  );
+  const choose = (id: string) => {
+    selectedPlanId = id;
+    $("dialog-content")
+      .querySelectorAll<HTMLElement>("[data-plan-id]")
+      .forEach((row) =>
+        row.classList.toggle("selected", row.dataset.planId === id),
+      );
+    $("dialog-content")
+      .querySelectorAll<HTMLButtonElement>("[data-select-plan]")
+      .forEach((button) =>
+        button.setAttribute(
+          "aria-pressed",
+          String(button.dataset.selectPlan === id),
+        ),
+      );
+    const selected = plan.findIndex((track) => track.id === id);
+    $<HTMLButtonElement>("plan-up").disabled = selected <= 0;
+    $<HTMLButtonElement>("plan-down").disabled =
+      selected < 0 || selected === plan.length - 1;
+    $<HTMLButtonElement>("plan-remove").disabled = selected < 0;
+  };
+  $("dialog-content")
+    .querySelectorAll<HTMLElement>("[data-plan-id]")
+    .forEach((row) => {
+      row.onclick = () => choose(row.dataset.planId!);
+    });
+  const move = (step: number) => {
+    const from = (workspace.routePlan ?? []).findIndex(
+        (track) => track.id === selectedPlanId,
+      ),
+      to = from + step;
+    if (from < 0 || to < 0 || to >= (workspace.routePlan?.length ?? 0)) return;
+    if (
+      commit(() => {
+        workspace.routePlan = movePlanSection(workspace.routePlan!, from, to);
+      })
+    ) {
+      routePlanDialog();
+      const row = Array.from(
+        $("dialog-content").querySelectorAll<HTMLButtonElement>(
+          "[data-select-plan]",
+        ),
+      ).find((button) => button.dataset.selectPlan === selectedPlanId);
+      row?.focus({ preventScroll: true });
+      row?.scrollIntoView({ block: "nearest" });
+    }
+  };
+  $("plan-up").onclick = () => move(-1);
+  $("plan-down").onclick = () => move(1);
+  $("dialog-content")
+    .querySelectorAll<HTMLButtonElement>("[data-select-plan]")
+    .forEach((button) => {
+      button.onkeydown = (event) => {
+        if (
+          event.altKey &&
+          (event.key === "ArrowUp" || event.key === "ArrowDown")
+        ) {
+          event.preventDefault();
+          selectedPlanId = button.dataset.selectPlan!;
+          move(event.key === "ArrowUp" ? -1 : 1);
+        }
+      };
+    });
+  $("plan-remove").onclick = () => {
+    const from = (workspace.routePlan ?? []).findIndex(
+      (track) => track.id === selectedPlanId,
+    );
+    if (from < 0) return;
+    if (
+      commit(() => {
+        workspace.routePlan = workspace.routePlan!.filter(
+          (track) => track.id !== selectedPlanId,
+        );
+      })
+    ) {
+      selectedPlanId =
+        workspace.routePlan![Math.min(from, workspace.routePlan!.length - 1)]
+          ?.id ?? null;
+      routePlanDialog();
+    }
+  };
+  $("confirm-route-plan").onclick = () => {
+    if (busy || !workspace.routePlan?.length) return;
+    if (
+      commit(() => {
+        const ids = workspace.routePlan!.map((track) => track.id);
+        if (
+          !workspace.route ||
+          JSON.stringify(ids) !== JSON.stringify(workspace.confirmedPlan ?? [])
+        )
+          workspace.route = buildPlannedRoute(
+            workspace.routePlan!,
+            workspace.route,
+          );
+        workspace.confirmedPlan = ids;
+        workspace.activeId = workspace.route!.id;
+        workspace.selection = {
+          start: 0,
+          end: workspace.route!.points.length - 1,
+        };
+        editWelcome = false;
+        showAll = false;
+        ensureTrackCapacity(0, 0);
+      }, true)
+    ) {
+      $<HTMLDialogElement>("dialog").close();
+      notification(
+        "Route confirmed. The Route Card shows the full route in plan order.",
+      );
+    }
+  };
 }
 function renderRoute() {
   const route = workspace.route,
@@ -642,7 +769,7 @@ function renderRoute() {
     return;
   }
   const a = analytics(route.points);
-  card.innerHTML = `<div class="route-summary"><span class="route-empty-icon">${icon("join", 26)}</span><div><span class="eyebrow">YOUR JOINED ROUTE</span><button id="rename-route" class="name-button">${esc(route.name)} ${icon("edit", 14)}</button><p>${km(a.length)} km <span>·</span> ${route.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ascent${a.estimatedGap || a.missingEdges ? " (estimated)" : ""}` : "Elevation unavailable"}${a.gapDistance ? ` <span>·</span> ${km(a.gapDistance)} km of walking connections` : ""}</p></div></div><div class="route-buttons">${a.estimatedGap ? '<button id="terrain" class="button secondary">' + icon("mountain", 17) + "Fetch gap terrain</button>" : ""}<button id="preview-route" class="button secondary">${icon("eye", 17)}Preview</button><button id="export-route" class="button primary">${icon("export", 17)}Save route</button><button id="remove-route" class="icon-button" aria-label="Remove joined route">${icon("trash", 17)}</button></div>`;
+  card.innerHTML = `<div class="route-summary"><span class="route-empty-icon">${icon("join", 26)}</span><div><span class="eyebrow">YOUR JOINED ROUTE</span><button id="rename-route" class="name-button">${esc(route.name)} ${icon("edit", 14)}</button><p>${km(a.length)} km <span>·</span> ${route.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ascent${a.estimatedGap || a.missingEdges ? " (estimated)" : ""}` : "Elevation unavailable"}${a.gapDistance ? ` <span>·</span> ${km(a.gapDistance)} km of walking connections` : ""}</p></div></div><div class="route-buttons"><button id="preview-route" class="button secondary">${icon("eye", 17)}Preview</button><button id="export-route" class="button primary">${icon("export", 17)}Save route</button><button id="remove-route" class="icon-button" aria-label="Remove joined route">${icon("trash", 17)}</button></div>`;
   $("rename-route").onclick = () => rename(route);
   $("preview-route").onclick = () => {
     showAll = false;
@@ -663,7 +790,6 @@ function renderRoute() {
         };
       }
     });
-  $("terrain")?.addEventListener("click", terrainDialog);
 }
 function render() {
   renderTracks();
@@ -683,7 +809,6 @@ function render() {
   for (const id of [
     "import",
     "empty-import",
-    "demo",
     "view-toggle",
     "edit-tab",
     "create-tab",
@@ -715,7 +840,7 @@ function ensureTrackCapacity(count: number, points: number) {
     );
   if (
     allTracks().reduce((n, t) => n + t.points.length, 0) + points >
-    MAX_POINTS * 3
+    MAX_POINTS * 4
   )
     throw new Error(
       "This workspace is full. Export and remove some tracks before importing more.",
@@ -737,8 +862,7 @@ async function importFiles(files?: ImportFile[]) {
         const parsed = parseGPX(
           file.text,
           file.name,
-          workspace.tracks.filter((track) => !isDemoTrack(track)).length +
-            tracks.length,
+          workspace.tracks.length + tracks.length,
         );
         ensureTrackCapacity(
           tracks.length + parsed.length,
@@ -787,7 +911,12 @@ async function exportTrack(track: Track) {
   busy = true;
   render();
   try {
-    if (await saveTrack(track))
+    if (
+      await saveTrack(
+        track,
+        mode === "create" ? "Created Route" : "Edited Route",
+      )
+    )
       notification(
         Capacitor.isNativePlatform()
           ? "GPX saved to your chosen location."
@@ -800,7 +929,8 @@ async function exportTrack(track: Track) {
     render();
   }
 }
-function openDialog(content: string, variant?: "about") {
+function openDialog(content: string, variant?: "about" | "plan") {
+  $("dialog").classList.toggle("plan-dialog", variant === "plan");
   $("dialog").classList.toggle("about-dialog", variant === "about");
   $("dialog-content").innerHTML = content;
   $<HTMLDialogElement>("dialog").showModal();
@@ -906,9 +1036,14 @@ function splitDialog(track: Track) {
   };
 }
 function terrainDialog() {
-  if (!workspace.route || busy) return;
+  if (
+    !workspace.route ||
+    busy ||
+    !analytics(workspace.route.points).estimatedGap
+  )
+    return;
   openDialog(
-    `${dialogHeader("Count the hills between tracks", "Include terrain along your dashed walking connections.")}<p>We’ll sample heights about every 90 metres along each straight connection using Open Topo Data. Connection coordinates are sent to that service.</p><p>These are terrain estimates, not a routed footpath. Distance and ascent include all connections. Keep the connection only if it follows the way you plan to walk.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-terrain" class="button primary">${icon("mountain", 17)}Fetch terrain heights</button></div>`,
+    `${dialogHeader("Fetch Terrain Heights")}<div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-terrain" class="button primary">Fetch Terrain Heights</button></div>`,
   );
   $("confirm-terrain").onclick = async () => {
     const route = workspace.route!;
@@ -982,7 +1117,6 @@ function setMode(next: "edit" | "create") {
   mode = next;
   if (next === "edit") {
     editWelcome = true;
-    examplesVisible = false;
     showAll = true;
   }
   drawingMode = "add";
@@ -1051,32 +1185,14 @@ function routeCardContext() {
       offset: 0,
       description: "",
     };
-  const source = workspace.route ?? (editWelcome ? null : active());
+  const source = workspace.route;
   if (!source) return null;
-  if (source === workspace.route)
-    return {
-      route: source,
-      terrain: undefined,
-      source,
-      offset: 0,
-      description: `Whole joined route · ${source.points.length} points`,
-    };
-  const { start, end } = workspace.selection;
-  const whole = start === 0 && end === source.points.length - 1;
   return {
-    route: {
-      ...source,
-      name: whole
-        ? source.name
-        : `${source.name} · points ${start + 1}–${end + 1}`,
-      points: selectedPoints(source, workspace.selection),
-    },
+    route: source,
     terrain: undefined,
     source,
-    offset: start,
-    description: whole
-      ? `Whole track · ${source.points.length} points`
-      : `Selected section · points ${start + 1}–${end + 1} of ${source.points.length}`,
+    offset: 0,
+    description: `Whole joined route · ${source.points.length} points`,
   };
 }
 function fitCardCoordinates() {
@@ -1278,7 +1394,7 @@ function renderPointCard() {
           })
           .join("") +
         bottomSpacer
-      : `<tr><td colspan="${mode === "create" ? 5 : 4}" class="waypoint-empty">${mode === "create" ? "Your points will appear here. Tap the map to begin." : "Choose a track or open a GPX file to view its Route Card."}</td></tr>`;
+      : `<tr><td colspan="${mode === "create" ? 5 : 4}" class="waypoint-empty">${mode === "create" ? "Your points will appear here. Tap the map to begin." : "Confirm Route in Route Plan to populate this card."}</td></tr>`;
     $("waypoint-rows")
       .querySelectorAll<HTMLButtonElement>("[data-remove-point]")
       .forEach((button) => {
@@ -1395,7 +1511,10 @@ function renderPointCard() {
   $<HTMLButtonElement>("create-share").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-pdf").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-terrain").disabled =
-    busy || points.length < 2 || !!workspace.createdTerrain;
+    busy ||
+    (mode === "create"
+      ? points.length < 2 || !!workspace.createdTerrain
+      : !workspace.route || !analytics(workspace.route.points).estimatedGap);
   $<HTMLButtonElement>("create-clear").disabled = busy || !points.length;
   $<HTMLInputElement>("create-name").disabled = busy;
   requestAnimationFrame(updateCardScrollLimit);
@@ -1482,11 +1601,13 @@ $("create-clear").onclick = () => {
   if (mode === "edit") {
     if (!routeCardContext()) return;
     openDialog(
-      `${dialogHeader("Clear the Edit route?", "Your imported tracks and Create route stay in place.")}<p>This clears the joined route and current Edit selection. You can undo this change.</p><div class="dialog-actions"><button class="button secondary" data-close>Keep route</button><button id="confirm-clear-edit" class="button primary">Clear route</button></div>`,
+      `${dialogHeader("Clear the Edit route?", "Your imported tracks and Create route stay in place.")}<p>This clears the joined route, Route Plan and current Edit selection. You can undo this change.</p><div class="dialog-actions"><button class="button secondary" data-close>Keep route</button><button id="confirm-clear-edit" class="button primary">Clear route</button></div>`,
     );
     $("confirm-clear-edit").onclick = () => {
       commit(() => {
         workspace.route = null;
+        workspace.routePlan = [];
+        workspace.confirmedPlan = [];
         workspace.activeId = null;
         workspace.selection = { start: 0, end: 0 };
         editWelcome = true;
@@ -1584,6 +1705,10 @@ $("create-share").onclick = async () => {
   };
 };
 $("create-terrain").onclick = () => {
+  if (mode === "edit") {
+    terrainDialog();
+    return;
+  }
   if (mode !== "create" || busy || draft().points.length < 2) return;
   openDialog(
     `${dialogHeader("Add terrain to your new route")}<p>Route coordinates are sent to Open Topo Data to sample heights about every 90 metres along each straight leg. Ascent is an estimate. This does not make the route follow paths.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-create-terrain" class="button primary">Fetch route terrain</button></div>`,
@@ -1651,34 +1776,6 @@ $("create-terrain").onclick = () => {
 };
 $("import").onclick = () => importFiles();
 $("empty-import").onclick = () => importFiles();
-function loadSampleTracks() {
-  const existing = workspace.tracks.filter(isDemoTrack);
-  if (existing.length) {
-    examplesVisible = true;
-    select(existing[0]);
-    return;
-  }
-  const tracks = demoTracks();
-  const loaded = commit(() => {
-    ensureTrackCapacity(
-      tracks.length,
-      tracks.reduce((n, t) => n + t.points.length, 0),
-    );
-    workspace.tracks.push(...tracks);
-    workspace.activeId = tracks[0].id;
-    workspace.selection = { start: 0, end: tracks[0].points.length - 1 };
-  });
-  if (loaded) {
-    examplesVisible = true;
-    editWelcome = false;
-    render();
-    fitMap();
-    notification(
-      "Illustrative sample tracks loaded. Import your own GPX files to plan a real walk.",
-    );
-  }
-}
-$("demo").onclick = loadSampleTracks;
 $("view-toggle").onclick = () => {
   showAll = !showAll;
   render();
@@ -1780,7 +1877,7 @@ $("settings").onclick = () => {
 };
 $("help").onclick = () =>
   openDialog(
-    `${dialogHeader("About", "BareGPS Route Planner · Create and Edit", true)}${aboutGuide}`,
+    `${dialogHeader("About", "BareGPS Route Planner · Create New and Edit Existing", true)}${aboutGuide}`,
     "about",
   );
 window.addEventListener("keydown", (e) => {

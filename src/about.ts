@@ -1,10 +1,10 @@
 export const aboutGuide = `
 <div id="about-guide" class="about-guide">
-  <p class="about-intro">Two ways to plan your walk: build a new route in <strong>Create</strong>, or shape existing GPX tracks in <strong>Edit</strong>.</p>
-  <nav class="about-navigation" aria-label="About guide sections"><a href="#about-create">Create</a><a href="#about-edit">Edit</a><a href="#about-settings">Settings</a></nav>
+  <p class="about-intro">Two ways to plan your walk: build a new route in <strong>Create New</strong>, or shape existing GPX tracks in <strong>Edit Existing</strong>.</p>
+  <nav class="about-navigation" aria-label="About guide sections"><a href="#about-create">Create New</a><a href="#about-edit">Edit Existing</a><a href="#about-settings">Settings</a></nav>
 
   <section id="about-create" class="about-stream" aria-labelledby="about-create-title">
-    <div class="about-stream-title"><span aria-hidden="true">01</span><h3 id="about-create-title">Create</h3><p>Build a route from map points</p></div>
+    <div class="about-stream-title"><span aria-hidden="true">01</span><h3 id="about-create-title">Create New</h3><p>Build a route from map points</p></div>
     <h4>Draw and shape</h4>
     <ol class="help-list">
       <li><strong>Add points.</strong> Tap the map to place your start and each next point. Every tap extends the route, even near an existing line.</li>
@@ -18,32 +18,41 @@ export const aboutGuide = `
     <p>With at least two points and no fetched terrain, expanding the card opens a confirmation. Choose Fetch route terrain to send the route coordinates to Open Topo Data and sample heights along the legs. Cancel leaves the expanded card usable without fetching. Fetch terrain is also available on the reduced card.</p>
     <p>Heights and ascent are estimates. Missing values are shown as a dash; zero in the metrics does not supply a missing height. Moving, inserting or removing points clears fetched terrain so it can be refreshed. Failed or cancelled fetches leave the route unchanged and expansion remains available.</p>
     <h4>Save or start again</h4>
-    <p>Name the route in its card and choose Created Route Colour in Settings. Save route exports GPX. Clear route asks before clearing the Create points; Undo can restore them. Your Edit tracks stay in place.</p>
+    <p>Name the route in its card and choose Created Route Colour in Settings. Save route exports GPX with the default filename Created Route.gpx. Clear route asks before clearing the Create points; Undo can restore them. Your Edit tracks stay in place.</p>
   </section>
 
   <section id="about-edit" class="about-stream" aria-labelledby="about-edit-title">
-    <div class="about-stream-title"><span aria-hidden="true">02</span><h3 id="about-edit-title">Edit</h3><p>Work with tracks and join sections</p></div>
+    <div class="about-stream-title"><span aria-hidden="true">02</span><h3 id="about-edit-title">Edit Existing</h3><p>Work with tracks and join sections</p></div>
     <h4>Open and select</h4>
     <ol class="help-list">
-      <li><strong>Open files.</strong> Import GPX tracks or routes from Files, including multiple tracks in one file. Choose a track in Your Tracks to work on it.</li>
-      <li><strong>Choose A–B.</strong> Drag the map handles or use the start/end sliders. The selection metrics and elevation profile update immediately. Select whole track restores the complete selection.</li>
+      <li><strong>Open files.</strong> Import GPX tracks or routes from Files, including multiple tracks in one file. Choose a track in Input Tracks to work on it.</li>
+      <li><strong>Choose A–B.</strong> Drag the map handles or use the start/end sliders. The selection metrics and elevation profile update immediately. The labels beside the bar show A/pt and B/pt with their current point numbers. Reselect the track in Input Tracks to restore its complete selection.</li>
       <li><strong>Shape a section.</strong> Save section exports A–B. Split creates two tracks sharing the split point. Reverse changes the whole selected track’s direction. Source GPX files are not overwritten automatically.</li>
     </ol>
-    <h4>Build a joined route</h4>
-    <p>Start joined route with section, then choose other tracks and Append section to route in walking order. Dashed lines mark straight walking connections between separated sections. Their distance counts; Fetch gap terrain adds sampled heights along those connections. Preview selects the joined route on the map.</p>
+    <h4>Build a Route Plan</h4>
+    <ol class="help-list">
+      <li><strong>Add a section.</strong> Choose A–B in an input track, then Add to Route Plan. This copies the selected section into the plan and opens its grid. Later input-track edits do not change that copy.</li>
+      <li><strong>Keep adding.</strong> Return to Input Tracks to choose more sections. Route Plan reopens the saved list.</li>
+      <li><strong>Set the order.</strong> Select a grid row, then Move up or Move down, or Remove it. Keyboard users can use Alt + Up/Down on a selected section. Long plans scroll while confirmation stays on screen.</li>
+      <li><strong>Confirm Route.</strong> Build the listed sections in walking order. Only then does the Edit Route Card populate. Later plan changes leave that confirmed route in place until you confirm again.</li>
+    </ol>
+    <p>The plan is saved on this device and uses Edit Undo/Redo. Dashed lines mark straight walking connections between separated sections; their distance counts. Preview selects the confirmed route on the map.</p>
+    <h4>Fetch connection heights</h4>
+    <p>Fetch Terrain is beside Clear route and Save route on the reduced Edit Route Card. It is enabled when the confirmed route has unsampled connections. The Fetch Terrain Heights confirmation starts the request. It fetches heights for those connections, not every recorded track point. Confirming a plan and expanding its card do not fetch terrain.</p>
     <h4>Read and share the Edit Route Card</h4>
-    <p>The card at the bottom initially shows the whole selected track. Choosing A–B changes it to that section. <strong>When a joined route exists, the card always shows the entire joined route</strong>, even while you select source sections to append.</p>
-    <p>The reduced card scrolls after six point rows. Expand it for cumulative distance and ascent, with Share Text and Share PDF fixed at the bottom. Both sharing options and the card’s Save button use all points in the displayed section or joined route, including points reached by scrolling.</p>
-    <p>Point numbers refer to the source track, or the new walking order of a joined route. Tap one to locate it on the Edit map. If point naming is enabled, names can be edited here and those edits use Edit’s Undo history. Point bins are available only in Create.</p>
+    <p>The Edit Route Card stays empty until you choose <strong>Confirm Route</strong> in Route Plan. Selecting input tracks or changing A–B updates the map, metrics and elevation profile, but does not populate the card. After confirmation, the card shows the entire confirmed route, even while you select further input sections. Pending plan changes do not replace it until you confirm again.</p>
+    <p>The reduced card scrolls after six point rows. Expand it for cumulative distance and ascent, with Share Text and Share PDF fixed at the bottom. Both sharing options and the card’s Save button use all points in the confirmed route, including points reached by scrolling.</p>
+    <p>Point numbers follow the confirmed route’s walking order. Tap one to locate it on the Edit map. If point naming is enabled, names can be edited here and those edits use Edit’s Undo history. Point bins are available only in Create New.</p>
+    <p>Save section in Edit Input Track exports A–B; Save route on the Route Card exports the entire confirmed route. Both use the default filename Edited Route.gpx.</p>
     <h4>Clear without losing your track library</h4>
-    <p>The card’s Clear route asks before clearing the joined route and current Edit selection. Imported tracks remain in Your Tracks and the Create draft is untouched. Undo restores the cleared route. The bin in Your Tracks removes a track from this workspace; its original file stays in Files.</p>
+    <p>The card’s Clear route asks before clearing the joined route, Route Plan and current Edit selection. Imported tracks remain in Input Tracks and the Create draft is untouched. Undo restores the cleared route. The bin in Input Tracks removes a track from this workspace; its original file stays in Files.</p>
   </section>
 
   <section id="about-settings" class="about-common">
     <h3>Settings</h3>
     <p>Open Settings using the cog beneath ?. Preferences are remembered on this device.</p>
     <h4>Created Route Colour</h4>
-    <p>Use the spectrum, a preset or a hex value, then Apply colour. This sets the Create route and its GPX export. Imported tracks have their own Line colour control in Edit, using the same picker. Colour changes preserve fetched terrain.</p>
+    <p>Use the spectrum, a preset or a hex value, then Apply colour. This sets the Create route and its GPX export. Imported tracks have their own Line colour control in Edit, using the same picker. Colour changes preserve fetched terrain. New imports without a saved colour start red, blue and pink for the first three tracks; new joined routes start green. Each track’s Line colour remains adjustable.</p>
     <h4>Allow Point Naming</h4>
     <p>This is off by default. Turn it on to show the Name column in both cards and edit names of up to 10 characters. Off hides Name and adds Distance to the reduced grid; it does not delete names already stored with points.</p>
     <h3>Grid references</h3>
@@ -53,9 +62,9 @@ export const aboutGuide = `
 
   <section class="about-common">
     <h3>Maps, terrain and location</h3>
-    <p>Lines connect points directly and do not automatically follow roads or paths. Check that the route follows walkable ground. The optional Irish samples are illustrative tracks, loaded only when requested.</p>
-    <p>Create and Edit keep separate maps. Fit frames the relevant tracks; Expand map gives more space while keeping the header and metrics visible. The crosshair requests your current position only when tapped, showing a dot and accuracy circle. It never adds a point or starts background tracking.</p>
-    <p>Map tiles and optional terrain requests need internet access. Terrain confirmations explain that coordinates are sent to Open Topo Data. Map outages do not prevent editing or export; Retry reloads the tiles. Missing elevations produce unavailable or partial ascent rather than invented heights.</p>
+    <p>Lines connect points directly and do not automatically follow roads or paths. Check that the route follows walkable ground.</p>
+    <p>Create New and Edit Existing keep separate maps and drafts. Switching screens does not transfer a drawing into Edit; save its GPX and open that file in Edit Existing when needed. Fit frames the relevant tracks; Expand map gives more space while keeping the header and metrics visible. The crosshair requests your current position only when tapped, showing a dot and accuracy circle. It never adds a point or starts background tracking.</p>
+    <p>Map tiles and optional terrain requests need internet access. Terrain requests send route or connection coordinates to Open Topo Data after you confirm. Map outages do not prevent editing or export; Retry reloads the tiles. Missing elevations produce unavailable or partial ascent rather than invented heights.</p>
     <h3>Files, saving and undo</h3>
     <p>Saved on device means automatic workspace recovery, not an exported GPX file. Export routes you want to keep before uninstalling the app or clearing its data. Native apps use the system Files picker; browsers use file access or downloads. Share PDF creates a landscape route card; if browser sharing is unavailable, the PDF downloads. Share Text offers a copyable preview where device sharing is unavailable.</p>
     <p>Create and Edit have separate Undo/Redo histories. Use ⌘/Ctrl + Z to undo and ⌘/Ctrl + Shift + Z to redo. Escape closes a dialog or collapses an expanded card or map. The workspace survives reopening; Undo history does not.</p>

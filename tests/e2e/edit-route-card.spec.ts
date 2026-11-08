@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
   });
   await page.route("**/*.tile.opentopomap.org/**", (r) => r.abort());
   await page.goto("/");
-  await page.getByRole("tab", { name: "Edit", exact: true }).click();
+  await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");
   await page
     .getByRole("button", { name: "Open GPX files", exact: true })
@@ -41,27 +41,28 @@ test.beforeEach(async ({ page }) => {
     .getByRole("button", { name: "Dismiss message", exact: true })
     .click();
 });
-test("Edit card follows A–B, shares and exports that section, and keeps Create separate", async ({
+test("Edit card stays empty during input editing and exports only the confirmed route", async ({
   page,
 }) => {
-  await expect(page.locator("#card-source-note")).toHaveText(
-    "Whole track · 8 points",
-  );
-  await expect(page.locator("#waypoint-rows tr")).toHaveCount(8);
+  await expect(page.locator("#waypoint-count")).toHaveText("0");
+  await expect(page.locator("#waypoint-rows [data-card-row]")).toHaveCount(0);
+  await expect(page.locator("#create-save")).toBeDisabled();
   await page
     .getByRole("slider", { name: "Section start point", exact: true })
     .fill("2");
   await page
     .getByRole("slider", { name: "Section end point", exact: true })
     .fill("5");
-  await expect(page.locator("#card-source-note")).toContainText("points 3–6");
+  await expect(page.locator("#point-count")).toHaveText("4 points");
+  await expect(page.locator("#waypoint-count")).toHaveText("0");
+  await expect(page.locator("#profile svg")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await expect(page.locator("#waypoint-count")).toHaveText("0");
+  await page.locator("#confirm-route-plan").click();
   await expect(page.locator("#waypoint-rows tr")).toHaveCount(4);
-  await expect(
-    page.getByRole("button", { name: "Show point 3 on map", exact: true }),
-  ).toBeVisible();
-  await expect(page.locator("#create-name")).toHaveValue(
-    "First track · points 3–6",
-  );
+  await expect(page.locator("#create-name")).toHaveValue("My joined route");
   const download = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Save Route Card as GPX", exact: true })
@@ -79,14 +80,14 @@ test("Edit card follows A–B, shares and exports that section, and keeps Create
   await expect(page.locator("#dialog")).not.toBeVisible();
   await page.getByRole("button", { name: "Share Text", exact: true }).click();
   await expect(page.locator("#routecard-text")).toContainText(
-    "First track · points 3–6",
+    "My joined route",
   );
-  await expect(page.locator("#routecard-text")).toContainText("Point 3");
+  await expect(page.locator("#routecard-text")).toContainText("Point 1");
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page
     .getByRole("button", { name: "Collapse Route Card", exact: true })
     .click();
-  await page.getByRole("tab", { name: "Create", exact: true }).click();
+  await page.getByRole("tab", { name: "Create New", exact: true }).click();
   await expect(page.locator("#waypoint-count")).toHaveText("0");
   await expect(page.locator("#create-name")).toHaveValue("My walking route");
 });
@@ -98,10 +99,11 @@ test("Joined route takes precedence and remains whole while source sections chan
     .fill("2");
   await page
     .getByRole("button", {
-      name: "Start joined route with section",
+      name: "Add to Route Plan",
       exact: true,
     })
     .click();
+  await page.locator("#confirm-route-plan").click();
   await expect(page.locator("#card-source-note")).toHaveText(
     "Whole joined route · 6 points",
   );
@@ -110,8 +112,9 @@ test("Joined route takes precedence and remains whole while source sections chan
     .first()
     .click();
   await page
-    .getByRole("button", { name: "Append section to route", exact: true })
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
     .click();
+  await page.locator("#confirm-route-plan").click();
   await expect(page.locator("#card-source-note")).toHaveText(
     "Whole joined route · 14 points",
   );
@@ -135,19 +138,23 @@ test("Joined route takes precedence and remains whole while source sections chan
   await page.locator("#create-pdf").click();
   expect((await pdf).suggestedFilename()).toMatch(/\.pdf$/);
 });
-test("Edit point names use Edit undo and focus the selected source point", async ({
+test("Confirmed-route point names use Edit undo and focus the selected route point", async ({
   page,
 }) => {
   await page
     .getByRole("slider", { name: "Section start point", exact: true })
     .fill("2");
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await page.locator("#confirm-route-plan").click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page
     .getByRole("switch", { name: "Allow Point Naming", exact: true })
     .click();
   await page.getByRole("button", { name: "Done", exact: true }).click();
   const name = page.getByRole("textbox", {
-    name: "Name for point 3 (optional)",
+    name: "Name for point 1 (optional)",
     exact: true,
   });
   await expect(name).toHaveValue("P3");
@@ -158,7 +165,7 @@ test("Edit point names use Edit undo and focus the selected source point", async
   await page.locator("#redo").click();
   await expect(name).toHaveValue("Gate");
   await page
-    .getByRole("button", { name: "Show point 3 on map", exact: true })
+    .getByRole("button", { name: "Show point 1 on map", exact: true })
     .click();
   await expect(page.locator("#edit-coordinates")).toContainText("53.002");
 });
@@ -176,6 +183,11 @@ test("large Edit cards scroll through all points without rendering the entire tr
     mimeType: "text/xml",
     buffer: Buffer.from(xml),
   });
+  await expect(page.locator("#waypoint-count")).toHaveText("0");
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await page.locator("#confirm-route-plan").click();
   await expect(page.locator("#waypoint-count")).toHaveText("2000");
   await page
     .getByRole("button", { name: "Dismiss message", exact: true })
@@ -216,30 +228,15 @@ test("Edit Clear and Save are equal; clearing is undoable and keeps imported tra
         y: button.getBoundingClientRect().y,
       })),
     );
-  expect(sizes).toHaveLength(2);
+  expect(sizes).toHaveLength(3);
   expect(Math.abs(sizes[0].width - sizes[1].width)).toBeLessThan(1);
   expect(sizes[0].y).toBe(sizes[1].y);
-  await page.locator("#create-clear").click();
-  await page.locator("#confirm-clear-edit").click();
-  await expect(page.locator("#waypoint-count")).toHaveText("0");
-  await expect(page.locator("#source-count")).toHaveText("2");
-  await page.locator("#undo").click();
-  await expect(page.locator("#waypoint-count")).toHaveText("8");
-  await expect(page.locator("#card-source-note")).toHaveText(
-    "Whole track · 8 points",
-  );
-  await page.locator("#redo").click();
-  await expect(page.locator("#waypoint-count")).toHaveText("0");
+  await expect(page.locator("#create-clear")).toBeDisabled();
+  await expect(page.locator("#create-save")).toBeDisabled();
   await page
-    .getByRole("button", { name: /First track/ })
-    .first()
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
     .click();
-  await page
-    .getByRole("button", {
-      name: "Start joined route with section",
-      exact: true,
-    })
-    .click();
+  await page.locator("#confirm-route-plan").click();
   await expect(page.locator("#card-source-note")).toContainText(
     "Whole joined route",
   );

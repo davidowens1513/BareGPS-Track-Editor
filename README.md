@@ -6,9 +6,9 @@ BareGPS Route Planner creates walking routes and edits GPX tracks on Android, iO
 
 [Browser Preview](https://appsbyonzy.dev/tools/baregps-route-planner/) · [Downloads and instructions](https://appsbyonzy.dev/#tools)
 
-## Create a route
+## Create New
 
-The app opens in **Create**, with an empty map at Carrauntoohil. Create retains its draft, map position and separate undo history.
+The app opens in **Create New**, with an empty map at Carrauntoohil. Create retains its draft, map position and separate undo history.
 
 - **Add points** extends the route with every map tap, even near an existing line. **Insert point** inserts between neighbours on the chosen line, then returns to Add points.
 - Drag numbered markers to reshape the route. **Close loop** joins precisely to the start and includes the return leg in the distance.
@@ -17,20 +17,18 @@ The app opens in **Create**, with an empty map at Carrauntoohil. Create retains 
 - Moving, adding or removing points clears terrain estimates. Fetch again after reshaping. Missing heights/ascent are marked unavailable; zero in the metrics does not supply a missing height.
 - Name the route in its card and choose **Created Route Colour** in Settings, then **Save route** exports GPX. **Clear route** asks before clearing Create points, with Undo available. Edit tracks remain in place.
 
-**Fetch terrain**, **Clear route** and **Save route** are equal-width controls on the reduced Create card only. Lines connect points directly and do not automatically follow roads or paths.
+**Fetch Terrain**, **Clear route** and **Save route** are equal-width controls on reduced Route Cards. Create New fetches heights along the drawing; Edit Existing fetches unsampled connections in the confirmed route. Lines connect points directly and do not automatically follow roads or paths.
 
-## Edit GPX tracks
+## Edit Existing
 
-**Edit** opens at Carrauntoohil with **Open GPX files** and optional **Explore with sample tracks**. Existing imported tracks and joined routes remain on the device; choose a track in **Your Tracks** to resume it. The compact list uses small route icons and closely spaced rows.
+**Edit Existing** opens at Carrauntoohil with **Open GPX files**. Existing imported tracks and joined routes remain on the device; choose a track in **Input Tracks** to resume it. The compact list uses small route icons and closely spaced rows.
 
 1. **Open files** imports GPX tracks or routes, including multiple tracks in one file. Phones can also open or share GPX files into the app from Files.
-2. Select a track, then drag **A** and **B** or use the sliders. Metrics, the elevation profile and the ordinary track’s Route Card follow the selected section. **Select whole track** restores the full selection.
+2. Select a track, then drag **A** and **B** or use the sliders. Metrics and the elevation profile follow the selected section; the Edit Route Card stays empty until a Route Plan is confirmed. The A/pt and B/pt labels sit beside the slider. Reselecting the track in **Input Tracks** restores the full selection.
 3. **Save section** exports A–B. **Split** creates two tracks sharing the split point, retaining the source track. **Reverse** reverses the whole selected track. These operations do not overwrite source GPX files automatically.
-4. **Start joined route with section** and **Append section to route** assemble sections in walking order. Dashed gaps are straight walking connections whose distance counts. **Fetch gap terrain** estimates heights along those connections. **Preview** selects the joined route on the map.
-5. The **Route Card** at the bottom starts with the whole selected track and follows A–B when chosen. **If a joined route exists, its entire route takes precedence**, even while selecting source sections to append. Its caption states which points are displayed. Point numbers locate the source point on the Edit map; optional names can be edited with Edit Undo/Redo.
-6. The reduced Edit card has equal-width **Clear route** and **Save section** / **Save route** controls. Clear asks before clearing the joined route and active Edit selection; imported tracks remain in Your Tracks and Create is untouched. Undo restores the cleared route. The bin in Your Tracks removes only that workspace track, not its source file.
-
-The Irish samples are optional illustrative tracks around Glendalough’s Upper Lake and the Spinc. They load only when requested. Opening Edit hides retained samples again; requesting them reuses them rather than adding duplicates.
+4. **Add to Route Plan** stores a copy of the current A–B section and opens the planning grid. **Keep adding** returns to the inputs; **Route Plan** reopens the saved list. Select rows and use **Move up**, **Move down** or **Remove** to arrange the sections. **Confirm Route** builds the route in that order and updates the Route Card; pending plan changes leave an existing confirmed route untouched. Plans survive reopening and use Edit Undo/Redo. Dashed gaps are straight walking connections whose distance counts. **Fetch Terrain** on Edit’s reduced Route Card estimates heights along those connections after the **Fetch Terrain Heights** confirmation. It is enabled only for a confirmed route with unsampled gaps. **Preview** selects the joined route on the map.
+5. The **Edit Route Card** stays empty until **Confirm Route** is selected in Route Plan. It then shows the entire confirmed route, even while selecting further input sections. Pending plan changes leave that confirmed card unchanged. Its caption states which points are displayed. Point numbers locate the source point on the Edit map; optional names can be edited with Edit Undo/Redo.
+6. The reduced Edit card has equal-width **Fetch Terrain**, **Clear route** and **Save route** controls. Clear asks before clearing the joined route, Route Plan and active Edit selection; imported tracks remain in Input Tracks and Create is untouched. Undo restores the cleared route. The bin in Input Tracks removes only that workspace track, not its source file.
 
 ## Route Cards and sharing
 
@@ -39,7 +37,7 @@ Create and Edit use the same card layout, grid-reference preference and optional
 - With naming off (the default), the reduced grid shows Point, the selected grid reference, Height and Distance. Create also has a point-bin column. With naming on, Name replaces reduced-view Distance; `[Name]` marks an empty name field. Newly entered names are limited to 10 characters. Existing names are retained when hidden, and names survive point changes, recovery and GPX round trips.
 - Expanded cards add Distance, Cumul Distance, Ascent and Cumul Ascent. Headers and units are centred, measurements are right-aligned, and Lat/Lon values are centred. Borders and separators distinguish cells clearly. Long coordinate values reduce their font size to fit one line without truncation or changing stored coordinates.
 - **Share Text** produces a message summary. Where browser sharing is unavailable, a copyable preview is offered. **Share PDF** produces a paginated landscape route card; browsers without file sharing download it.
-- Edit cards and their exports use the entire displayed section or joined route. Large tracks render a scrolling window of rows to remain responsive, while calculations and exports retain all points. Text and PDF point numbers preserve source numbering for A–B sections.
+- Edit cards and their exports use the entire confirmed route. Large tracks render a scrolling window of rows to remain responsive, while calculations and exports retain all points. Text and PDF point numbers follow the confirmed route’s walking order.
 
 ## Map, metrics and colour
 
@@ -50,6 +48,8 @@ Both maps use OpenTopoMap. The crosshair at the upper right requests one current
 Metrics show **Distance(km)**, **Ascent(m)** and **Descent(m)**, with labels and values centred in their columns. Empty ascent and descent display **0**. Where elevation is unavailable, the profile explains that heights are needed; displayed zero does not supply missing GPX heights. Terrain and partial-elevation totals are identified where applicable.
 
 The cog beneath **?** opens **Settings**, with **Grid references**, **Created Route Colour** and **Allow Point Naming** sections separated by visible rules. The created-route colour control uses the same spectrum, preset swatches, hex field and preview as the **Line colour** picker in Edit. **Apply colour** makes one undoable change and preserves fetched terrain. Settings stays open after applying a colour. Editing an imported track’s colour does not change the created route. The metrics panel contains only route metrics.
+
+The elevation profile reserves its populated size from the start, with a plain empty background and no upper-right placeholder text.
 
 The green BareGPS logo and title remain in the header. The **?** button opens the branded **About** guide, with separate Create and Edit streams, clear task subheadings and quick navigation. Common sections explain Settings, grid references, terrain, location, saving and Undo. **Allow Point Naming** defaults off and is remembered on the device; turning it off hides names without deleting them.
 
@@ -67,13 +67,15 @@ Dashed connections between separated sections count toward distance, ascent and 
 
 Distance uses great-circle calculations over every edge. Ascent sums positive elevation changes and descent sums negative changes. Recorded elevations are not smoothed, so noisy GPX heights can inflate ascent. Missing elevations remain missing in the data and produce partial totals where applicable.
 
-A connection initially uses its endpoint heights for estimated ascent. **Fetch gap terrain** samples heights at roughly 90-metre intervals using Open Topo Data's Mapzen dataset and recomputes the totals. This can reveal hills and valleys between imported tracks. Endpoint terrain heights replace the relevant GPX endpoint heights to give a continuous profile. Cancellation, timeouts, missing heights or service errors leave the route unchanged.
+A connection initially uses its endpoint heights for estimated ascent. **Fetch Terrain** on the reduced Edit Route Card samples heights at roughly 90-metre intervals using Open Topo Data's Mapzen dataset and recomputes the totals. This can reveal hills and valleys between imported tracks. Endpoint terrain heights replace the relevant GPX endpoint heights to give a continuous profile. Cancellation, timeouts, missing heights or service errors leave the route unchanged.
 
-Terrain dialogs explain that coordinates are sent to Open Topo Data. Requests are batched to 100 locations, spaced at least 1.1 seconds apart and bounded by timeouts. Import and export work offline; map tiles and optional terrain requests require internet. There is no offline tile pack, trail routing, account system or remote workspace sync.
+After confirmation, terrain requests send route or connection coordinates to Open Topo Data. Edit’s confirmation says **Fetch Terrain Heights**; expanding its card and confirming a plan do not fetch. Requests are batched to 100 locations, spaced at least 1.1 seconds apart and bounded by timeouts. Import and export work offline; map tiles and optional terrain requests require internet. There is no offline tile pack, trail routing, account system or remote workspace sync.
 
 GPX export forms a continuous track so other readers include connection distance. BareGPS extensions preserve dashed edges, terrain status and line colour on reimport. Readers that ignore these extensions display a continuous line. Recorded timestamps are preserved; generated terrain points have no fabricated timestamps.
 
 ## Files, saving and recovery
+
+Default GPX filenames are **Created Route.gpx** in Create New and **Edited Route.gpx** in Edit Existing, including section exports. The track’s name inside the GPX remains its chosen name. To use a drawing in Edit Existing, save it from Create New and open the GPX file there. The screens retain separate workspaces and Undo histories.
 
 Android uses the system document picker and Create Document save picker. iOS uses its document picker and Export to Files. Browser Preview uses browser file access or downloads. File actions can be cancelled without losing edits.
 
@@ -81,7 +83,7 @@ The **Saved** header status refers to automatic workspace recovery in IndexedDB 
 
 Invalid XML, unsupported entities, missing points, invalid coordinates/elevations and file-size limits produce errors. Valid files in a mixed batch can import while invalid files are identified individually. Save failures, cancelled pickers, unavailable storage, missing maps, service outages and unavailable location have explicit handling. Failed tile loading does not disable editing or export; Retry reloads tiles. Restored workspace data is validated before use.
 
-Limits include 15 MB per GPX file, 20 files / 30 MB per picker batch, 150,000 points per imported file or joined route, 100 workspace tracks and 450,000 total workspace points. Create supports up to 1,000 waypoints. Terrain sampling is limited to 5,000 new locations per operation and 135 km per unsampled connector.
+Limits include 15 MB per GPX file, 20 files / 30 MB per picker batch, 150,000 points per imported file or joined route, 100 workspace tracks and 600,000 total workspace points including staged Route Plan sections. Create supports up to 1,000 waypoints. Terrain sampling is limited to 5,000 new locations per operation and 135 km per unsampled connector.
 
 ## Run locally
 
@@ -147,6 +149,7 @@ The public platform bundles are v0.2.7 in `releases/bundles/0.2.7/`, linked from
 - `src/about.ts`: the structured Create/Edit About guide.
 - `src/model.ts`: GPX parsing/export, validation, track operations and analytics.
 - `src/create.ts`: route creation and waypoint operations.
+- `src/route-plan.ts`: staged section snapshots, ordering and explicit route assembly.
 - `src/map.ts`: map rendering, draggable markers, current-position layers and framing.
 - `src/coordinates.ts` and `src/location.ts`: coordinate formatting and one-shot location access.
 - `src/terrain.ts`: sampling and terrain lookup.

@@ -13,12 +13,12 @@ test("About distinguishes Create and Edit and navigation stays inside the guide"
   await expect(
     page
       .locator("#about-create")
-      .getByRole("heading", { name: "Create", exact: true }),
+      .getByRole("heading", { name: "Create New", exact: true }),
   ).toBeVisible();
   await expect(
     page
       .locator("#about-edit")
-      .getByRole("heading", { name: "Edit", exact: true }),
+      .getByRole("heading", { name: "Edit Existing", exact: true }),
   ).toBeVisible();
   await expect(
     page
@@ -28,9 +28,9 @@ test("About distinguishes Create and Edit and navigation stays inside the guide"
   await expect(
     page
       .locator("#about-edit")
-      .getByRole("heading", { name: "Build a joined route", exact: true }),
+      .getByRole("heading", { name: "Build a Route Plan", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Edit", exact: true }).click();
+  await page.getByRole("link", { name: "Edit Existing", exact: true }).click();
   const edit = await page.locator("#about-edit").boundingBox();
   const bounds = await dialog.boundingBox();
   expect(edit!.y).toBeGreaterThanOrEqual(bounds!.y);

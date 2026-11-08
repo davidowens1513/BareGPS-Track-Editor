@@ -86,3 +86,27 @@ The shared-screen change was reverted at the user's request. Separate Create/Edi
 58 unit tests, all 50 desktop/phone browser checks, TypeScript/build, formatting and whitespace checks passed. The new browser recovery check exercises an actual saved shared-screen workspace on both viewport sizes. Android and signed iPhone builds succeeded. Both Samsung Galaxy A07 and iPhone 14 received build 22 updates in place and launched successfully after reconnection/unlocking, without uninstalling or clearing data. Git and website remain on hold.
 
 Build 22 was subsequently committed and published at the user’s request. The preview assets and all five platform-download checksums match the release files, previous download paths remain available, and the live terrain proxy returned OK. Publication evidence is in docs/website/production-publication-0.2.7-build22.json.
+
+## Pending local Route Plan update — 8 November 2026
+
+Edit Input Track now has Add to Route Plan and Route Plan controls. Adding snapshots the current A–B section; the persisted planning grid supports row selection, Move up/Move down, removal and Alt+Up/Down. Only Confirm Route assembles the ordered sections and updates the confirmed Route Card. Pending edits preserve an existing confirmed route. Unchanged reconfirmation retains fetched gap terrain; rebuilding preserves the route name/colour. Edit Undo/Redo includes plan mutations. Legacy joined routes recover as confirmed plan entries, and staged sections survive removal of their input files from the workspace. Clear Edit route also clears the plan after confirmation.
+
+The same pending work includes the compact Input Tracks/section panels, track-coloured lighter A–B slider with side labels, stable elevation-profile footprint and plain empty background, and Created Route/Edited Route default GPX filenames. About/README reflect the planning workflow.
+
+65 unit tests and all 58 desktop/phone browser checks passed, along with TypeScript/build, formatting and whitespace checks. Browser coverage includes staging without rebuilding, ordering and confirmation, persistence, Undo, source-track removal, and long-plan scrolling with confirmation visible on a 320×568 screen. Route Plan layouts were reviewed at 320, 390 and 1280 pixels. This Route Plan update has not yet been installed or published.
+
+The pending Route Plan update was refined so Edit’s Route Card contains no input-track or A–B points before confirmation. Input selection still drives map analytics and elevation. Confirmation populates only the complete assembled route; clearing it returns the card to its empty state. All 58 desktop/phone browser checks passed against this behaviour, including confirmed-route sharing, point naming/Undo, and 2,000-point scrolling/export.
+
+The Route Plan update was then built as v0.2.7 build 28 and installed in place on Samsung Galaxy A07 and iPhone 14. Both apps launched successfully; existing data was preserved. Git and website publication remain unchanged.
+
+## Local build 29 — 8 November 2026
+
+Removed the sample-track loader and its generator; empty Edit now offers only GPX import, positioned lower in the map. Existing saved tracks are retained. Tabs are Create New and Edit Existing. The reduced Edit Route Card has Fetch Terrain beside Clear/Save, enabled for confirmed routes with unsampled gaps. Its confirmation says Fetch Terrain Heights; expansion and plan confirmation do not fetch. The expanded-card swipe hint is removed.
+
+64 unit tests and all 58 desktop/phone browser checks passed, along with TypeScript/native builds. Tests use imported GPX fixtures rather than the removed sample routine. The Edit terrain control also passed explicit cancellation, failure/retry and successful-fetch checks on desktop and phone. Build 29 installed in place and launched successfully on Samsung Galaxy A07 and iPhone 14, with existing data preserved. Git and website are unchanged.
+
+## Version 0.2.8 verification — 8 November 2026
+
+The release includes Create New/Edit Existing labels, compact Input Tracks and Edit Input Track panels, a track-coloured A–B slider with side point labels, a persisted and reorderable Route Plan, and confirmation-only population of Edit’s Route Card. Edit Fetch Terrain is on the reduced Route Card and uses Fetch Terrain Heights confirmation. The drawing and edited GPX default filenames are Created Route.gpx and Edited Route.gpx. The elevation profile has a stable footprint and plain empty background; the sample-track loader and expanded-card swipe hint are removed. README, About and both platform instruction files describe the final workflow. About now has matching mode names, numbered planning steps, separate connection-height guidance and correct save-file wording.
+
+64 unit tests and all 58 desktop/phone browser checks passed. TypeScript, formatting, whitespace and Android/signed iPhone builds passed. About was visually reviewed at 320, 390 and 1280 pixels. Both phones received v0.2.8 build 30 update installs in place; Samsung launched successfully. The iPhone launch result is recorded with the publication evidence. Existing data was retained.

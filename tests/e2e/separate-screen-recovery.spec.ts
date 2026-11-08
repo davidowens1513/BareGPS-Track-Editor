@@ -67,7 +67,7 @@ test("separate screens recover a shared-screen drawing, terrain, imported track 
   await expect(page.locator("#create-terrain")).toBeVisible();
   await expect(page.locator("#create-terrain")).toBeDisabled();
   await expect(page.locator("#ascent")).toContainText("40");
-  await page.getByRole("tab", { name: "Edit", exact: true }).click();
+  await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
   await expect(page.locator("#edit-map-view")).toBeVisible();
   await expect(page.locator("#create-map-view")).toBeHidden();
   await expect(page.locator("#source-count")).toHaveText("1");
@@ -78,7 +78,7 @@ test("separate screens recover a shared-screen drawing, terrain, imported track 
     .first()
     .click();
   await expect(page.locator("#point-count")).toHaveText("3 points");
-  await page.getByRole("tab", { name: "Create", exact: true }).click();
+  await page.getByRole("tab", { name: "Create New", exact: true }).click();
   await expect(page.locator("#create-name")).toHaveValue("Recovered drawing");
   await expect(page.locator("#waypoint-count")).toHaveText("5");
 });

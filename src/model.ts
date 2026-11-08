@@ -25,6 +25,8 @@ export interface Workspace {
   created?: Track;
   createdTerrain?: Track;
   tracks: Track[];
+  routePlan?: Track[];
+  confirmedPlan?: string[];
   route: Track | null;
   activeId: string | null;
   selection: Selection;
@@ -313,6 +315,14 @@ export function validateWorkspace(value: unknown): value is Workspace {
     (w.tool !== undefined && w.tool !== "create" && w.tool !== "edit") ||
     !Array.isArray(w.tracks) ||
     w.tracks.length > 100 ||
+    (w.routePlan !== undefined &&
+      (!Array.isArray(w.routePlan) || w.routePlan.length > 500)) ||
+    (w.confirmedPlan !== undefined &&
+      (!Array.isArray(w.confirmedPlan) ||
+        w.confirmedPlan.length > 500 ||
+        !w.confirmedPlan.every(
+          (id) => typeof id === "string" && /^[a-z0-9-]{1,64}$/i.test(id),
+        ))) ||
     !w.selection ||
     !Number.isInteger(w.selection.start) ||
     !Number.isInteger(w.selection.end)
@@ -321,6 +331,7 @@ export function validateWorkspace(value: unknown): value is Workspace {
   let total = 0;
   const all = [
     ...w.tracks,
+    ...(w.routePlan ?? []),
     ...(w.route ? [w.route] : []),
     ...(w.created ? [w.created] : []),
     ...(w.createdTerrain ? [w.createdTerrain] : []),
@@ -341,7 +352,7 @@ export function validateWorkspace(value: unknown): value is Workspace {
         t.points.length <= MAX_POINTS &&
         (t === w.created ||
           t === w.createdTerrain ||
-          (total += t.points.length) <= MAX_POINTS * 3) &&
+          (total += t.points.length) <= MAX_POINTS * 4) &&
         t.points.every(
           (p) =>
             p &&
@@ -356,6 +367,10 @@ export function validateWorkspace(value: unknown): value is Workspace {
             (p.terrain === undefined || typeof p.terrain === "boolean"),
         ),
     ) &&
+    (w.routePlan ?? []).reduce(
+      (count, track) => count + track.points.length,
+      0,
+    ) <= MAX_POINTS &&
     (w.activeId === null ||
       [
         ...w.tracks,
@@ -377,5 +392,17 @@ export function restoreSeparateWorkspace(saved: Workspace): Workspace {
     };
   }
   delete workspace.tool;
+  if (workspace.routePlan === undefined) {
+    workspace.routePlan = workspace.route
+      ? [
+          section(
+            workspace.route,
+            { start: 0, end: workspace.route.points.length - 1 },
+            workspace.route.name,
+          ),
+        ]
+      : [];
+    workspace.confirmedPlan = workspace.routePlan.map((track) => track.id);
+  }
   return workspace;
 }

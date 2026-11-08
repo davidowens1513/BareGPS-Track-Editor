@@ -63,9 +63,9 @@ export function decode(data: string): string {
     Uint8Array.from(atob(data), (c) => c.charCodeAt(0)),
   );
 }
-export async function saveTrack(track: Track) {
+export async function saveTrack(track: Track, filename = track.name) {
   const name =
-    (track.name
+    (filename
       .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
       .trim()
       .slice(0, 90) || "BareGPS track") + ".gpx";
