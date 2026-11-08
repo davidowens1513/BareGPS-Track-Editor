@@ -21,6 +21,7 @@ export interface Selection {
 }
 export interface Workspace {
   version: 1;
+  tool?: "create" | "edit";
   created?: Track;
   createdTerrain?: Track;
   tracks: Track[];
@@ -31,6 +32,9 @@ export interface Workspace {
 export const MAX_BYTES = 15 * 1024 * 1024;
 export const MAX_POINTS = 150000;
 export const COLORS = [
+  "#d32f2f",
+  "#2563eb",
+  "#ec4899",
   "#16724d",
   "#d78332",
   "#5b69b0",
@@ -179,7 +183,11 @@ const children = (el: Element, name: string) =>
   Array.from(el.children).filter((e) => e.localName === name);
 const childText = (el: Element, name: string) =>
   children(el, name)[0]?.textContent?.trim();
-export function parseGPX(xml: string, filename: string): Track[] {
+export function parseGPX(
+  xml: string,
+  filename: string,
+  colourOffset = 0,
+): Track[] {
   if (new TextEncoder().encode(xml).length > MAX_BYTES)
     throw new Error(
       "This file is over 15 MB. Export a smaller GPX file and try again.",
@@ -271,7 +279,7 @@ export function parseGPX(xml: string, filename: string): Track[] {
       color:
         color && /^#[0-9a-f]{6}$/i.test(color)
           ? color
-          : COLORS[index % COLORS.length],
+          : COLORS[(colourOffset + results.length) % COLORS.length],
       points,
       kind: "track",
     });
@@ -302,6 +310,7 @@ export function validateWorkspace(value: unknown): value is Workspace {
   const w = value as Workspace;
   if (
     w.version !== 1 ||
+    (w.tool !== undefined && w.tool !== "create" && w.tool !== "edit") ||
     !Array.isArray(w.tracks) ||
     w.tracks.length > 100 ||
     !w.selection ||
@@ -348,8 +357,25 @@ export function validateWorkspace(value: unknown): value is Workspace {
         ),
     ) &&
     (w.activeId === null ||
-      [...w.tracks, ...(w.route ? [w.route] : [])].some(
-        (t) => t.id === w.activeId,
-      ))
+      [
+        ...w.tracks,
+        ...(w.route ? [w.route] : []),
+        ...(w.created ? [w.created] : []),
+      ].some((t) => t.id === w.activeId))
   );
+}
+
+/** Retain all route data while migrating the shared-screen selection back to Edit. */
+export function restoreSeparateWorkspace(saved: Workspace): Workspace {
+  const workspace = structuredClone(saved);
+  if (workspace.created && workspace.activeId === workspace.created.id) {
+    const editTrack = workspace.route ?? workspace.tracks[0];
+    workspace.activeId = editTrack?.id ?? null;
+    workspace.selection = {
+      start: 0,
+      end: Math.max(0, (editTrack?.points.length ?? 1) - 1),
+    };
+  }
+  delete workspace.tool;
+  return workspace;
 }

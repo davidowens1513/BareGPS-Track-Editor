@@ -43,6 +43,8 @@ Create and Edit use the same card layout, grid-reference preference and optional
 
 ## Map, metrics and colour
 
+New imports without a saved colour default to red, blue and pink for the first three tracks across files/batches. New joined routes default to green. Saved and individually chosen colours are preserved.
+
 Both maps use OpenTopoMap. The crosshair at the upper right requests one current-position fix and shows a blue dot and accuracy circle. It never adds a waypoint or starts background tracking. Location access is requested only after tapping the button; approximate Android permission is supported. Zoom controls sit at the lower left above the scale. The smaller map-centre readout is right-aligned immediately above the attribution.
 
 Metrics show **Distance(km)**, **Ascent(m)** and **Descent(m)**, with labels and values centred in their columns. Empty ascent and descent display **0**. Where elevation is unavailable, the profile explains that heights are needed; displayed zero does not supply missing GPX heights. Terrain and partial-elevation totals are identified where applicable.

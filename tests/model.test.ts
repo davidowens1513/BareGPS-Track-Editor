@@ -10,6 +10,7 @@ import {
   section,
   split,
   validateWorkspace,
+  restoreSeparateWorkspace,
   type Track,
 } from "../src/model";
 import { sampleGaps, enrichTerrain } from "../src/terrain";
@@ -48,6 +49,8 @@ describe("track editing and walking totals", () => {
     const first = join(null, t, { start: 1, end: 3 });
     const joined = join(first, next, { start: 0, end: 1 });
     const a = analytics(joined.points);
+    expect(first.color).toBe("#16724d");
+    expect(joined.color).toBe("#16724d");
     expect(joined.points[3].gapBefore).toBe(true);
     expect(a.length).toBeCloseTo(distance(t.points[1], next.points[1]), 3);
     expect(a.ascent).toBe(90);
@@ -114,6 +117,21 @@ describe("track editing and walking totals", () => {
   });
 });
 describe("GPX integrity and input errors", () => {
+  it("defaults imported tracks to red, blue and pink across files and batches", () => {
+    const body =
+      '<trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="1"/></trkseg></trk>';
+    const first = parseGPX(gpx(body), "first.gpx");
+    const next = parseGPX(gpx(body + body), "next.gpx", first.length);
+    expect([...first, ...next].map((track) => track.color)).toEqual([
+      "#d32f2f",
+      "#2563eb",
+      "#ec4899",
+    ]);
+    const coloured = track();
+    expect(parseGPX(exportGPX(coloured), "saved.gpx", 2)[0].color).toBe(
+      coloured.color,
+    );
+  });
   it("round-trips names, colour, elevations, times and dashed connections", () => {
     const t = track();
     t.points[2].gapBefore = true;
@@ -272,4 +290,38 @@ it("provides two illustrative Irish tracks with useful distance and ascent", () 
     expect(analytics(track.points).length).toBeGreaterThan(1000);
     expect(analytics(track.points).ascent).toBeGreaterThan(20);
   }
+});
+
+it("recovers shared-screen work into separate screens without losing routes or terrain", () => {
+  const imported = track();
+  const created = { ...track(), id: "drawing", kind: "route" as const };
+  const joined = { ...track(), id: "joined", kind: "route" as const };
+  const saved = {
+    ...emptyWorkspace(),
+    tool: "edit" as const,
+    tracks: [imported],
+    created,
+    createdTerrain: { ...created, id: "terrain" },
+    route: joined,
+    activeId: created.id,
+    selection: { start: 1, end: 3 },
+  };
+  expect(validateWorkspace(saved)).toBe(true);
+  const restored = restoreSeparateWorkspace(saved);
+  expect(restored.created).toEqual(saved.created);
+  expect(restored.createdTerrain).toEqual(saved.createdTerrain);
+  expect(restored.tracks).toEqual(saved.tracks);
+  expect(restored.route).toEqual(saved.route);
+  expect(restored.activeId).toBe(joined.id);
+  expect(restored.selection).toEqual({ start: 0, end: 4 });
+  expect(restored.tool).toBeUndefined();
+  expect(saved.activeId).toBe(created.id);
+  expect(validateWorkspace(restored)).toBe(true);
+  const drawingOnly = restoreSeparateWorkspace({
+    ...saved,
+    tracks: [],
+    route: null,
+  });
+  expect(drawingOnly.activeId).toBeNull();
+  expect(drawingOnly.created).toEqual(created);
 });

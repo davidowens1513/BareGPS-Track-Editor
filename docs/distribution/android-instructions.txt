@@ -1,5 +1,5 @@
 BAREGPS ROUTE PLANNER — ANDROID
-Version 0.2.7 | 8 November 2026
+Version 0.2.7 build 22 | 8 November 2026
 
 INSTALL OR UPDATE
 
@@ -98,3 +98,9 @@ Project: https://github.com/davidowens1513/BareGPS-Track-Editor
 Website and downloads: https://appsbyonzy.dev/#tools
 Browser preview: https://appsbyonzy.dev/tools/baregps-route-planner/
 Contact: appsbyonzy@gmail.com
+
+TRACK COLOUR DEFAULTS
+
+New imports without a saved colour use red, blue and pink for the first three
+tracks across files and batches. A new joined route starts green. Saved and
+individually chosen colours are preserved. Create and Edit use separate screens.

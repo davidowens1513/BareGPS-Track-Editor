@@ -15,6 +15,7 @@ import {
   selectedPoints,
   split,
   validateWorkspace,
+  restoreSeparateWorkspace,
   type Point,
   type Track,
   type Workspace,
@@ -733,7 +734,12 @@ async function importFiles(files?: ImportFile[]) {
       errors: string[] = [];
     for (const file of incoming) {
       try {
-        const parsed = parseGPX(file.text, file.name);
+        const parsed = parseGPX(
+          file.text,
+          file.name,
+          workspace.tracks.filter((track) => !isDemoTrack(track)).length +
+            tracks.length,
+        );
         ensureTrackCapacity(
           tracks.length + parsed.length,
           tracks.reduce((n, t) => n + t.points.length, 0) +
@@ -1834,7 +1840,7 @@ async function init() {
     const saved = await get(STORAGE_KEY);
     if (saved) {
       if (validateWorkspace(saved)) {
-        workspace = saved;
+        workspace = restoreSeparateWorkspace(saved);
         const t = active();
         if (t)
           workspace.selection = {
