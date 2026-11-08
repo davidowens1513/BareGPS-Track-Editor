@@ -12,6 +12,7 @@ export function routecardPDF(
   route: Track,
   system: CoordinateSystem,
   terrain?: Track,
+  pointOffset = 0,
 ): Blob {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const km = (n: number) => (n / 1000).toFixed(2);
@@ -43,7 +44,7 @@ export function routecardPDF(
       ],
     ],
     body: routecardRows(route, terrain).map((r, i) => [
-      String(i + 1),
+      String(i + 1 + pointOffset),
       r.point.name || "",
       formatCoordinate(r.point, system),
       height(r.point.ele),
@@ -56,8 +57,8 @@ export function routecardPDF(
       fontSize: 9,
       cellPadding: 3,
       overflow: "linebreak",
-      lineWidth: 0.15,
-      lineColor: [210, 220, 205],
+      lineWidth: 0.2,
+      lineColor: [143, 162, 130],
       halign: "left",
     },
     headStyles: { fillColor: [22, 103, 71], halign: "center" },

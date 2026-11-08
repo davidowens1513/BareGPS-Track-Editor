@@ -8,7 +8,9 @@
   --brand-green: #34c759;
   --dark: #253f33;
   --muted: #7b857a;
-  --border: #e4e8df;
+  --border: #b8c6ae;
+  --divider: #9eaf92;
+  --grid-line: #8fa282;
   --paper: #fff;
   --header-height: 77px;
   --analytics-height: 98px;
@@ -139,7 +141,7 @@ button svg {
 }
 .button.secondary {
   background: #fff;
-  border-color: #dce3d8;
+  border-color: var(--border);
   color: #3f5b47;
 }
 .button.secondary:hover:not(:disabled) {
@@ -238,7 +240,7 @@ h3 {
   height: 30px;
 }
 .map-panel {
-  border: 1px solid #dce2d7;
+  border: 1px solid var(--border);
   border-radius: 13px;
   overflow: hidden;
   position: relative;
@@ -253,7 +255,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e0e6db;
+  border-bottom: 1px solid var(--border);
   position: relative;
   z-index: 450;
 }
@@ -284,7 +286,7 @@ h3 {
 .toolbar-divider {
   width: 1px;
   height: 17px;
-  background: #e4e8df;
+  background: var(--divider);
   margin: 0 6px;
 }
 #map {
@@ -466,7 +468,7 @@ h3 {
   min-width: 0;
   text-align: center;
   padding: 0 23px;
-  border-right: 1px solid #e9ece5;
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -574,8 +576,8 @@ h3 {
     0deg,
     transparent,
     transparent 24px,
-    #f2f4ee 24px,
-    #f2f4ee 25px
+    #d3ddca 24px,
+    #d3ddca 25px
   );
   border-radius: 4px;
 }
@@ -583,7 +585,7 @@ h3 {
   font-size: 10px;
   line-height: 1.6;
   color: #8b7748;
-  border-top: 1px solid #efeee5;
+  border-top: 1px solid var(--border);
   margin-top: 10px;
   padding-top: 9px;
 }
@@ -604,7 +606,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   padding: 0 22px;
-  border-bottom: 1px solid #e9ece5;
+  border-bottom: 1px solid var(--border);
 }
 .card-heading h2 {
   display: flex;
@@ -613,7 +615,7 @@ h3 {
 }
 .badge {
   background: #edf2e8;
-  border: 1px solid #e5ebdf;
+  border: 1px solid var(--border);
   color: #7a8d6b;
   min-width: 21px;
   height: 21px;
@@ -630,7 +632,7 @@ h3 {
   font-size: 9px;
   letter-spacing: 2px;
   background: #f5f7f1;
-  border-color: #edf0e7;
+  border-color: var(--border);
 }
 .track-list {
   padding: 4px 8px;
@@ -648,7 +650,7 @@ h3 {
 }
 .track-row.active {
   background: #eff5e9;
-  border-color: #dce8ce;
+  border-color: var(--border);
 }
 .track-row:not(.active):hover {
   background: #f7f8f4;
@@ -720,7 +722,7 @@ h3 {
   gap: 7px;
   color: #97a18e;
   padding: 14px 20px;
-  border-top: 1px solid #edf0e8;
+  border-top: 1px solid var(--border);
 }
 .tracks-empty {
   display: flex;
@@ -1042,7 +1044,7 @@ footer > span:first-child {
   max-width: min(700px, calc(100vw - 30px));
   padding: 10px 12px 10px 17px;
   background: #fff;
-  border: 1px solid #d9e4cf;
+  border: 1px solid var(--border);
   box-shadow: 0 5px 30px #1e3f2720;
   border-radius: 11px;
   display: flex;
@@ -1066,7 +1068,7 @@ footer > span:first-child {
 }
 dialog {
   color: var(--dark);
-  border: 1px solid #dce4d3;
+  border: 1px solid var(--border);
   padding: 28px;
   max-width: min(490px, calc(100vw - 30px));
   width: 490px;
@@ -1116,7 +1118,7 @@ dialog p {
   color: #7d8d71;
 }
 .text-input {
-  border: 1px solid #d8e1ce;
+  border: 1px solid var(--border);
   background: #fafbf7;
   border-radius: 7px;
   padding: 12px;
@@ -1131,7 +1133,7 @@ dialog p {
 .split-summary {
   display: flex;
   background: #f1f5eb;
-  border: 1px solid #e4eadd;
+  border: 1px solid var(--border);
   border-radius: 8px;
 }
 .split-summary > span {
@@ -1826,7 +1828,7 @@ dialog p {
 .waypoint-table th,
 .waypoint-table td {
   padding: 10px 16px;
-  border-bottom: 1px solid #edf0e8;
+  border-bottom: 1px solid var(--border);
 }
 .waypoint-table thead {
   background: #f5f8f0;
@@ -2045,7 +2047,7 @@ dialog p {
 .map-empty .text-button {
   margin-top: 0;
   background: #fffffff2;
-  border: 1px solid #dce4d3;
+  border: 1px solid var(--border);
   border-radius: 7px;
   padding: 6px 12px;
 }
@@ -2574,5 +2576,428 @@ body:not(.card-expanded) #create-card .point-name {
   }
   #create-card col.compact-delete {
     width: 28px;
+  }
+}
+
+/* Dense rows in both card views; keep placeholder typography independent. */
+body:not(.card-expanded) #create-card .waypoint-table th,
+body:not(.card-expanded) #create-card .waypoint-table td,
+.card-expanded #create-card .waypoint-table th,
+.card-expanded #create-card .waypoint-table td {
+  padding-block: 2px;
+}
+body:not(.card-expanded) #create-card .point-name,
+.card-expanded #create-card .point-name {
+  padding-block: 2px;
+}
+#create-card .compact-delete .icon-button {
+  height: 24px;
+}
+.creating #profile .profile-empty,
+.creating #create-card .waypoint-table td.waypoint-empty,
+.creating #create-card .point-name::placeholder {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.45;
+  color: #819273;
+  text-align: center;
+  opacity: 1;
+}
+.creating #create-card .point-name::placeholder {
+  text-align: left;
+}
+.card-expanded #create-card .create-buttons {
+  display: none;
+}
+.system-picker-prompt {
+  margin: 0 0 8px;
+}
+.system-picker-label {
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.system-picker {
+  width: 230px;
+  max-width: 100%;
+  padding: 6px 8px;
+  font-size: 10.5px;
+}
+.system-picker option {
+  font-size: 10.5px;
+}
+.settings-grid-section {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-expanded .notice {
+  bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+#create-card .waypoint-scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+body:not(.card-expanded) #create-card .waypoint-scroll {
+  max-height: var(--compact-card-height, 350px);
+}
+.card-expanded #create-card {
+  max-height: calc(100dvh - var(--header-height) - env(safe-area-inset-top));
+  overflow: hidden;
+}
+.card-expanded #create-card > .create-settings,
+.card-expanded #create-card > .card-scroll-hint {
+  flex-shrink: 0;
+}
+.card-expanded #create-card .waypoint-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+}
+.card-expanded #create-card .card-share-actions {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-top: 0;
+  padding: 10px 16px 8px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+}
+
+/* Optional point naming: Distance occupies the reduced card's spare column. */
+body:not(.point-naming) #create-card .name-col,
+body:not(.point-naming) #create-card .point-name-cell {
+  display: none;
+}
+body:not(.point-naming) #create-card col.distance-col {
+  display: table-column;
+}
+body:not(.point-naming) #create-card th.distance-cell,
+body:not(.point-naming) #create-card td.distance-cell {
+  display: table-cell;
+}
+body:not(.point-naming):not(.card-expanded) #create-card col.distance-col {
+  width: 60px;
+}
+body:not(.point-naming):not(.card-expanded) #create-card .waypoint-table {
+  width: calc(203.625px + 14ch);
+}
+.card-expanded #create-card .waypoint-table {
+  margin-inline: auto;
+}
+body.card-expanded:not(.point-naming) #create-card .waypoint-table {
+  width: calc(201.65px + 10ch + max(41.625px, calc(74px - 5ch)));
+}
+#create-card .waypoint-table td.numeric-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+#create-card .waypoint-table tbody td.compact-delete {
+  text-align: center;
+}
+.settings-point-naming {
+  margin: 18px 0 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.settings-toggle-row h3 {
+  margin: 0;
+}
+.settings-point-naming p {
+  margin: 8px 0 0;
+}
+.settings-switch {
+  width: 44px;
+  height: 26px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid #b9c9ac;
+  border-radius: 20px;
+  background: #dce4d3;
+  cursor: pointer;
+}
+.settings-switch span {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px #17321f33;
+  transition: transform 120ms ease;
+}
+.settings-switch[aria-checked="true"] {
+  background: var(--green);
+  border-color: var(--green);
+}
+.settings-switch[aria-checked="true"] span {
+  transform: translateX(18px);
+}
+.settings-switch:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-switch span {
+    transition: none;
+  }
+}
+@media (max-width: 350px) {
+  body:not(.point-naming):not(.card-expanded) #create-card .waypoint-table {
+    width: 100%;
+  }
+  body:not(.point-naming):not(.card-expanded) #create-card col.distance-col {
+    width: 54px;
+  }
+}
+
+#create-card.latlon-coordinates .waypoint-table .grid-reference {
+  text-align: center;
+}
+
+.card-source-note {
+  margin: 8px 22px 10px;
+  font-size: 11px;
+  color: #637b58;
+}
+.card-expanded #create-card > .card-source-note {
+  flex-shrink: 0;
+}
+body:not(.creating) #create-card .compact-delete,
+body:not(.creating) #create-terrain {
+  display: none;
+}
+body:not(.creating):not(.card-expanded) #create-card .waypoint-table {
+  width: calc(209.25px + 14ch);
+}
+body:not(.creating):not(.point-naming):not(.card-expanded)
+  #create-card
+  .waypoint-table {
+  width: calc(173.625px + 14ch);
+}
+body:not(.creating) #create-card .waypoint-table td.waypoint-empty {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  color: #819273;
+  text-align: center;
+}
+@media (max-width: 350px) {
+  body:not(.creating):not(.card-expanded) #create-card .waypoint-table {
+    width: 100%;
+  }
+  body:not(.creating):not(.point-naming):not(.card-expanded)
+    #create-card
+    .waypoint-table {
+    width: 100%;
+  }
+}
+
+/* Compact Edit track list. */
+.track-list {
+  padding: 2px 6px;
+}
+.track-row {
+  margin-bottom: 1px;
+  padding-right: 3px;
+}
+.track-select {
+  min-height: 32px;
+  gap: 7px;
+  padding: 2px 6px;
+}
+.track-symbol {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
+.track-symbol svg {
+  width: 14px;
+  height: 14px;
+}
+.track-text {
+  gap: 2px;
+}
+.track-text strong {
+  line-height: 1.2;
+}
+.track-text small {
+  line-height: 1.2;
+}
+
+#create-card .waypoint-table .card-spacer td {
+  padding: 0 !important;
+  border: 0 !important;
+  font-size: 0;
+  line-height: 0;
+}
+#create-card .virtual-card-table tbody tr[data-card-row] {
+  height: var(--virtual-row-height, auto);
+}
+
+#create-card .coordinate-value {
+  display: inline-block;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  max-width: none;
+  vertical-align: middle;
+}
+
+/* Clear, consistent boundaries for cards, grids and settings. */
+.card-heading {
+  border-bottom: 2px solid var(--divider);
+}
+.metric {
+  border-right-color: var(--divider);
+}
+.toolbar-divider {
+  width: 2px;
+  background: var(--divider);
+}
+.card-footnote,
+.elevation-note {
+  border-color: var(--divider);
+}
+.track-row:not(.active) {
+  border-bottom-color: var(--divider);
+}
+#create-card .waypoint-table th,
+#create-card .waypoint-table td {
+  border-color: var(--grid-line);
+}
+#create-card .waypoint-table thead th {
+  background: #edf3e8;
+  border-bottom: 2px solid var(--divider);
+}
+.settings-grid-section {
+  border-bottom: 2px solid var(--divider);
+}
+.settings-point-naming {
+  border-top: 2px solid var(--divider);
+}
+.card-expanded #create-card .card-share-actions {
+  border-top: 2px solid var(--divider);
+}
+.about-dialog {
+  width: 620px;
+  max-width: min(620px, calc(100vw - 30px));
+}
+.about-guide {
+  color: var(--dark);
+}
+.about-guide .about-intro {
+  color: #526747;
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+.about-navigation {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 20px;
+}
+.about-navigation a {
+  flex: 1;
+  padding: 8px 10px;
+  text-align: center;
+  color: #146644;
+  background: #f1f6ed;
+  border: 1px solid var(--divider);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.about-navigation a:hover {
+  background: #e4efdc;
+}
+.about-navigation a:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.about-stream {
+  padding: 0 0 20px;
+  margin: 0 0 22px;
+  border-bottom: 2px solid var(--divider);
+  scroll-margin-top: 12px;
+}
+.about-stream-title {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  column-gap: 10px;
+  align-items: center;
+  background: #edf3e8;
+  border: 1px solid var(--divider);
+  border-left: 4px solid var(--green);
+  border-radius: 7px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.about-stream-title > span {
+  grid-row: 1 / 3;
+  color: var(--green);
+  font-size: 16px;
+  font-weight: 700;
+}
+.about-stream-title h3 {
+  margin: 0;
+  color: var(--green);
+  font-size: 18px;
+}
+.about-stream-title p {
+  margin: 2px 0 0;
+  color: #526747;
+  font-size: 11px;
+}
+.about-guide h4 {
+  margin: 16px 0 6px;
+  color: #304e28;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.about-guide p,
+.about-guide .help-list {
+  color: #526747;
+  font-size: 12px;
+  line-height: 1.75;
+}
+.about-guide p {
+  margin: 0 0 10px;
+}
+.about-guide .help-list {
+  margin: 0 0 12px;
+}
+.about-guide .help-list li {
+  margin-bottom: 8px;
+}
+.about-common {
+  margin: 0 0 22px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--divider);
+  scroll-margin-top: 12px;
+}
+.about-common h3 {
+  color: var(--green);
+  font-size: 16px;
+  margin: 18px 0 8px;
+}
+.about-guide .about-detail {
+  color: #637359;
+  font-size: 11px;
+}
+@media (max-width: 640px) {
+  .about-stream-title {
+    padding: 10px;
+  }
+  .about-navigation a {
+    padding: 8px 5px;
   }
 }

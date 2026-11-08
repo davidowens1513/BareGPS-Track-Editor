@@ -1,125 +1,102 @@
-BAREGPS ROUTE PLANNER - iOS BUNDLE
-GPX Creator and Editor
-Version 0.2.6 | 8 November 2026
+BAREGPS ROUTE PLANNER — iOS
+Version 0.2.7 | 8 November 2026
 
-Will be available through App Store
+XCODE SOURCE BUNDLE
 
-1. WHAT THIS DOWNLOAD IS
+This is source plus prebuilt web assets for Xcode. It is not a publicly signed
+IPA or an App Store download. Will be available through App Store.
 
-This bundle contains the iOS Xcode project, shared app source and prebuilt
-web assets. It is a source bundle for building the app with Xcode, not an
-App Store download or an IPA that installs directly from a browser.
-No Apple certificate, private key or device provisioning profile is included.
+Extract the ZIP. Install Node.js 22 or newer and run npm ci in the extracted
+project before opening ios/App/App.xcodeproj. This installs the JavaScript and
+local Capacitor geolocation dependencies used by the bundled Swift package.
+The bundle already contains the current web assets. To change src/ or public/,
+run npm run native:sync after editing, then build with Xcode.
 
-2. BUILD AND INSTALL WITH XCODE
+Choose the App scheme, your device and your own Apple development team, then
+Product > Run. Normal Apple signing/provisioning requirements apply. No signing
+identity, private key or provisioning profile is included. The project supports
+iOS 16.4 or newer. Use the existing app identifier for an update when appropriate.
+Export important GPX files before uninstalling or clearing data.
 
-Use a Mac with a current Xcode and its iOS SDK. The app supports iOS 16.4
-or later. Unzip the bundle.
-Before opening Xcode, install Node.js 22 or newer and run npm ci from the
-extracted bundle root. This supplies the geolocation plugin used by the local
-Swift package. Allow Xcode to resolve its pinned Swift dependencies.
-Open ios/App/App.xcodeproj. Choose the App scheme and your connected iPhone
-or iPad.
+USING BAREGPS ROUTE PLANNER
 
-In the App target's Signing & Capabilities panel, choose your own Apple
-Development Team and enable automatic signing. Adjust the bundle identifier
-if required by your development account. On the device, complete Apple's
-normal Trust and Developer Mode steps if Xcode asks for them.
+CREATE
 
-Choose Product > Run. Xcode signs and installs the app on your device.
-Your Apple account and provisioning rules determine where that development
-build can run and for how long it remains valid.
+Tap Add points to draw in walking order. Insert point adds between neighbours
+on a chosen line and returns to Add points. Drag markers to reshape the route.
+Close loop joins back to the start. Lines are straight and do not follow paths
+automatically; check they follow walkable ground.
 
-3. EDITING AND REBUILDING THE SHARED APP
+The reduced Route Card shows six point rows before scrolling. Point numbers
+locate points on the map; bins remove individual Create points. Expanded cards
+add per-leg and cumulative distance and ascent, with text/PDF sharing fixed
+at the bottom. Long coordinates fit on one line by reducing their text size.
 
-The bundle includes prebuilt web assets. npm ci is still required to supply
-the native geolocation plugin before building the Xcode project. To change src/ or public/, install Node.js 22 or newer,
-then run these commands from the extracted bundle root:
+Fetch terrain asks before sending coordinates to Open Topo Data. Expanding a
+Create card with at least two points and no fetched terrain opens the same
+confirmation. Cancel leaves the card usable. Moving/adding/removing points
+clears estimates so they can be fetched again. Missing heights are unavailable.
 
-  npm ci
-  npm run build
-  npx cap sync ios
+Name the route, choose Created Route Colour in Settings, then Save route.
+Fetch terrain, Clear route and Save route appear only on the reduced card.
+Clear asks before clearing Create points; Undo restores them. Edit stays intact.
 
-Rebuild the App scheme in Xcode afterwards. The full project, including the
-Android version and automated tests, is linked below.
+EDIT
 
-4. USING THE APP
+Open GPX tracks/routes from Files, including multiple tracks in one file.
+Choose a track in Your Tracks. Select A-B using map handles or sliders.
+Save section exports A-B; Split creates two tracks sharing the split point;
+Reverse changes the whole selected track's direction. Source files are not
+overwritten automatically.
 
-Choose Edit and tap Explore with sample tracks on the welcome screen to try the illustrative
-Glendalough Upper Lake and Spinc ridge tracks from County Wicklow.
-Tap Open files to select one or more GPX files from Files.
-Drag the A and B handles on the map, or use the sliders, to choose a section.
-Split or reverse it, or add selected sections to a joined walking route.
-Distance, ascent, descent and the elevation profile update as you edit.
+Start joined route with section, then Append section to route in walking
+order. Dashed gaps count as walking distance; Fetch gap terrain samples heights
+along those connections. Preview selects the joined route on the map.
 
-Dashed connections count toward distance and ascent. Connection ascent is
-estimated from endpoint heights until you fetch intermediate terrain.
-The map and optional terrain requests require internet; file operations do not.
+The Edit Route Card starts with the whole track, then follows A-B. If a joined
+route exists, the card shows that entire route even while choosing other source
+sections. The caption identifies the displayed points. Scroll to access all
+points; all of them are included in exports, even on large tracks.
 
-5. CREATE A NEW WALKING ROUTE
+The reduced Edit card has equal Clear and Save controls. Clear asks before
+removing the joined route and active selection; imported tracks remain in Your
+Tracks and Create is untouched. Undo restores the cleared route. The track-list
+bin removes a workspace track without deleting its original file.
 
-Create opens by default, on the left tab. Add points below the map is the default: every map tap extends
-the route, even near an existing line. To insert between existing points,
-choose Insert point and tap the chosen line. The app then returns to Add points.
-Drag numbered markers to reshape the route. Close loop connects precisely
-back to the start. The grid lists points in walking order, coordinates,
-leg distances, total distance and available heights. Remove points or undo
-changes as needed. Create preserves its draft and map position. Opening Edit
-resets to Carrauntoohil, hides the examples and shows the file/sample actions.
-Imported tracks remain saved in Your tracks; select one to resume editing.
+SETTINGS, NAMING AND COORDINATES
 
-Lines connect points directly and do not automatically follow paths.
-Fetch terrain to estimate ascent and descent along the whole route.
-Changing route points clears these estimates so you can fetch fresh heights.
-Name the route and choose Created Route Colour in Settings; Save route exports GPX.
+Use the cog beneath ? for Grid references, Created Route Colour and Allow Point
+Naming. Naming is off by default and remembered on this device. Off hides Name
+and shows Distance on the reduced card. On shows editable names in both cards;
+[Name] marks an empty name field. Newly entered names have a 10-character limit.
+Turning naming off does not delete existing names. Point names survive GPX export.
 
-Save section or Save route exports a GPX using the system Files save picker.
-The Saved label refers to local workspace recovery, not an exported GPX.
-Export tracks you want to keep before deleting the app or its data.
+Available Systems retains full descriptions. The cards use shorter headings:
+Lat/Lon, Irish Grid, British Grid, ITM, MGRS, UTM and USNG. Shared cards use your
+choice; GPX always uses WGS84 Lat/Long. Irish/British transformations are
+approximate, and regional coverage limits are shown where appropriate.
+
+Created Route Colour uses the spectrum, presets or hex input, then Apply colour.
+Imported tracks have their own Line colour control in Edit using the same picker.
+
+SHARING, SAVING AND HELP
+
+Share Text and Share PDF are on expanded cards. Text sharing offers a copyable
+preview where device sharing is unavailable. PDF sharing creates a paginated
+landscape route card; browsers without PDF sharing download it instead.
+
+Saved on device means workspace recovery, not an exported GPX. Export routes you
+want to keep before uninstalling or clearing app data. Create and Edit have
+separate Undo/Redo histories. Undo history does not survive reopening; workspaces
+do. Use Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z, or the header controls.
+
+The crosshair requests current position only when tapped and never adds a point
+or starts background tracking. Map tiles and optional terrain requests need
+internet; file editing and export remain available when tiles fail. Retry reloads
+tiles. The ? button opens About, with separate Create and Edit guides and a
+Settings section. OpenTopoMap and Open Topo Data are external services.
 
 Project: https://github.com/davidowens1513/BareGPS-Track-Editor
-Website: https://appsbyonzy.dev/#tools
+Website and downloads: https://appsbyonzy.dev/#tools
+Browser preview: https://appsbyonzy.dev/tools/baregps-route-planner/
 Contact: appsbyonzy@gmail.com
-
-Browser Preview: https://appsbyonzy.dev/tools/baregps-route-planner/
-
-COORDINATES AND CURRENT POSITION
-
-The cog beneath ? selects Lat/Long, Irish National Grid, British National
-Grid, ITM, MGRS, UTM or USNG. The choice is remembered on this device and
-applies to route points and the map-centre readout. GPX remains WGS84.
-Irish/British grid transformations are approximate. Regional coverage limits
-are shown when appropriate.
-
-The crosshair at the upper right of either map requests one current-position
-fix. Allow location access when prompted if you want this feature. A blue dot
-and accuracy circle mark the position; it never adds a route point. There is
-no background tracking. Zoom controls sit at the lower left above the scale.
-Metrics are centred and show Distance(km), Ascent(m), Descent(m); empty ascent
-and descent show 0. Fetch terrain when heights are needed for a created route.
-
-ROUTE CARD AND SHARING
-
-The main Route Card is centred, with Point, Name, grid reference and Height,
-plus a fifth-column bin button. Point numbers locate points on the map.
-Optional names are editable and limited to 10 characters. Names survive
-point changes, undo/redo and GPX export. The bin removes a point; Undo can
-restore it. Clear route removes the whole created route after confirmation.
-
-Expand Route Card opens a fullscreen table with Distance, Cumul Distance,
-Ascent and Cumul Ascent. Names stay editable; bins are only on the main card.
-Swipe across when necessary. Headings and their units are centred; values
-are right-aligned. Dashes indicate missing elevation information. Terrain
-samples are included in per-leg and cumulative ascent when available.
-
-Share Text and Share PDF appear only in the expanded card. Share Text makes
-a message summary; Share PDF makes a paginated landscape route card. Both
-use your selected grid format. In browsers without device sharing, copy
-the text from the preview or download the PDF.
-
-SETTINGS AND ABOUT
-
-The cog beneath ? opens Settings, with Grid references and Created Route
-Colour sections. Choose a coordinate format or use the spectrum, presets
-or hex input, then Apply colour. Edit's Line colour uses the same picker.
-The ? button opens About, including grid coverage and accuracy guidance.

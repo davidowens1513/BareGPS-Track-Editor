@@ -8,33 +8,38 @@ BareGPS Route Planner creates walking routes and edits GPX tracks on Android, iO
 
 ## Create a route
 
-The app opens in **Create**, the left tab. An empty map starts at Carrauntoohil at zoom 13. Create and Edit have separate maps; Create retains its draft and map position.
+The app opens in **Create**, with an empty map at Carrauntoohil. Create retains its draft, map position and separate undo history.
 
-- **Add points**, beneath the map, adds a starting point and subsequent points in walking order. Every tap extends the route, including taps near an existing line.
-- **Insert point** inserts one point between neighbouring points on the chosen line, then returns to Add points.
-- Drag numbered markers to move points. The centred **Route Card** lists Point, Name, the selected grid reference and Height, with a fifth-column bin button to remove points. Tap a point number to locate it on the map.
-- Add optional names of up to **10 characters** in the **Name** column. Names stay attached as points move and are included in exported GPX files.
-- **Expand Route Card** opens a fullscreen table with Distance, Cumul Distance, Ascent and Cumul Ascent. Names remain editable; deletion is available only in the main list. The expanded table uses a smaller type size; swipe sideways if needed. Cell borders, centred headings, units on separate heading lines and right-aligned measurements help comparison. Missing height/ascent data is shown as a dash.
-- In the expanded card, **Share Text** shares a message summary and **Share PDF** shares a paginated landscape route card. Both use the selected coordinate format and include point names, heights, distances and ascent. Unnamed points retain their Point number in text summaries. Browsers without text sharing offer a copyable preview; browsers without PDF sharing download the PDF.
-- **Close loop** joins the last point precisely to the start and includes the return leg in distance.
-- **Fetch terrain** estimates ascent and descent along the route. Moving, adding or removing points clears terrain estimates; fetch again after reshaping.
-- Choose a route name, set **Created Route Colour** in Settings, then **Save route** exports a GPX file. **Fetch terrain**, **Clear route** and **Save route** are equal-width buttons on the main card.
+- **Add points** extends the route with every map tap, even near an existing line. **Insert point** inserts between neighbours on the chosen line, then returns to Add points.
+- Drag numbered markers to reshape the route. **Close loop** joins precisely to the start and includes the return leg in the distance.
+- The **Route Card** lists points in walking order. Its reduced view scrolls after six point rows. Tap a number to locate it on the map; use its bin to remove it.
+- **Fetch terrain** estimates heights and ascent/descent along every leg. Expanding a card with at least two points and no fetched terrain opens the same confirmation. Coordinates are sent to Open Topo Data only after confirming. Cancel leaves the expanded card usable. Success, failure and cancellation all leave expansion available.
+- Moving, adding or removing points clears terrain estimates. Fetch again after reshaping. Missing heights/ascent are marked unavailable; zero in the metrics does not supply a missing height.
+- Name the route in its card and choose **Created Route Colour** in Settings, then **Save route** exports GPX. **Clear route** asks before clearing Create points, with Undo available. Edit tracks remain in place.
 
-Lines connect points directly; the app does not automatically follow roads or paths. Undo and Redo are beneath the device-save status in the title panel. Create's undo history is separate from Edit's.
+**Fetch terrain**, **Clear route** and **Save route** are equal-width controls on the reduced Create card only. Lines connect points directly and do not automatically follow roads or paths.
 
 ## Edit GPX tracks
 
-Opening **Edit**, including switching from Create, resets its map to Carrauntoohil and shows **Open GPX files** and **Explore with sample tracks**. Imported tracks and joined routes remain saved. Select an imported track in **Your tracks** to resume editing it.
+**Edit** opens at Carrauntoohil with **Open GPX files** and optional **Explore with sample tracks**. Existing imported tracks and joined routes remain on the device; choose a track in **Your Tracks** to resume it. The compact list uses small route icons and closely spaced rows.
 
-Examples are optional illustrative tracks around Glendalough's Upper Lake and the Spinc in County Wicklow. They appear only after choosing the sample button. Opening Edit hides them again; requesting them reuses retained samples rather than adding duplicates.
+1. **Open files** imports GPX tracks or routes, including multiple tracks in one file. Phones can also open or share GPX files into the app from Files.
+2. Select a track, then drag **A** and **B** or use the sliders. Metrics, the elevation profile and the ordinary track’s Route Card follow the selected section. **Select whole track** restores the full selection.
+3. **Save section** exports A–B. **Split** creates two tracks sharing the split point, retaining the source track. **Reverse** reverses the whole selected track. These operations do not overwrite source GPX files automatically.
+4. **Start joined route with section** and **Append section to route** assemble sections in walking order. Dashed gaps are straight walking connections whose distance counts. **Fetch gap terrain** estimates heights along those connections. **Preview** selects the joined route on the map.
+5. The **Route Card** at the bottom starts with the whole selected track and follows A–B when chosen. **If a joined route exists, its entire route takes precedence**, even while selecting source sections to append. Its caption states which points are displayed. Point numbers locate the source point on the Edit map; optional names can be edited with Edit Undo/Redo.
+6. The reduced Edit card has equal-width **Clear route** and **Save section** / **Save route** controls. Clear asks before clearing the joined route and active Edit selection; imported tracks remain in Your Tracks and Create is untouched. Undo restores the cleared route. The bin in Your Tracks removes only that workspace track, not its source file.
 
-1. **Open files** accepts GPX tracks and routes, including multiple tracks within one file. On phones, GPX files can also be opened or shared into the app from Files.
-2. Select a track, then drag **A** and **B** on the map or use the sliders to choose a section. Distance, ascent, descent and the elevation profile update immediately.
-3. **Save section** exports the selection. **Split** creates two tracks sharing the cut point, retaining the original. **Reverse** reverses the selected track's direction.
-4. **Start joined route** and **Append section to route** assemble selected sections in walking order. The joined route is separate from its sources and can be previewed, renamed and saved.
-5. **Undo** and **Redo** cover editing, importing, splitting, reversal, joining, renaming, colour changes and removal. Use ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z on a keyboard.
+The Irish samples are optional illustrative tracks around Glendalough’s Upper Lake and the Spinc. They load only when requested. Opening Edit hides retained samples again; requesting them reuses them rather than adding duplicates.
 
-**Select whole track** resets the section selection. The fit control frames relevant tracks; the track-view control switches between all tracks and the selected section. Expand the map for a larger workspace, then collapse it or press Escape. The header and metrics remain visible while expanded.
+## Route Cards and sharing
+
+Create and Edit use the same card layout, grid-reference preference and optional naming setting. The reduced table shows at most six point rows before scrolling; the expanded table scrolls within the screen and keeps **Share Text** and **Share PDF** visible at the bottom.
+
+- With naming off (the default), the reduced grid shows Point, the selected grid reference, Height and Distance. Create also has a point-bin column. With naming on, Name replaces reduced-view Distance; `[Name]` marks an empty name field. Newly entered names are limited to 10 characters. Existing names are retained when hidden, and names survive point changes, recovery and GPX round trips.
+- Expanded cards add Distance, Cumul Distance, Ascent and Cumul Ascent. Headers and units are centred, measurements are right-aligned, and Lat/Lon values are centred. Borders and separators distinguish cells clearly. Long coordinate values reduce their font size to fit one line without truncation or changing stored coordinates.
+- **Share Text** produces a message summary. Where browser sharing is unavailable, a copyable preview is offered. **Share PDF** produces a paginated landscape route card; browsers without file sharing download it.
+- Edit cards and their exports use the entire displayed section or joined route. Large tracks render a scrolling window of rows to remain responsive, while calculations and exports retain all points. Text and PDF point numbers preserve source numbering for A–B sections.
 
 ## Map, metrics and colour
 
@@ -42,13 +47,13 @@ Both maps use OpenTopoMap. The crosshair at the upper right requests one current
 
 Metrics show **Distance(km)**, **Ascent(m)** and **Descent(m)**, with labels and values centred in their columns. Empty ascent and descent display **0**. Where elevation is unavailable, the profile explains that heights are needed; displayed zero does not supply missing GPX heights. Terrain and partial-elevation totals are identified where applicable.
 
-The cog beneath **?** opens **Settings**, with two sections: **Grid references** and **Created Route Colour**. The created-route colour control uses the same spectrum, preset swatches, hex field and preview as the **Line colour** picker in Edit. **Apply colour** makes one undoable change and preserves fetched terrain. Settings stays open after applying a colour. Editing an imported track’s colour does not change the created route. The metrics panel contains only route metrics.
+The cog beneath **?** opens **Settings**, with **Grid references**, **Created Route Colour** and **Allow Point Naming** sections separated by visible rules. The created-route colour control uses the same spectrum, preset swatches, hex field and preview as the **Line colour** picker in Edit. **Apply colour** makes one undoable change and preserves fetched terrain. Settings stays open after applying a colour. Editing an imported track’s colour does not change the created route. The metrics panel contains only route metrics.
 
-The green BareGPS logo and title remain in the header. **About** and **Settings** carry the same logo. The **?** button opens **About**, with route-creation and editing guidance, a dedicated Grid references section covering display formats and accuracy, and Created route colour guidance.
+The green BareGPS logo and title remain in the header. The **?** button opens the branded **About** guide, with separate Create and Edit streams, clear task subheadings and quick navigation. Common sections explain Settings, grid references, terrain, location, saving and Undo. **Allow Point Naming** defaults off and is remembered on the device; turning it off hides names without deleting them.
 
 ## Coordinate display
 
-Settings offers Lat/Long (WGS84), Irish National Grid, British National Grid, Irish Transverse Mercator (ITM), MGRS, UTM and USNG (WGS84). The choice is remembered on the device and applies to the Create Route Card, shared text/PDF route cards and map-centre coordinates in both views. Column headings use short format labels such as Irish Grid and British Grid. GPX storage and export, geometry calculations and terrain requests use WGS84 regardless of the display format.
+Settings offers Lat/Long (WGS84), Irish National Grid, British National Grid, Irish Transverse Mercator (ITM), MGRS, UTM and USNG (WGS84). The choice is remembered on the device and applies to both Route Cards, shared text/PDF route cards and map-centre coordinates in both views. Column headings use Lat/Lon, Irish Grid, British Grid, ITM, MGRS, UTM and USNG; the Available Systems picker retains full descriptions. GPX storage and export, geometry calculations and terrain requests use WGS84 regardless of the display format.
 
 Irish and British National Grid use approximate Helmert datum transformations. ITM uses ETRS89 with a null WGS84 transformation for walking-scale display. Regional formats identify positions outside their coverage. UTM, MGRS and USNG cover 80°S to 84°N. UTM zones include Norway/Svalbard exceptions and the date-line boundary. MGRS and USNG use full, spaced one-metre WGS84 references; the reference precision does not imply equivalent GPS accuracy.
 
@@ -132,11 +137,12 @@ Native document-picker tests are in `android/app/src/androidTest` and `ios/App/A
 
 The browser Preview runs the same application at [appsbyonzy.dev/tools/baregps-route-planner/](https://appsbyonzy.dev/tools/baregps-route-planner/). Build it with `npm run build:web` and copy `web-dist/` into the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies validated terrain requests; `_routes.json` limits execution to that endpoint. The rest of the website and its downloads are static.
 
-The public platform bundles are v0.2.6 in `releases/bundles/0.2.6/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
+The public platform bundles are v0.2.7 in `releases/bundles/0.2.7/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes an installable development APK, a ZIP bundle and instructions. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
 
 ## Source layout and dependencies
 
-- `src/main.ts`: UI, actions, undo/redo, settings and local recovery.
+- `src/main.ts`: UI, shared Create/Edit Route Card, undo/redo, settings and local recovery.
+- `src/about.ts`: the structured Create/Edit About guide.
 - `src/model.ts`: GPX parsing/export, validation, track operations and analytics.
 - `src/create.ts`: route creation and waypoint operations.
 - `src/map.ts`: map rendering, draggable markers, current-position layers and framing.

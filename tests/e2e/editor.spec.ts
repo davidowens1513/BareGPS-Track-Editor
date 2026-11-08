@@ -164,6 +164,29 @@ test("map handles change selection and analytics remain visible while expanded",
   await expect(page.locator("#analytics")).toBeVisible();
   await expect(page.locator(".brand")).toBeVisible();
   const handles = page.locator(".track-handle");
+  // Expansion schedules a map resize; drag only after the handles settle.
+  let lastBounds = "",
+    stableSince = 0;
+  await expect
+    .poll(
+      async () => {
+        const bounds = JSON.stringify(
+          await handles.evaluateAll((nodes) =>
+            nodes.map((node) => {
+              const box = node.getBoundingClientRect();
+              return [box.x, box.y, box.width, box.height];
+            }),
+          ),
+        );
+        if (bounds !== lastBounds) {
+          lastBounds = bounds;
+          stableSince = Date.now();
+        }
+        return Date.now() - stableSince >= 120;
+      },
+      { intervals: [50] },
+    )
+    .toBe(true);
   const from = await handles.first().boundingBox(),
     to = await handles.last().boundingBox();
   await page.mouse.move(from!.x + 16, from!.y + 16);

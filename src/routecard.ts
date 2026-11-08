@@ -36,6 +36,7 @@ export function routecardText(
   route: Track,
   system: CoordinateSystem,
   terrain?: Track,
+  pointOffset = 0,
 ): string {
   const rows = routecardRows(route, terrain);
   const km = (value: number) => `${(value / 1000).toFixed(2)} km`;
@@ -48,7 +49,7 @@ export function routecardText(
     "",
     ...rows.map(({ point, distance, total, ascent, totalAscent }, i) => {
       const label = [
-        `Point ${i + 1}`,
+        `Point ${i + 1 + pointOffset}`,
         point.name?.trim(),
         i === 0 ? "Start" : i === route.points.length - 1 ? "End" : "",
       ]

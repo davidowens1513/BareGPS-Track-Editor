@@ -1,5 +1,6 @@
 import "leaflet/dist/leaflet.css";
 import "./style.css";
+import { aboutGuide } from "./about";
 import { get, set } from "idb-keyval";
 import { Capacitor } from "@capacitor/core";
 import {
@@ -46,6 +47,8 @@ import {
 } from "./coordinates";
 let coordinateSystem: CoordinateSystem = "latlon";
 const COORDINATE_KEY = "baregps-coordinate-system-v1";
+let allowPointNaming = false;
+const POINT_NAMING_KEY = "baregps-allow-point-naming-v1";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -119,9 +122,10 @@ document.querySelector("#app")!.innerHTML = `
   <section id="route-card" class="route-card"></section>
   <section id="create-card" class="card create-card" aria-label="Route Card" hidden>
     <div class="card-heading"><h2>Route Card <span id="waypoint-count" class="badge">0</span></h2><button id="expand-card" class="icon-button" aria-label="Expand Route Card" aria-expanded="false" title="Expand Route Card">${icon("expand", 18)}</button></div>
-    <div class="create-settings"><label>Route name<input id="create-name" class="text-input" maxlength="120" value="My walking route"></label></div>
+    <p id="card-source-note" class="card-source-note" hidden></p>
+    <div class="create-settings"><label><span id="card-name-label">Route name</span><input id="create-name" class="text-input" maxlength="120" value="My walking route"></label></div>
     <p class="card-scroll-hint card-extra">Swipe across for distance and ascent →</p>
-    <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><colgroup><col class="point-col"><col class="name-col"><col class="grid-col"><col class="height-col"><col class="compact-delete"><col class="card-extra distance-col"><col class="card-extra cumulative-distance-col"><col class="card-extra ascent-col"><col class="card-extra cumulative-ascent-col"></colgroup><thead><tr><th scope="col">Point</th><th scope="col">Name</th><th id="coordinate-heading" scope="col">Grid ref.</th><th scope="col">Height<span class="heading-unit">(m)</span></th><th class="compact-delete" scope="col"><span class="sr-only">Delete point</span></th><th class="card-extra" scope="col">Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Cumul<br>Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Ascent<span class="heading-unit">(m)</span></th><th class="card-extra" scope="col">Cumul<br>Ascent<span class="heading-unit">(m)</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
+    <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><colgroup><col class="point-col"><col class="name-col"><col class="grid-col"><col class="height-col"><col class="card-extra distance-col"><col class="compact-delete"><col class="card-extra cumulative-distance-col"><col class="card-extra ascent-col"><col class="card-extra cumulative-ascent-col"></colgroup><thead><tr><th scope="col">Point</th><th class="point-name-cell" scope="col">Name</th><th id="coordinate-heading" scope="col">Grid ref.</th><th scope="col">Height<span class="heading-unit">(m)</span></th><th class="card-extra distance-cell" scope="col">Distance<span class="heading-unit">(km)</span></th><th class="compact-delete" scope="col"><span class="sr-only">Delete point</span></th><th class="card-extra" scope="col">Cumul<br>Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Ascent<span class="heading-unit">(m)</span></th><th class="card-extra" scope="col">Cumul<br>Ascent<span class="heading-unit">(m)</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="card-share-actions card-extra"><button id="create-share" class="button secondary">${icon("export", 17)}Share Text</button><button id="create-pdf" class="button secondary">${icon("file", 17)}Share PDF</button></div>
     <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
   </section>
@@ -384,6 +388,7 @@ function updateSelection(selection: Selection) {
   }
   renderStats();
   renderMap();
+  if (mode === "edit") renderPointCard();
   persist();
 }
 function renderMap() {
@@ -450,7 +455,7 @@ function renderStats(preview?: Track) {
   note.hidden = !(a.missingEdges || a.estimatedGap);
   note.textContent =
     mode === "create" && !hasElevation
-      ? "Ascent and descent are unavailable until terrain is fetched. Distance includes every route leg."
+      ? "Ascent and descent are unavailable until terrain is fetched."
       : a.missingEdges
         ? "Elevation is missing for some points. Ascent and descent are partial; distance includes the entire section."
         : a.estimatedGap
@@ -503,7 +508,7 @@ function renderStats(preview?: Track) {
   });
   if (!a.missingEdges)
     area = `${paths.replace(/M/g, "L").replace(/^L/, "M")} L1000,70 L0,70 Z`;
-  profile.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Elevation profile, ${metres(min)} to ${metres(a.max!)} metres"><defs><linearGradient id="profile-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${t!.color}" stop-opacity=".18"/><stop offset="100%" stop-color="${t!.color}" stop-opacity=".015"/></linearGradient></defs><path d="M0 23H1000M0 47H1000" stroke="#e9ede6" stroke-dasharray="3 5"/>${area ? `<path d="${area}" fill="url(#profile-fill)"/>` : ""}<path d="${paths}" fill="none" stroke="${t!.color}" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="${gapPaths}" fill="none" stroke="${t!.color}" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/></svg><div class="profile-axis"><span>0 km</span><span>${km(a.length)} km</span></div>`;
+  profile.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Elevation profile, ${metres(min)} to ${metres(a.max!)} metres"><defs><linearGradient id="profile-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${t!.color}" stop-opacity=".18"/><stop offset="100%" stop-color="${t!.color}" stop-opacity=".015"/></linearGradient></defs><path d="M0 23H1000M0 47H1000" stroke="var(--divider)" stroke-dasharray="3 5"/>${area ? `<path d="${area}" fill="url(#profile-fill)"/>` : ""}<path d="${paths}" fill="none" stroke="${t!.color}" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="${gapPaths}" fill="none" stroke="${t!.color}" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/></svg><div class="profile-axis"><span>0 km</span><span>${km(a.length)} km</span></div>`;
 }
 import { distance as analyticsDistance } from "./model";
 function renderTracks() {
@@ -665,6 +670,7 @@ function render() {
   renderRoute();
   renderMode();
   if (mode === "create") renderCreated();
+  else renderPointCard();
   renderStats();
   renderMap();
   $<HTMLButtonElement>("undo").disabled =
@@ -689,6 +695,7 @@ function render() {
       !b.closest("#notice") &&
       ![
         "expand",
+        "expand-card",
         "help",
         "settings",
         "retry-map",
@@ -787,7 +794,8 @@ async function exportTrack(track: Track) {
     render();
   }
 }
-function openDialog(content: string) {
+function openDialog(content: string, variant?: "about") {
+  $("dialog").classList.toggle("about-dialog", variant === "about");
   $("dialog-content").innerHTML = content;
   $<HTMLDialogElement>("dialog").showModal();
   $("dialog-content")
@@ -995,11 +1003,12 @@ function renderMode() {
   updateMapCoordinates("edit", map);
   updateMapCoordinates("create", createMap);
   document.body.classList.toggle("creating", creating);
+  document.body.classList.toggle("point-naming", allowPointNaming);
   $("edit-map-view").hidden = creating;
   $("create-map-view").hidden = !creating;
   $("editor").hidden = creating;
   $("route-card").hidden = creating || editWelcome || !workspace.route;
-  $("create-card").hidden = !creating;
+  $("create-card").hidden = false;
   $("create-tools").hidden = !creating;
   $("view-toggle").hidden = creating || editWelcome;
   $("selection-caption").textContent = creating
@@ -1019,6 +1028,120 @@ function renderMode() {
   $("map-error").hidden = creating || !map.hasTileError();
   $("create-map-error").hidden = !creating || !createMap.hasTileError();
 }
+const emptyCardRoute: Track = {
+  id: "empty-card",
+  name: "",
+  color: "#16724d",
+  points: [],
+  source: "",
+  kind: "track",
+};
+function routeCardContext() {
+  if (mode === "create")
+    return {
+      route: draft(),
+      terrain: workspace.createdTerrain,
+      source: draft(),
+      offset: 0,
+      description: "",
+    };
+  const source = workspace.route ?? (editWelcome ? null : active());
+  if (!source) return null;
+  if (source === workspace.route)
+    return {
+      route: source,
+      terrain: undefined,
+      source,
+      offset: 0,
+      description: `Whole joined route · ${source.points.length} points`,
+    };
+  const { start, end } = workspace.selection;
+  const whole = start === 0 && end === source.points.length - 1;
+  return {
+    route: {
+      ...source,
+      name: whole
+        ? source.name
+        : `${source.name} · points ${start + 1}–${end + 1}`,
+      points: selectedPoints(source, workspace.selection),
+    },
+    terrain: undefined,
+    source,
+    offset: start,
+    description: whole
+      ? `Whole track · ${source.points.length} points`
+      : `Selected section · points ${start + 1}–${end + 1} of ${source.points.length}`,
+  };
+}
+function fitCardCoordinates() {
+  const values = Array.from(
+    $("waypoint-rows").querySelectorAll<HTMLElement>(".coordinate-value"),
+  );
+  for (const value of values) value.style.fontSize = "";
+  // Re-measure rendered glyphs: font hinting can make proportional estimates a pixel wider.
+  for (let pass = 0; pass < 4; pass++) {
+    const sizes = values.map((value) => {
+      const cell = value.parentElement!;
+      const style = getComputedStyle(cell);
+      const available =
+        cell.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight);
+      const width = value.getBoundingClientRect().width;
+      const currentSize = parseFloat(getComputedStyle(value).fontSize);
+      return available > 0 && width > available
+        ? Math.max(
+            1,
+            Math.floor(
+              ((currentSize * Math.max(1, available - 1)) / width) * 100,
+            ) / 100,
+          )
+        : null;
+    });
+    if (sizes.every((size) => size === null)) break;
+    values.forEach((value, i) => {
+      if (sizes[i] !== null) value.style.fontSize = `${sizes[i]}px`;
+    });
+  }
+}
+function updateCardScrollLimit() {
+  fitCardCoordinates();
+  const empty =
+    $("waypoint-rows").querySelector<HTMLTableCellElement>(".waypoint-empty");
+  if (empty)
+    empty.colSpan = cardExpanded
+      ? allowPointNaming
+        ? 8
+        : 7
+      : mode === "create"
+        ? 5
+        : 4;
+  if (cardExpanded) return;
+  const table =
+    $("create-card").querySelector<HTMLTableElement>(".waypoint-table")!;
+  const rows = Array.from($<HTMLTableSectionElement>("waypoint-rows").rows)
+    .filter((row) => !row.classList.contains("card-spacer"))
+    .slice(0, 6);
+  const last = rows.at(-1);
+  if (!last || !table.getBoundingClientRect().height) return;
+  const virtualHeight = Number(table.dataset.virtualRowHeight);
+  const height = virtualHeight
+    ? Math.floor(
+        (table.tHead?.getBoundingClientRect().height ?? 0) +
+          virtualHeight * Math.min(6, rows.length),
+      ) + 1
+    : Math.floor(
+        last.getBoundingClientRect().bottom - table.getBoundingClientRect().top,
+      ) + 1;
+  const value = `${height}px`;
+  if (
+    table.parentElement!.style.getPropertyValue("--compact-card-height") !==
+    value
+  )
+    table.parentElement!.style.setProperty("--compact-card-height", value);
+}
+const cardTableObserver = new ResizeObserver(updateCardScrollLimit);
+cardTableObserver.observe($("create-card").querySelector(".waypoint-table")!);
 function renderCreated() {
   const route = draft(),
     points = route.points;
@@ -1045,80 +1168,223 @@ function renderCreated() {
   $<HTMLButtonElement>("create-close").disabled =
     busy || points.length < 3 || closed;
   $("create-close").textContent = closed ? "Loop closed" : "Close loop";
+  renderPointCard();
+}
+let cardSourceKey = "";
+let cardScrollFrame = 0;
+function renderPointCard() {
+  if (cardScrollFrame) cancelAnimationFrame(cardScrollFrame);
+  cardScrollFrame = 0;
+  const context = routeCardContext();
+  const route = context?.route ?? emptyCardRoute;
+  const points = route.points;
+  const offset = context?.offset ?? 0;
+  $("waypoint-count").textContent = String(points.length);
+  const nameField = $<HTMLInputElement>("create-name");
+  nameField.value = route.name;
+  nameField.readOnly = mode === "edit";
+  nameField.closest<HTMLElement>(".create-settings")!.hidden =
+    mode === "edit" && !context;
+  $("card-name-label").textContent =
+    mode === "create"
+      ? "Route name"
+      : context?.source === workspace.route
+        ? "Route name"
+        : "Track / section";
+  $("card-source-note").hidden = mode === "create" || !context;
+  $("card-source-note").textContent = context?.description ?? "";
+  $("create-save").setAttribute(
+    "aria-label",
+    mode === "create" ? "Save route" : "Save Route Card as GPX",
+  );
+  $("create-save").innerHTML =
+    `${icon("export", 17)}${mode === "create" || context?.source === workspace.route ? "Save route" : "Save section"}`;
   $("coordinate-heading").textContent = {
-    latlon: "Lat/Long WGS84",
+    latlon: "Lat/Lon",
     irish: "Irish Grid",
     british: "British Grid",
-    itm: "ITM (ETRS89)",
-    mgrs: "MGRS (WGS84)",
-    utm: "UTM (WGS84)",
-    usng: "USNG (WGS84)",
+    itm: "ITM",
+    mgrs: "MGRS",
+    utm: "UTM",
+    usng: "USNG",
   }[coordinateSystem];
   $("coordinate-heading").title = coordinateSystems[coordinateSystem];
-  const rows = routecardRows(route, workspace.createdTerrain);
-  $("waypoint-rows").innerHTML = points.length
-    ? points
-        .map((point, i) => {
-          const row = rows[i];
-          const ascent = (value: number | undefined) =>
-            value === undefined
-              ? "—"
-              : `${metres(value)}<span class="card-cell-unit"> m</span>`;
-          return `<tr><th scope="row"><button class="text-button" data-focus-point="${i}" aria-label="Show point ${i + 1} on map">${i + 1}</button></th><td><input class="point-name" data-point-name="${i}" aria-label="Name for point ${i + 1} (optional)" maxlength="10" placeholder="Optional" value="${esc(point.name || "")}" ${busy ? "disabled" : ""}></td><td class="grid-reference">${esc(formatCoordinate(point, coordinateSystem))}</td><td>${ascent(point.ele)}</td><td class="compact-delete"><button class="icon-button" data-remove-point="${i}" aria-label="Remove point ${i + 1}" ${busy ? "disabled" : ""}>${icon("trash", 15)}</button></td><td class="card-extra">${km(row.distance)}</td><td class="card-extra">${km(row.total)}</td><td class="card-extra">${ascent(row.ascent)}</td><td class="card-extra">${ascent(row.totalAscent)}</td></tr>`;
-        })
-        .join("")
-    : '<tr><td colspan="5" class="waypoint-empty">Your points will appear here. Tap the map to begin.</td></tr>';
-  $("waypoint-rows")
-    .querySelectorAll<HTMLButtonElement>("[data-remove-point]")
-    .forEach((button) => {
-      button.onclick = () =>
-        changeCreated(() =>
-          removeWaypoint(draft(), Number(button.dataset.removePoint)),
-        );
-    });
-  $("waypoint-rows")
-    .querySelectorAll<HTMLInputElement>("[data-point-name]")
-    .forEach((input) => {
-      let started = false;
-      input.onfocus = () => {
-        started = false;
-      };
-      input.oninput = () => {
-        if (busy) return;
-        if (!started) {
-          createUndo.push(createdSnapshot());
-          if (createUndo.length > 30) createUndo.shift();
-          createRedo = [];
-          started = true;
-        }
-        const point = draft().points[Number(input.dataset.pointName)];
-        point.name = input.value.slice(0, 10) || undefined;
-        if (workspace.createdTerrain) {
-          for (const p of workspace.createdTerrain.points) {
-            if (p.lat === point.lat && p.lon === point.lon) p.name = point.name;
+  $("create-card").classList.toggle(
+    "latlon-coordinates",
+    coordinateSystem === "latlon",
+  );
+  const rows = routecardRows(route, context?.terrain);
+  const table =
+    $("create-card").querySelector<HTMLTableElement>(".waypoint-table")!;
+  const scroller = table.parentElement!;
+  const key = `${mode}:${context?.source.id}:${offset}:${points.length}:${cardExpanded}`;
+  if (cardSourceKey !== key) {
+    scroller.scrollTop = 0;
+    cardSourceKey = key;
+  }
+  const virtual = mode === "edit" && points.length > 400;
+  table.classList.toggle("virtual-card-table", virtual);
+  table.setAttribute("aria-rowcount", String(points.length + 1));
+  table.style.removeProperty("--virtual-row-height");
+  delete table.dataset.virtualRowHeight;
+  let rowHeight = 36;
+  let lastFirst = -1,
+    lastEnd = -1;
+  const colspan = cardExpanded
+    ? allowPointNaming
+      ? 8
+      : 7
+    : mode === "create"
+      ? 5
+      : 4;
+  const spacer = (count: number) =>
+    `<tr class="card-spacer" aria-hidden="true" style="height:${count * rowHeight}px"><td colspan="${colspan}" style="height:${count * rowHeight}px"></td></tr>`;
+  function drawRows() {
+    const first = virtual
+      ? Math.max(
+          0,
+          Math.floor(
+            Math.max(0, scroller.scrollTop - (table.tHead?.offsetHeight ?? 0)) /
+              rowHeight,
+          ) - 10,
+        )
+      : 0;
+    const end = virtual ? Math.min(points.length, first + 100) : points.length;
+    if (first === lastFirst && end === lastEnd) return;
+    lastFirst = first;
+    lastEnd = end;
+    const topSpacer = virtual && first > 0 ? spacer(first) : "";
+    const bottomSpacer =
+      virtual && end < points.length ? spacer(points.length - end) : "";
+    $("waypoint-rows").innerHTML = points.length
+      ? topSpacer +
+        points
+          .slice(first, end)
+          .map((point, localIndex) => {
+            const i = first + localIndex;
+            const row = rows[i];
+            const coordinate = formatCoordinate(point, coordinateSystem);
+            const ascent = (value: number | undefined) =>
+              value === undefined
+                ? "—"
+                : `${metres(value)}<span class="card-cell-unit"> m</span>`;
+            return `<tr data-card-row="${i}" aria-rowindex="${i + 2}"><th scope="row"><button class="text-button" data-focus-point="${i}" aria-label="Show point ${offset + i + 1} on map">${offset + i + 1}</button></th><td class="point-name-cell"><input class="point-name" data-point-name="${i}" aria-label="Name for point ${offset + i + 1} (optional)" maxlength="10" placeholder="[Name]" value="${esc(point.name || "")}" ${busy ? "disabled" : ""}></td><td class="grid-reference" title="${esc(coordinate)}"><span class="coordinate-value">${esc(coordinate)}</span></td><td>${ascent(point.ele)}</td><td class="card-extra distance-cell numeric-cell">${km(row.distance)}</td><td class="compact-delete"><button class="icon-button" data-remove-point="${i}" aria-label="Remove point ${i + 1}" ${busy ? "disabled" : ""}>${icon("trash", 15)}</button></td><td class="card-extra">${km(row.total)}</td><td class="card-extra">${ascent(row.ascent)}</td><td class="card-extra">${ascent(row.totalAscent)}</td></tr>`;
+          })
+          .join("") +
+        bottomSpacer
+      : `<tr><td colspan="${mode === "create" ? 5 : 4}" class="waypoint-empty">${mode === "create" ? "Your points will appear here. Tap the map to begin." : "Choose a track or open a GPX file to view its Route Card."}</td></tr>`;
+    $("waypoint-rows")
+      .querySelectorAll<HTMLButtonElement>("[data-remove-point]")
+      .forEach((button) => {
+        button.onclick = () =>
+          mode === "create" &&
+          changeCreated(() =>
+            removeWaypoint(draft(), Number(button.dataset.removePoint)),
+          );
+      });
+    $("waypoint-rows")
+      .querySelectorAll<HTMLInputElement>("[data-point-name]")
+      .forEach((input) => {
+        let started = false;
+        input.onfocus = () => {
+          started = false;
+        };
+        input.oninput = () => {
+          if (busy) return;
+          if (!started) {
+            if (mode === "create") {
+              createUndo.push(createdSnapshot());
+              if (createUndo.length > 30) createUndo.shift();
+              createRedo = [];
+            } else checkpoint();
+            started = true;
           }
-        }
-        persist();
-        $<HTMLButtonElement>("undo").disabled = false;
-        $<HTMLButtonElement>("redo").disabled = true;
-      };
-      input.onkeydown = (event) => {
-        if (event.key === "Enter") input.blur();
-      };
-    });
-  $("waypoint-rows")
-    .querySelectorAll<HTMLButtonElement>("[data-focus-point]")
-    .forEach((button) => {
-      button.onclick = () => {
-        const p = draft().points[Number(button.dataset.focusPoint)];
-        createMap.map.setView(
-          [p.lat, p.lon],
-          Math.max(createMap.map.getZoom(), 15),
-        );
-        if (cardExpanded) toggleCard();
-        $("map-panel").scrollIntoView({ behavior: "smooth", block: "start" });
-      };
-    });
+          const point =
+            context!.source.points[offset + Number(input.dataset.pointName)];
+          point.name = input.value.slice(0, 10) || undefined;
+          points[Number(input.dataset.pointName)].name = point.name;
+          if (mode === "create" && workspace.createdTerrain) {
+            for (const p of workspace.createdTerrain.points) {
+              if (p.lat === point.lat && p.lon === point.lon)
+                p.name = point.name;
+            }
+          }
+          persist();
+          $<HTMLButtonElement>("undo").disabled = false;
+          $<HTMLButtonElement>("redo").disabled = true;
+        };
+        input.onkeydown = (event) => {
+          if (event.key === "Enter") input.blur();
+        };
+      });
+    $("waypoint-rows")
+      .querySelectorAll<HTMLButtonElement>("[data-focus-point]")
+      .forEach((button) => {
+        button.onclick = () => {
+          if (busy) return;
+          const p = points[Number(button.dataset.focusPoint)];
+          if (
+            mode === "edit" &&
+            context &&
+            (editWelcome || active()?.id !== context.source.id)
+          ) {
+            editWelcome = false;
+            workspace.activeId = context.source.id;
+            workspace.selection = {
+              start: 0,
+              end: context.source.points.length - 1,
+            };
+            persist();
+            render();
+          }
+          if (cardExpanded) toggleCard();
+          visibleMap().map.setView(
+            [p.lat, p.lon],
+            Math.max(visibleMap().map.getZoom(), 15),
+          );
+          $("map-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+      });
+
+    fitCardCoordinates();
+    if (virtual) {
+      const realRows = Array.from(
+        $("waypoint-rows").querySelectorAll<HTMLTableRowElement>(
+          "tr[data-card-row]",
+        ),
+      );
+      const measured = Math.max(
+        1,
+        ...realRows.map((row) => row.getBoundingClientRect().height),
+      );
+      rowHeight = measured;
+      table.style.setProperty("--virtual-row-height", `${rowHeight}px`);
+      table.dataset.virtualRowHeight = String(rowHeight);
+      const spacers = Array.from(
+        $("waypoint-rows").querySelectorAll<HTMLTableRowElement>(
+          ".card-spacer",
+        ),
+      );
+      let spacerIndex = 0;
+      for (const count of [first, points.length - end]) {
+        if (count <= 0) continue;
+        const row = spacers[spacerIndex++];
+        row.style.height = `${count * rowHeight}px`;
+        row.cells[0].style.height = row.style.height;
+      }
+    }
+    requestAnimationFrame(updateCardScrollLimit);
+  }
+  drawRows();
+  scroller.onscroll = virtual
+    ? () => {
+        if (cardScrollFrame) return;
+        cardScrollFrame = requestAnimationFrame(() => {
+          cardScrollFrame = 0;
+          drawRows();
+        });
+      }
+    : null;
   $<HTMLButtonElement>("create-save").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-share").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-pdf").disabled = busy || points.length < 2;
@@ -1126,6 +1392,7 @@ function renderCreated() {
     busy || points.length < 2 || !!workspace.createdTerrain;
   $<HTMLButtonElement>("create-clear").disabled = busy || !points.length;
   $<HTMLInputElement>("create-name").disabled = busy;
+  requestAnimationFrame(updateCardScrollLimit);
 }
 $("edit-tab").onclick = () => setMode("edit");
 $("create-tab").onclick = () => setMode("create");
@@ -1146,7 +1413,7 @@ for (const name of ["edit", "create"])
   };
 let nameEditStarted = false;
 $<HTMLInputElement>("create-name").oninput = (e) => {
-  if (busy) return;
+  if (busy || mode !== "create") return;
   if (!nameEditStarted) {
     createUndo.push(createdSnapshot());
     if (createUndo.length > 30) createUndo.shift();
@@ -1165,7 +1432,8 @@ $<HTMLInputElement>("create-name").oninput = (e) => {
 };
 $<HTMLInputElement>("create-name").onblur = () => {
   nameEditStarted = false;
-  $<HTMLInputElement>("create-name").value = draft().name;
+  $<HTMLInputElement>("create-name").value =
+    routeCardContext()?.route.name ?? "";
 };
 function applyCreatedColour(color: string) {
   if (busy || color === draft().color) return;
@@ -1199,9 +1467,28 @@ $("create-close").onclick = () => {
   }
 };
 $("create-save").onclick = () => {
-  if (draft().points.length >= 2) void exportTrack(createdTrack());
+  const context = routeCardContext();
+  if (context && context.route.points.length >= 2)
+    void exportTrack(context.terrain ?? context.route);
 };
 $("create-clear").onclick = () => {
+  if (busy) return;
+  if (mode === "edit") {
+    if (!routeCardContext()) return;
+    openDialog(
+      `${dialogHeader("Clear the Edit route?", "Your imported tracks and Create route stay in place.")}<p>This clears the joined route and current Edit selection. You can undo this change.</p><div class="dialog-actions"><button class="button secondary" data-close>Keep route</button><button id="confirm-clear-edit" class="button primary">Clear route</button></div>`,
+    );
+    $("confirm-clear-edit").onclick = () => {
+      commit(() => {
+        workspace.route = null;
+        workspace.activeId = null;
+        workspace.selection = { start: 0, end: 0 };
+        editWelcome = true;
+      }, true);
+      $<HTMLDialogElement>("dialog").close();
+    };
+    return;
+  }
   openDialog(
     `${dialogHeader("Start a fresh route?", "Clear the points in Create. Your Edit tracks will stay in place.")}<p>You can undo this change. Save the current route first if you need a GPX copy.</p><div class="dialog-actions"><button class="button secondary" data-close>Keep route</button><button id="confirm-clear-created" class="button primary">Clear points</button></div>`,
   );
@@ -1216,15 +1503,19 @@ $("retry-create-map").onclick = () => {
   createMap.retryTiles();
 };
 $("create-pdf").onclick = async () => {
-  if (busy || draft().points.length < 2) return;
-  const route = structuredClone(draft());
-  const terrain = workspace.createdTerrain
-    ? structuredClone(workspace.createdTerrain)
+  const context = routeCardContext();
+  if (busy || !context || context.route.points.length < 2) return;
+  const route = structuredClone(context.route);
+  const terrain = context.terrain
+    ? structuredClone(context.terrain)
     : undefined;
   const system = coordinateSystem;
   try {
     const { routecardPDF } = await import("./routecard-pdf");
-    await sharePDF(route.name, routecardPDF(route, system, terrain));
+    await sharePDF(
+      route.name,
+      routecardPDF(route, system, terrain, context.offset),
+    );
   } catch (error) {
     if (!isCancelled(error)) report(error);
   }
@@ -1242,15 +1533,27 @@ function toggleCard() {
   $("expand-card").title = cardExpanded
     ? "Collapse Route Card"
     : "Expand Route Card";
+  if (mode === "edit") renderPointCard();
+  requestAnimationFrame(updateCardScrollLimit);
+  if (
+    cardExpanded &&
+    mode === "create" &&
+    !busy &&
+    draft().points.length >= 2 &&
+    !workspace.createdTerrain
+  )
+    $("create-terrain").click();
 }
 $("expand-card").onclick = toggleCard;
 $("create-share").onclick = async () => {
-  if (busy || draft().points.length < 2) return;
-  const title = `${draft().name} — Routecard`;
+  const context = routeCardContext();
+  if (busy || !context || context.route.points.length < 2) return;
+  const title = `${context.route.name} — Routecard`;
   const text = routecardText(
-    draft(),
+    context.route,
     coordinateSystem,
-    workspace.createdTerrain,
+    context.terrain,
+    context.offset,
   );
   try {
     if (await shareRoutecard(title, text)) return;
@@ -1275,7 +1578,7 @@ $("create-share").onclick = async () => {
   };
 };
 $("create-terrain").onclick = () => {
-  if (busy || draft().points.length < 2) return;
+  if (mode !== "create" || busy || draft().points.length < 2) return;
   openDialog(
     `${dialogHeader("Add terrain to your new route")}<p>Route coordinates are sent to Open Topo Data to sample heights about every 90 metres along each straight leg. Ascent is an estimate. This does not make the route follow paths.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-create-terrain" class="button primary">Fetch route terrain</button></div>`,
   );
@@ -1415,6 +1718,7 @@ function history(back: boolean) {
   const created = workspace.created,
     terrain = workspace.createdTerrain;
   workspace = from.pop()!;
+  editWelcome = !workspace.activeId && !workspace.route;
   workspace.created = created;
   workspace.createdTerrain = terrain;
   persist();
@@ -1425,7 +1729,7 @@ $("undo").onclick = () => history(true);
 $("redo").onclick = () => history(false);
 $("settings").onclick = () => {
   openDialog(
-    `${dialogHeader("Settings", "", true)}<h3 id="grid-settings-heading">Grid references</h3><select id="coordinate-system" class="text-input" aria-labelledby="grid-settings-heading">${Object.entries(
+    `${dialogHeader("Settings", "", true)}<section class="settings-grid-section"><h3 id="grid-settings-heading">Grid references</h3><p class="system-picker-prompt">Choose a Grid Reference System.</p><label id="available-systems-heading" class="field-label system-picker-label" for="coordinate-system">Available Systems</label><select id="coordinate-system" class="text-input system-picker" aria-labelledby="available-systems-heading">${Object.entries(
       coordinateSystems,
     )
       .map(
@@ -1434,8 +1738,24 @@ $("settings").onclick = () => {
       )
       .join(
         "",
-      )}</select><h3 class="settings-colour-heading">Created Route Colour</h3>${colourForm(draft().color, true)}<p id="colour-status" class="dialog-note" role="status"></p><button class="button primary full" data-close>Done</button>`,
+      )}</select></section><h3 class="settings-colour-heading">Created Route Colour</h3>${colourForm(draft().color, true)}<p id="colour-status" class="dialog-note" role="status"></p><section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section><button class="button primary full" data-close>Done</button>`,
   );
+  $("allow-point-naming").onclick = async () => {
+    allowPointNaming = !allowPointNaming;
+    $("allow-point-naming").setAttribute(
+      "aria-checked",
+      String(allowPointNaming),
+    );
+    render();
+    try {
+      await set(POINT_NAMING_KEY, allowPointNaming);
+    } catch {
+      notification(
+        "Point naming changed for this session, but could not be saved on this device.",
+        true,
+      );
+    }
+  };
   bindColourPicker(draft().color, applyCreatedColour);
   $("coordinate-system").onchange = async (event) => {
     const value = (event.target as HTMLSelectElement).value;
@@ -1454,7 +1774,8 @@ $("settings").onclick = () => {
 };
 $("help").onclick = () =>
   openDialog(
-    `${dialogHeader("About", "A guide to BareGPS Route Planner", true)}<h3>Create a route</h3><ol class="help-list"><li><strong>Add points.</strong> Tap the map to place the start and each next point. Add points always extends the route, even beside an existing line.</li><li><strong>Insert a point.</strong> Choose Insert point, then tap the chosen route line. The new point goes between its neighbours and Add points resumes automatically.</li><li><strong>Move or remove points.</strong> Drag any numbered marker to reshape the route. The main Route Card shows point numbers, editable names, coordinates and heights. Tap a point number to locate it; the fifth-column bin removes it. Expand the card for per-leg and cumulative distance and ascent, and Share Text or Share PDF. Names can be up to 10 characters.</li><li><strong>Close a loop.</strong> Close loop joins the last point precisely to the start, including that return leg in distance. Undo can reopen the loop.</li><li><strong>Check the route.</strong> Lines connect points directly and do not automatically follow paths. Check that your route is walkable.</li><li><strong>Fetch terrain.</strong> With at least two points, fetch heights sampled along every leg for estimated ascent and descent. Coordinates are sent to Open Topo Data. Moving, adding or removing points clears previous terrain estimates; fetch again after changes.</li><li><strong>Save.</strong> Name your route and choose its colour in Settings, then Save route exports GPX. Undo/redo are below the device status in the title. Create preserves its draft and map position. Opening Edit resets its map to Carrauntoohil and shows the file and example buttons; imported tracks remain in Your tracks. Example tracks appear only after choosing the sample button.</li></ol><p class="dialog-note">The current-position button at the upper right of either map centres it on your device location. It requests access only when tapped and never adds a route point.</p><h3>Grid references</h3><ol class="help-list"><li><strong>Choose your format.</strong> Open Settings using the cog beneath ?. The Grid references choice controls route points, the map centre in Create and Edit, and shared text and PDF route cards.</li><li><strong>Keep your preference.</strong> The selected format applies immediately and is remembered on this device.</li><li><strong>Export coordinates.</strong> GPX files always use WGS84 Lat/Long. Display settings do not change the saved route geometry.</li></ol><p class="dialog-note">Irish and British National Grid references use approximate datum conversions. ITM uses ETRS89; global formats use WGS84, including USNG. Reference precision does not imply equivalent GPS accuracy. UTM, MGRS and USNG cover 80°S to 84°N. Regional grids show an out-of-area message elsewhere.</p><h3>Created route colour</h3><p>In Settings, use Created Route Colour to choose a spectrum colour, a preset or a hex value, then select Apply colour. This changes the current created route and its GPX export. Imported tracks have their own Line colour control in Edit, using the same picker.</p><h3>Edit GPX tracks</h3><ol class="help-list"><li><strong>Open your files.</strong> Choose one or more GPX tracks or routes from Files. Multiple tracks in one file are supported.</li><li><strong>Choose a section.</strong> Drag A and B on the map or use the sliders. Distance and ascent update as you go.</li><li><strong>Shape your route.</strong> Save the section, split it into two tracks, reverse direction, or add it to a joined route. Add sections in walking order.</li><li><strong>Check connections.</strong> Dashed lines connect separated sections. Their distance and ascent count. Fetch terrain to include hills between endpoints.</li><li><strong>Save to Files.</strong> Save the current section or your complete joined route as GPX. Your originals stay untouched.</li></ol><p class="dialog-note">Undo / redo: ⌘ or Ctrl + Z / Shift + Z. Escape collapses the map. Edits are saved on this device. Ascent sums elevation gains; missing heights are marked as partial. GPX connection markers and track colours round-trip in BareGPS.</p><button class="button primary full" data-close>Let’s go</button>`,
+    `${dialogHeader("About", "BareGPS Route Planner · Create and Edit", true)}${aboutGuide}`,
+    "about",
   );
 window.addEventListener("keydown", (e) => {
   if (
@@ -1502,6 +1823,7 @@ async function pendingFiles() {
 async function init() {
   try {
     const savedCoordinates = await get(COORDINATE_KEY);
+    allowPointNaming = (await get(POINT_NAMING_KEY)) === true;
     if (isCoordinateSystem(savedCoordinates))
       coordinateSystem = savedCoordinates;
   } catch {
