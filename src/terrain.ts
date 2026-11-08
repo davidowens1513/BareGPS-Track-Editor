@@ -9,7 +9,7 @@ export function sampleGaps(track: Track): Track {
       const steps = Math.max(1, Math.ceil(distance(a, b) / 90));
       if (steps > 1500)
         throw new Error(
-          "This gap is over 135 km. Split it into smaller connections before fetching terrain.",
+          "This leg is over 135 km. Add points to make shorter connections before fetching terrain.",
         );
       let delta = ((b.lon - a.lon + 540) % 360) - 180;
       for (let j = 1; j < steps; j++)
@@ -26,7 +26,7 @@ export function sampleGaps(track: Track): Track {
   const missing = points.filter((p) => p.gapBefore && !p.terrain);
   if (missing.length > 5000)
     throw new Error(
-      "Too many gap samples. Please fetch terrain for smaller sections.",
+      "Too many terrain samples. Try fetching smaller input tracks.",
     );
   return { ...track, points };
 }

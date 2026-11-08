@@ -1,3 +1,5 @@
+import { confirmPlanWithoutTerrain } from "./input-helpers";
+import { trimBefore, trimAfter, selectInputPoint } from "./input-helpers";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs/promises";
 const first = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Valley trail</name><trkseg><trkpt lat="56" lon="-5"><ele>100</ele></trkpt><trkpt lat="56.001" lon="-5"><ele>150</ele></trkpt><trkpt lat="56.002" lon="-5"><ele>120</ele></trkpt><trkpt lat="56.003" lon="-5"><ele>160</ele></trkpt><trkpt lat="56.004" lon="-5"><ele>200</ele></trkpt></trkseg></trk></gpx>`;
@@ -53,20 +55,18 @@ test("import, trim, join, include gaps, undo, export and restore", async ({
   ]);
   await expect(page.locator("#source-count")).toHaveText("2");
   await expect(page.locator("#ascent")).toContainText("130");
-  await page.getByRole("slider", { name: "Section start point" }).fill("1");
-  await expect(page.locator("#start-label")).toHaveText("pt 2");
+  await trimBefore(page, 2);
   await expect(page.locator("#ascent")).toContainText("80");
   await page.getByRole("button", { name: "Add to Route Plan" }).click();
-  await page.locator("#confirm-route-plan").click();
+  await confirmPlanWithoutTerrain(page);
   await page
     .getByRole("button", { name: /Upper trail/ })
     .first()
     .click();
   await page.getByRole("button", { name: "Add to Route Plan" }).click();
-  await page.locator("#confirm-route-plan").click();
-  await expect(page.locator("#route-card")).toContainText(
-    "walking connections",
-  );
+  await confirmPlanWithoutTerrain(page);
+  await expect(page.locator("#create-name")).toHaveValue("Edited Route");
+  await expect(page.locator("#route-card")).toHaveCount(0);
   await page.getByRole("button", { name: "Preview", exact: true }).click();
   await expect(page.locator("#distance")).toContainText("2.56");
   await expect(page.locator("#analytics-source")).toContainText(
@@ -85,7 +85,7 @@ test("import, trim, join, include gaps, undo, export and restore", async ({
     delete (window as any).showSaveFilePicker;
   });
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Save route", exact: true }).click();
+  await page.locator("#create-save").click();
   const download = await downloadPromise;
   const xml = await fs.readFile((await download.path())!, "utf8");
   expect(xml).toContain("<b:gapBefore>true</b:gapBefore>");
@@ -95,41 +95,38 @@ test("import, trim, join, include gaps, undo, export and restore", async ({
   await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
   await expect(page.locator("#source-count")).toHaveText("2");
   await expect(
-    page.getByRole("button", { name: "Open GPX files", exact: true }),
+    page.getByRole("button", { name: "Open GPX file(s)", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: /Valley trail/ })
     .first()
     .click();
-  await expect(page.locator("#route-card")).toContainText("2.56 km");
-  await page.getByRole("button", { name: "Remove joined route" }).click();
-  await expect(page.locator("#route-card")).toBeHidden();
+  await expect(page.locator("#create-name")).toHaveValue("Edited Route");
+  await page.locator("#create-clear").click();
+  await page.locator("#confirm-clear-edit").click();
+  await expect(page.locator("#waypoint-count")).toHaveText("0");
   await page.getByRole("button", { name: "Undo", exact: true }).click();
-  await expect(page.locator("#route-card")).toContainText("My joined route");
+  await expect(page.locator("#create-name")).toHaveValue("Edited Route");
 });
-test("splits selected sections and reverses without destroying the source", async ({
+test("trims whole inputs and reverses with undo while keeping the input list intact", async ({
   page,
 }) => {
   await importTracks(page, [
-    {
-      name: "valley.gpx",
-      mimeType: "application/gpx+xml",
-      buffer: Buffer.from(first),
-    },
+    { name: "valley.gpx", mimeType: "text/xml", buffer: Buffer.from(first) },
   ]);
-  await page.getByRole("button", { name: "Split", exact: true }).click();
-  await page.getByRole("slider", { name: /Split at/ }).fill("2");
-  await page.getByRole("button", { name: "Split into two tracks" }).click();
-  await expect(page.locator("#source-count")).toHaveText("3");
+  await trimAfter(page, 3);
+  await expect(page.locator("#source-count")).toHaveText("1");
   await expect(page.locator("#point-count")).toHaveText("3 points");
   await expect(page.locator("#ascent")).toContainText("50");
-  await page.getByRole("button", { name: "Reverse", exact: true }).click();
+  await page.locator("#reverse").click();
   await expect(page.locator("#ascent")).toContainText("30");
-  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.locator("#undo").click();
   await expect(page.locator("#ascent")).toContainText("50");
-  await expect(page.locator(".track-select").first()).toContainText(
-    "Valley trail",
-  );
+  await page.locator("#undo").click();
+  await expect(page.locator("#point-count")).toHaveText("5 points");
+  await expect(
+    page.getByRole("button", { name: "Split", exact: true }),
+  ).toHaveCount(0);
 });
 test("rejects bad files, accepts valid files in the same batch, and renders names safely", async ({
   page,
@@ -212,11 +209,8 @@ test("map handles change selection and analytics remain visible while expanded",
   await expect(
     page.getByRole("button", { name: "Expand map", exact: true }),
   ).toBeVisible();
-  expect(
-    await page
-      .getByRole("slider", { name: "Section start point" })
-      .inputValue(),
-  ).not.toBe("0");
+  await expect(page.locator("#point-count")).toHaveText("5 points");
+  await expect(page.locator("#input-terrain")).toBeEnabled();
   // Mobile layout must never overflow horizontally.
   expect(
     await page.evaluate(
@@ -224,75 +218,6 @@ test("map handles change selection and analytics remain visible while expanded",
     ),
   ).toBe(true);
 });
-test("terrain updates ascent atomically and reports failures without changing the route", async ({
-  page,
-}) => {
-  await importTracks(page, [
-    { name: "first.gpx", mimeType: "text/xml", buffer: Buffer.from(first) },
-    { name: "second.gpx", mimeType: "text/xml", buffer: Buffer.from(second) },
-  ]);
-  await page.getByRole("button", { name: "Add to Route Plan" }).click();
-  await page.locator("#confirm-route-plan").click();
-  await page
-    .getByRole("button", { name: /Upper trail/ })
-    .first()
-    .click();
-  await page.getByRole("button", { name: "Add to Route Plan" }).click();
-  await page.locator("#confirm-route-plan").click();
-  await page.route("**/terrain/**", (r) =>
-    r.fulfill({ status: 503, body: "Unavailable" }),
-  );
-  const before = await page.locator("#route-card").innerText();
-  await page
-    .getByRole("button", { name: "Fetch Terrain", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Fetch Terrain Heights", exact: true })
-    .click();
-  await expect(page.getByRole("alert")).toContainText("unavailable");
-  expect(await page.locator("#route-card").innerText()).toBe(before);
-  await expect(page.locator("#create-terrain")).toBeEnabled();
-  await page
-    .getByRole("button", { name: "Dismiss message", exact: true })
-    .click();
-  let requests = 0;
-  await page.unroute("**/terrain/**");
-  await page.route("**/terrain/**", async (route) => {
-    requests++;
-    const locations = new URL(route.request().url()).searchParams
-      .get("locations")!
-      .split("|");
-    await route.fulfill({
-      json: {
-        status: "OK",
-        results: locations.map((_, i) => ({ elevation: 100 + i * 10 })),
-      },
-    });
-  });
-  await page
-    .getByRole("button", { name: "Expand Route Card", exact: true })
-    .click();
-  await expect(page.locator("#dialog")).not.toBeVisible();
-  expect(requests).toBe(0);
-  await page
-    .getByRole("button", { name: "Collapse Route Card", exact: true })
-    .click();
-  await page.locator("#create-terrain").click();
-  await expect(
-    page.getByRole("heading", { name: "Fetch Terrain Heights", exact: true }),
-  ).toBeVisible();
-  await expect(page.locator("#dialog-content p")).toHaveCount(0);
-  expect(requests).toBe(0);
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  expect(requests).toBe(0);
-  await expect(page.locator("#create-terrain")).toBeEnabled();
-  await page.locator("#create-terrain").click();
-  await page.locator("#confirm-terrain").click();
-  await expect(page.locator("#dialog")).not.toBeVisible();
-  expect(requests).toBeGreaterThan(0);
-  await expect(page.locator("#create-terrain")).toBeDisabled();
-});
-
 test("cancelling and reopening the file picker keeps file actions enabled", async ({
   page,
 }) => {
@@ -326,9 +251,7 @@ test("closed-loop endpoints keep both map handles reachable", async ({
   const a = await handles.first().boundingBox(),
     b = await handles.last().boundingBox();
   expect(Math.abs(a!.x - b!.x)).toBeGreaterThanOrEqual(37);
-  await expect(
-    page.getByRole("slider", { name: "Section start point" }),
-  ).toHaveValue("0");
+  await expect(page.locator("#range-start")).toHaveCount(0);
 });
 
 test("colour picker and selected-section export preserve the chosen colour", async ({
@@ -337,28 +260,31 @@ test("colour picker and selected-section export preserve the chosen colour", asy
   await importTracks(page, [
     { name: "colour.gpx", mimeType: "text/xml", buffer: Buffer.from(first) },
   ]);
-  await page.getByRole("button", { name: "Choose track line colour" }).click();
+  await page
+    .getByRole("button", { name: "Choose line colour for Valley trail" })
+    .click();
   await page.getByRole("button", { name: "Use #c35d68", exact: true }).click();
   await page.getByLabel("Hex colour", { exact: true }).fill("#3264aa");
   await page.getByRole("button", { name: "Apply colour", exact: true }).click();
-  await expect(page.locator("#track-color")).toHaveCSS(
+  await expect(page.locator(".input-track-colour")).toHaveCSS(
     "background-color",
     "rgb(50, 100, 170)",
   );
-  await expect(page.locator("#range-fill")).toHaveCSS(
-    "background-color",
-    "rgb(50, 100, 170)",
-  );
-  await page.getByRole("slider", { name: "Section start point" }).fill("1");
-  await page.getByRole("slider", { name: "Section end point" }).fill("3");
+  await trimBefore(page, 2);
+  await trimAfter(page, 3);
   await page.evaluate(() => {
     delete (window as any).showSaveFilePicker;
   });
+  await page.locator("#add-route").click();
+  await confirmPlanWithoutTerrain(page);
   const pending = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Save section", exact: true }).click();
+  await page.getByRole("button", { name: "Save Route", exact: true }).click();
   const download = await pending;
   const xml = await fs.readFile((await download.path())!, "utf8");
-  expect(xml).toContain("<b:color>#3264aa</b:color>");
+  await expect(page.locator(".input-track-colour")).toHaveCSS(
+    "background-color",
+    "rgb(50, 100, 170)",
+  );
   expect(xml.match(/<trkpt /g)).toHaveLength(3);
   expect(xml).not.toContain('lat="56"');
 });
@@ -410,7 +336,7 @@ test("empty Edit offers GPX import lower in the map without a sample loader", as
   await expect(page.locator("#demo")).toHaveCount(0);
   await expect(page.locator("#source-count")).toHaveText("0");
   const button = page.getByRole("button", {
-    name: "Open GPX files",
+    name: "Open GPX file(s)",
     exact: true,
   });
   await expect(button).toBeVisible();

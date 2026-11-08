@@ -859,9 +859,9 @@ h3 {
 .selection-settings {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  margin: 6px 0;
+  gap: 8px;
+  align-items: end;
+  margin: 3px 0;
 }
 .selection-slider {
   min-width: 0;
@@ -869,12 +869,13 @@ h3 {
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
-  min-height: 32px;
+  min-height: 18px;
 }
 .line-color {
   display: grid;
-  gap: 8px;
-  font-size: 11px;
+  justify-items: center;
+  gap: 4.8px;
+  font-size: 6.6px;
   color: #637b58;
 }
 .edit-buttons {
@@ -3061,5 +3062,350 @@ dialog.plan-dialog {
   }
   #mode-caption {
     display: none;
+  }
+}
+
+/* Keep the single route-name field and Preview together without squeezing phones. */
+.create-settings label:first-child {
+  min-width: 0;
+}
+#create-card #preview-route {
+  flex-shrink: 0;
+  margin-bottom: 1px;
+}
+
+@media (max-width: 350px) {
+  #create-card .create-buttons .button {
+    font-size: 10px;
+    gap: 3px;
+    padding-inline: 3px;
+  }
+  #create-card .create-buttons .button svg {
+    width: 12px;
+  }
+}
+
+#create-save:disabled {
+  background: #e9ede6;
+  border-color: var(--border);
+  color: #87927e;
+  opacity: 1;
+}
+
+.line-color .color-trigger {
+  width: 25.2px;
+  height: 25.2px;
+  border-width: 2.4px;
+}
+
+#create-name {
+  padding-block: 6px;
+}
+
+/* Input geometry editing uses the same map, without changing staged sections. */
+.input-edit-switch {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+.input-edit-switch > button {
+  flex: 1;
+}
+.input-edit-switch button[aria-pressed="true"] {
+  background: white;
+  color: var(--green);
+  border-color: #cadabd;
+  font-weight: 650;
+}
+.input-handle-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.input-handle-options[hidden] {
+  display: none;
+}
+.input-handle-options label,
+.input-handle-options > span {
+  font-size: 12px;
+}
+.input-handle-options input {
+  width: 76px;
+  min-width: 0;
+  padding: 6px;
+}
+.input-handle-options p {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+}
+#input-selected-point {
+  flex-basis: 100%;
+}
+.input-edit-actions {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+.input-edit-actions > button {
+  flex: 1;
+}
+.create-tools .drawing-modes {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+.create-tools .drawing-modes button {
+  padding-inline: 3px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .create-tools .drawing-modes button {
+    font-size: 11px;
+    padding-inline: 2px;
+  }
+}
+#map.input-drawing {
+  cursor: crosshair;
+}
+.input-handle span {
+  background: var(--input-colour);
+  font-size: 11px;
+  min-width: 25px;
+}
+.input-handle span:after,
+.input-handle:nth-child(2) span:after {
+  background: var(--input-colour);
+}
+.input-handle.selected span,
+#create-map .track-handle.selected span {
+  outline: 3px solid white;
+  box-shadow: 0 0 0 5px #1e293b;
+}
+.plan-dialog #plan-replace {
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Keep Edit tools visible while selecting A–B as well as editing points. */
+body:not(.creating) .map-empty {
+  bottom: 46px;
+}
+body:not(.creating) .map-legend {
+  bottom: 60px;
+}
+
+.input-selection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.input-selection-row #input-selected-point {
+  flex-basis: auto;
+}
+.input-selection-row .line-color {
+  margin: 0;
+  flex-shrink: 0;
+}
+.input-trim-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0;
+}
+.section-card .edit-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.section-card .edit-buttons .button {
+  font-size: 11px;
+  padding-inline: 4px;
+  gap: 4px;
+}
+
+.section-card .edit-buttons .button {
+  white-space: normal;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+/* The four secondary input actions always share one equal-width row. */
+.input-extra-tools {
+  height: auto;
+  min-height: 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 5px;
+}
+.input-extra-tools .drawing-modes button {
+  font-size: clamp(9px, 2.65vw, 12px);
+  padding-inline: 1px;
+  min-width: 0;
+}
+.input-selection-status {
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: center;
+  margin: 0;
+  color: var(--muted);
+}
+.input-track-colour {
+  width: 25.2px;
+  height: 25.2px;
+  border-width: 2.4px;
+  flex-shrink: 0;
+  margin-right: 5px;
+}
+.track-row .track-select {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.map-expanded .input-extra-tools {
+  flex-shrink: 0;
+}
+body:not(.creating) .map-empty {
+  bottom: 107px;
+}
+body:not(.creating) .map-legend {
+  bottom: 121px;
+}
+
+/* All map editing actions have a visible button surface. */
+.create-tools .drawing-modes button {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px #263e3310;
+  font-weight: 600;
+}
+.create-tools .drawing-modes button[aria-pressed="true"] {
+  background: #e6f1e7;
+  border-color: var(--green);
+  color: var(--green);
+}
+.create-tools .drawing-modes button:disabled {
+  background: #edf0e9;
+  color: #96a18f;
+  box-shadow: none;
+  opacity: 0.65;
+}
+.input-extra-tools {
+  height: 46px;
+  min-height: 46px;
+  gap: 0;
+}
+.input-selection-strip {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: #f5f7f1;
+  padding: 0 8px;
+}
+.input-selection-strip .input-selection-status {
+  font-size: 10px;
+  line-height: 13px;
+  margin: 0;
+  color: #52654b;
+}
+.input-selection-strip.inactive {
+  background: #ecefe8;
+}
+.input-selection-strip.inactive .input-selection-status {
+  color: #a4ad9d;
+}
+.input-plan-controls {
+  display: flow-root;
+  padding: 0 20px;
+  background: #fff;
+}
+.input-plan-controls .route-plan-buttons {
+  max-width: 560px;
+  margin: 8px auto;
+}
+#input-edit-controls {
+  flex-shrink: 0;
+}
+#editor.editor-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+body:not(.creating) .map-empty {
+  bottom: var(--input-controls-height, 166px);
+}
+body:not(.creating) .map-legend {
+  bottom: calc(var(--input-controls-height, 166px) + 14px);
+}
+
+/* Keep map warnings clear of the current-position button. */
+.map-error {
+  right: 58px;
+  padding: 6px 8px;
+  gap: 6px;
+}
+.map-error > span {
+  flex: 1;
+  min-width: 0;
+}
+.map-warning-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.map-warning-actions .icon-button {
+  width: 32px;
+  height: 32px;
+}
+.map-warning-actions .text-button {
+  min-height: 32px;
+}
+
+.terrain-failure-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* Keep the same reserved chart size before and after heights arrive. */
+.profile-card {
+  padding-top: 14.07px;
+  padding-bottom: 8.71px;
+}
+.profile-heading {
+  margin-bottom: 6.7px;
+}
+#profile {
+  height: 52.26px;
+}
+#profile svg {
+  height: 41.54px;
+}
+.profile-axis {
+  margin-top: 3.35px;
+}
+.profile-note-slot > .elevation-note {
+  margin-top: 6.7px;
+  padding-top: 6.03px;
+}
+@media (max-width: 640px) {
+  .profile-card {
+    padding-top: 12.06px;
+    padding-bottom: 8.04px;
+  }
+  .profile-heading {
+    margin-bottom: 5.36px;
+  }
+  #profile {
+    height: 40.87px;
+  }
+  #profile svg {
+    height: 30.82px;
   }
 }

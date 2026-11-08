@@ -6,6 +6,7 @@ export interface Point {
   time?: string;
   gapBefore?: boolean;
   terrain?: boolean;
+  terrainPending?: boolean;
 }
 export interface Track {
   id: string;
@@ -14,6 +15,7 @@ export interface Track {
   points: Point[];
   source: string;
   kind: "track" | "route";
+  inputTrackId?: string;
 }
 export interface Selection {
   start: number;
@@ -115,7 +117,11 @@ export function selectedPoints(track: Track, selection: Selection) {
   );
   return track.points
     .slice(start, end + 1)
-    .map((p, i) => (i === 0 ? { ...p, gapBefore: undefined } : { ...p }));
+    .map((p, i) =>
+      i === 0
+        ? { ...p, gapBefore: undefined, terrainPending: undefined }
+        : { ...p },
+    );
 }
 export function section(
   track: Track,
@@ -153,7 +159,7 @@ export function join(
   if (!route)
     return {
       id: uid(),
-      name: "My joined route",
+      name: "Edited Route",
       color: "#16724d",
       points: part,
       source: "Joined in BareGPS",
@@ -176,9 +182,11 @@ export function reverse(track: Track): Track {
       ...p,
       gapBefore: track.points[i + 1]?.gapBefore,
       terrain: track.points[i + 1]?.terrain,
+      terrainPending: track.points[i + 1]?.terrainPending,
     }))
     .reverse();
   points[0].gapBefore = undefined;
+  points[0].terrainPending = undefined;
   return { ...track, points };
 }
 const children = (el: Element, name: string) =>
@@ -254,6 +262,12 @@ export function parseGPX(
           ? Array.from(ext.children).find((e) => e.localName === "terrain")
               ?.textContent === "true"
           : false;
+        const terrainPending = ext
+          ? Array.from(ext.children).some(
+              (e) =>
+                e.localName === "terrainPending" && e.textContent === "true",
+            )
+          : false;
         points.push({
           lat,
           lon,
@@ -262,6 +276,7 @@ export function parseGPX(
           time: time && Number.isFinite(Date.parse(time)) ? time : undefined,
           gapBefore: (points.length > 0 && (i === 0 || gap)) || undefined,
           terrain: terrain || undefined,
+          ...(terrainPending ? { terrainPending: true } : {}),
         });
       }
     }
@@ -305,7 +320,7 @@ const escapeXML = (s: string) =>
       })[c]!,
   );
 export function exportGPX(track: Track): string {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BareGPS Route Planner" xmlns="http://www.topografix.com/GPX/1/1" xmlns:b="https://baregps.app/gpx/1"><metadata><name>${escapeXML(track.name)}</name><desc>Dashed gaps are straight-line walking connections included in distance and ascent. Elevation may be estimated.</desc></metadata><trk><name>${escapeXML(track.name)}</name><extensions><b:color>${track.color}</b:color></extensions><trkseg>\n${track.points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele !== undefined ? `<ele>${p.ele}</ele>` : ""}${p.time ? `<time>${escapeXML(p.time)}</time>` : ""}${p.name ? `<name>${escapeXML(p.name)}</name>` : ""}${p.gapBefore ? `<extensions><b:gapBefore>true</b:gapBefore>${p.terrain ? "<b:terrain>true</b:terrain>" : ""}</extensions>` : ""}</trkpt>`).join("\n")}\n</trkseg></trk></gpx>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BareGPS Route Planner" xmlns="http://www.topografix.com/GPX/1/1" xmlns:b="https://baregps.app/gpx/1"><metadata><name>${escapeXML(track.name)}</name><desc>Dashed gaps are straight-line walking connections included in distance and ascent. Elevation may be estimated.</desc></metadata><trk><name>${escapeXML(track.name)}</name><extensions><b:color>${track.color}</b:color></extensions><trkseg>\n${track.points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele !== undefined ? `<ele>${p.ele}</ele>` : ""}${p.time ? `<time>${escapeXML(p.time)}</time>` : ""}${p.name ? `<name>${escapeXML(p.name)}</name>` : ""}${p.gapBefore || p.terrainPending ? `<extensions>${p.gapBefore ? "<b:gapBefore>true</b:gapBefore>" : ""}${p.gapBefore && p.terrain ? "<b:terrain>true</b:terrain>" : ""}${p.terrainPending ? "<b:terrainPending>true</b:terrainPending>" : ""}</extensions>` : ""}</trkpt>`).join("\n")}\n</trkseg></trk></gpx>\n`;
 }
 export function validateWorkspace(value: unknown): value is Workspace {
   if (!value || typeof value !== "object") return false;
@@ -344,6 +359,9 @@ export function validateWorkspace(value: unknown): value is Workspace {
         /^[a-z0-9-]{1,64}$/i.test(t.id) &&
         typeof t.name === "string" &&
         typeof t.source === "string" &&
+        (t.inputTrackId === undefined ||
+          (typeof t.inputTrackId === "string" &&
+            /^[a-z0-9-]{1,64}$/i.test(t.inputTrackId))) &&
         ["track", "route"].includes(t.kind) &&
         /^#[0-9a-f]{6}$/i.test(t.color) &&
         Array.isArray(t.points) &&
@@ -364,7 +382,9 @@ export function validateWorkspace(value: unknown): value is Workspace {
             (p.time === undefined || typeof p.time === "string") &&
             (p.name === undefined || typeof p.name === "string") &&
             (p.gapBefore === undefined || typeof p.gapBefore === "boolean") &&
-            (p.terrain === undefined || typeof p.terrain === "boolean"),
+            (p.terrain === undefined || typeof p.terrain === "boolean") &&
+            (p.terrainPending === undefined ||
+              typeof p.terrainPending === "boolean"),
         ),
     ) &&
     (w.routePlan ?? []).reduce(
@@ -391,6 +411,21 @@ export function restoreSeparateWorkspace(saved: Workspace): Workspace {
       end: Math.max(0, (editTrack?.points.length ?? 1) - 1),
     };
   }
+  if (
+    workspace.created &&
+    ["My walking route", "Created Track"].includes(workspace.created.name)
+  ) {
+    workspace.created.name = "Created Route";
+    if (
+      workspace.createdTerrain &&
+      ["My walking route", "Created Track"].includes(
+        workspace.createdTerrain.name,
+      )
+    )
+      workspace.createdTerrain.name = "Created Route";
+  }
+  if (workspace.route?.name === "My joined route")
+    workspace.route.name = "Edited Route";
   delete workspace.tool;
   if (workspace.routePlan === undefined) {
     workspace.routePlan = workspace.route

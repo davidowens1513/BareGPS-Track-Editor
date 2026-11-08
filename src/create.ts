@@ -4,7 +4,7 @@ export const MAX_WAYPOINTS = 1000;
 export function newCreatedRoute(): Track {
   return {
     id: uid(),
-    name: "My walking route",
+    name: "Created Route",
     color: "#16724d",
     kind: "route",
     source: "Created in BareGPS",

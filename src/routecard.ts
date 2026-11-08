@@ -1,3 +1,4 @@
+import { needsTerrain } from "./input-edit";
 import { analytics, type Track } from "./model";
 import {
   coordinateSystems,
@@ -46,6 +47,9 @@ export function routecardText(
     `${route.name} — Routecard`,
     `${route.points.length} points · ${km(rows.at(-1)?.total ?? 0)}`,
     `Coordinates: ${coordinateSystems[system]}`,
+    ...(needsTerrain(terrain ?? route)
+      ? ["Terrain incomplete — heights and ascent are partial."]
+      : []),
     "",
     ...rows.map(({ point, distance, total, ascent, totalAscent }, i) => {
       const label = [

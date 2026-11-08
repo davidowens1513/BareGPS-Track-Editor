@@ -14,14 +14,16 @@ export class TrackMap {
   protected layers = L.layerGroup();
   private tileLayer: L.TileLayer;
   private tileFailed = false;
+  private failedTiles = new Set<HTMLElement>();
   private initialViewPending = true;
   private editing = false;
   private positionLayers = L.layerGroup();
-  private endpointLayers: L.Marker[] = [];
+  showSelectionHandles = true;
+  protected endpointLayers: L.Marker[] = [];
   private dragFrame = 0;
   constructor(
     private onSelection: (s: Selection) => void,
-    onTileError: () => void,
+    private onTileError: (failed: boolean) => void,
     containerId = "map",
   ) {
     this.map = L.map(containerId, {
@@ -38,11 +40,27 @@ export class TrackMap {
           'Map © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · SRTM | <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
       },
     ).addTo(this.map);
-    this.tileLayer.on("tileerror", () => {
-      if (!this.tileFailed) {
-        this.tileFailed = true;
-        onTileError();
+    const refreshTileWarning = () => {
+      for (const tile of this.failedTiles)
+        if (!tile.isConnected) this.failedTiles.delete(tile);
+      const failed = this.failedTiles.size > 0;
+      if (failed !== this.tileFailed) {
+        this.tileFailed = failed;
+        this.onTileError(failed);
       }
+    };
+    this.tileLayer.on("tileerror", (event: L.TileErrorEvent) => {
+      if (event.tile.isConnected) this.failedTiles.add(event.tile);
+      refreshTileWarning();
+    });
+    const removeFailedTile = (event: L.TileEvent) => {
+      this.failedTiles.delete(event.tile);
+      refreshTileWarning();
+    };
+    this.tileLayer.on("tileload", removeFailedTile);
+    this.tileLayer.on("tileunload", removeFailedTile);
+    window.addEventListener("online", () => {
+      if (this.tileFailed) this.retryTiles();
     });
     this.layers.addTo(this.map);
     this.map.attributionControl.setPosition("bottomright");
@@ -100,10 +118,18 @@ export class TrackMap {
     return this.tileFailed;
   }
   retryTiles() {
+    this.failedTiles.clear();
     this.tileFailed = false;
+    this.onTileError(false);
     this.tileLayer.redraw();
   }
-  private line(points: Point[], color: string, weight = 4, opacity = 1) {
+  protected line(
+    points: Point[],
+    color: string,
+    weight = 4,
+    opacity = 1,
+    target: L.LayerGroup = this.layers,
+  ) {
     if (points.length < 2) return;
     // Group runs by gap style rather than creating one Leaflet layer per GPS edge.
     let run: Point[] = [points[0]],
@@ -111,13 +137,13 @@ export class TrackMap {
     for (let i = 1; i < points.length; i++) {
       const nextGap = !!points[i].gapBefore;
       if (nextGap !== gap) {
-        this.stroke(run, color, weight, opacity, gap);
+        this.stroke(run, color, weight, opacity, gap, target);
         run = [points[i - 1]];
         gap = nextGap;
       }
       run.push(points[i]);
     }
-    this.stroke(run, color, weight, opacity, gap);
+    this.stroke(run, color, weight, opacity, gap, target);
   }
   private stroke(
     points: Point[],
@@ -125,6 +151,7 @@ export class TrackMap {
     weight: number,
     opacity: number,
     gap: boolean,
+    target: L.LayerGroup = this.layers,
   ) {
     L.polyline(
       points.map((p) => [p.lat, p.lon] as L.LatLngTuple),
@@ -135,7 +162,7 @@ export class TrackMap {
         dashArray: gap ? "7 8" : undefined,
         lineCap: "round",
       },
-    ).addTo(this.layers);
+    ).addTo(target);
   }
   render(
     tracks: Track[],
@@ -154,6 +181,7 @@ export class TrackMap {
     this.line(active.points, "#53685a", 3, 0.25);
     const part = selectedPoints(active, selection);
     this.line(part, active.color, 5);
+    if (!this.showSelectionHandles) return;
     (
       [
         ["start", selection.start, "A"],
@@ -241,6 +269,8 @@ export class TrackMap {
 import { routeTapIndex, isClosedRoute, type DrawingMode } from "./create";
 
 export class CreateMap extends TrackMap {
+  selectedIndex: number | null = null;
+  onSelect: (index: number) => void = () => {};
   drawingMode: DrawingMode = "add";
   enabled = true;
   private draggingPoint = false;
@@ -250,7 +280,7 @@ export class CreateMap extends TrackMap {
     private onAdd: (index: number, point: Point) => void,
     private onMove: (index: number, point: Point) => void,
     private onPreview: (index: number, point: Point) => void,
-    onTileError: () => void,
+    onTileError: (failed: boolean) => void,
   ) {
     super(() => {}, onTileError, "create-map");
     this.map.doubleClickZoom.disable();
@@ -326,8 +356,15 @@ export class CreateMap extends TrackMap {
         title: `Route point ${index + 1} · drag to move`,
         keyboard: true,
       }).addTo(this.layers);
+      marker
+        .getElement()
+        ?.classList.toggle("selected", this.selectedIndex === index);
+      marker.on("click", () => {
+        if (this.enabled) this.onSelect(index);
+      });
       marker.on("dragstart", () => {
         this.draggingPoint = true;
+        this.onSelect(index);
       });
       marker.on("drag", () => {
         const pos = marker.getLatLng();

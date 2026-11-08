@@ -10,15 +10,12 @@ import {
   MAX_POINTS,
   parseGPX,
   reverse,
-  section,
   selectedPoints,
-  split,
   validateWorkspace,
   restoreSeparateWorkspace,
   type Point,
   type Track,
   type Workspace,
-  type Selection,
 } from "./model";
 import {
   pickFiles,
@@ -31,12 +28,26 @@ import {
   type ImportFile,
 } from "./files";
 import { TrackMap, CreateMap } from "./map";
+import { InputMap } from "./input-map";
+import {
+  needsTerrain,
+  trimInputTrack,
+  insertInputPoint,
+  deleteInputPoint,
+  reshapeInputHandle,
+  closeInputLoop,
+  prepareInputTerrain,
+  finishInputTerrain,
+  type InputPointTool,
+} from "./input-edit";
 import { icon } from "./icons";
 import { routecardText, routecardRows } from "./routecard";
 import {
   addPlanSection,
   movePlanSection,
   buildPlannedRoute,
+  allInputsInPlan,
+  replacePlanSection,
 } from "./route-plan";
 import "vanilla-colorful/hex-color-picker.js";
 import type { HexColorPicker } from "vanilla-colorful/hex-color-picker.js";
@@ -80,6 +91,7 @@ let showAll = true,
   saveTimer: ReturnType<typeof setTimeout>,
   saveQueue = Promise.resolve();
 let terrainController: AbortController | null = null;
+const dismissedTileWarning = { create: false, edit: false };
 import {
   newCreatedRoute,
   insertWaypoint,
@@ -91,6 +103,12 @@ import {
 } from "./create";
 let cardExpanded = false;
 let drawingMode: DrawingMode = "add";
+let inputEditing = false;
+let inputTool: InputPointTool = "move";
+let inputHandleInterval = 20;
+let selectedInputPoint: number | null = null;
+let selectedCreatePoint: number | null = null;
+const INPUT_HANDLE_KEY = "baregps-input-handle-interval-v1";
 let mode: "edit" | "create" = "create";
 let createMapOpened = true;
 type CreatedSnapshot = { route: Track; terrain?: Track };
@@ -104,7 +122,7 @@ const CONNECTION_ELEVATION_NOTE =
   "Connection distance is included. Connection ascent uses endpoint heights until you fetch terrain; intermediate hills may be missed.";
 
 document.querySelector("#app")!.innerHTML = `
-<header class="app-header"><a class="brand" href="#" aria-label="BareGPS Route Planner home"><img src="${import.meta.env.BASE_URL}logo.svg" alt="" width="40" height="40"><span class="brand-copy"><strong class="brand-title">BareGPS Route Planner</strong><span class="brand-subtitle">GPX Creator and Editor</span></span></a><div class="header-right"><div class="device-status"><span id="save-state" class="save-state" role="status" title="Your workspace is kept on this device. Use Save section or Save route to export a GPX file."><span class="save-full">On your device</span><span class="save-short" aria-hidden="true">On device</span></span><div class="history" role="group" aria-label="Edit history"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)">${icon("undo", 18)}</button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)">${icon("redo", 18)}</button></div></div><div class="header-utilities"><button id="help" class="icon-button" aria-label="About and keyboard shortcuts">${icon("help")}</button><button id="settings" class="icon-button" aria-label="Settings" title="Settings">${icon("settings", 19)}</button></div></div></header>
+<header class="app-header"><a class="brand" href="#" aria-label="BareGPS Route Planner home"><img src="${import.meta.env.BASE_URL}logo.svg" alt="" width="40" height="40"><span class="brand-copy"><strong class="brand-title">BareGPS Route Planner</strong><span class="brand-subtitle">GPX Creator and Editor</span></span></a><div class="header-right"><div class="device-status"><span id="save-state" class="save-state" role="status" title="Your workspace is kept on this device. Use Save Route to export a GPX file."><span class="save-full">On your device</span><span class="save-short" aria-hidden="true">On device</span></span><div class="history" role="group" aria-label="Edit history"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)">${icon("undo", 18)}</button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)">${icon("redo", 18)}</button></div></div><div class="header-utilities"><button id="help" class="icon-button" aria-label="About and keyboard shortcuts">${icon("help")}</button><button id="settings" class="icon-button" aria-label="Settings" title="Settings">${icon("settings", 19)}</button></div></div></header>
 <main>
   <span id="track-count" class="sr-only">Your workspace</span>
   <section id="map-panel" class="map-panel" aria-label="Track map">
@@ -112,35 +130,66 @@ document.querySelector("#app")!.innerHTML = `
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
     <div id="edit-map-view" role="tabpanel" aria-labelledby="edit-tab"><div id="map"></div><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
     <div id="create-map-view" role="tabpanel" aria-labelledby="create-tab" hidden><div id="create-map" aria-label="Create a walking route"></div><button id="create-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="create-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span><p class="create-map-hint" id="create-map-hint">Tap the map to place your starting point.</p></div>
-    <div id="create-tools" class="create-tools" role="group" aria-label="Route drawing controls" hidden><div class="drawing-modes" role="group" aria-label="Drawing mode"><button id="draw-add" aria-pressed="true">Add points</button><button id="draw-insert" aria-pressed="false">Insert point</button></div><button id="create-close" class="small-button">Close loop</button></div>
-    <div id="map-empty" class="map-empty"><button id="empty-import" class="button primary">${icon("plus", 18)}Open GPX files</button></div>
-    <div id="create-map-error" class="map-error" hidden>Map tiles couldn’t load. You can still shape and save your route.<button id="retry-create-map" class="text-button">Retry</button></div>
-    <div id="map-error" class="map-error" hidden>Map tiles couldn’t load. Your tracks and editing are still available.<button id="retry-map" class="text-button">Retry</button></div>
+    <div id="create-tools" class="create-tools" role="group" aria-label="Route drawing controls" hidden><div class="drawing-modes" role="group" aria-label="Drawing mode"><button id="draw-add" aria-pressed="true">Add points</button><button id="draw-insert" aria-pressed="false">Insert point</button><button id="create-delete" disabled>Delete point</button><button id="create-close">Close loop</button></div></div>
+    <div id="input-edit-controls" hidden>
+    <div id="input-point-tools" class="create-tools" role="group" aria-label="Input point editing tools" hidden><div class="drawing-modes" role="group" aria-label="Input drawing mode"><button id="input-move" aria-pressed="true" hidden>Move</button><button id="input-add" aria-pressed="false">Add points</button><button id="input-insert" aria-pressed="false">Insert point</button><button id="input-delete" disabled>Delete point</button><button id="input-close">Close loop</button></div><p id="input-point-status" class="sr-only" role="status"></p></div>
+    <div id="input-extra-tools" class="create-tools input-extra-tools" role="group" aria-label="Input track actions" hidden><div class="drawing-modes"><button id="trim-before" disabled>Trim before</button><button id="trim-after" disabled>Trim after</button><button id="reverse" disabled>Reverse</button><button id="input-terrain" disabled>Fetch Terrain</button></div></div>
+    <div id="input-selection-strip" class="input-selection-strip"><p id="input-selected-point" class="input-selection-status">Tap a map point to select it</p></div>
+    <div id="input-plan-controls" class="input-plan-controls"></div>
+    </div>
+    <div id="map-empty" class="map-empty"><button id="empty-import" class="button primary">${icon("plus", 18)}Open GPX file(s)</button></div>
+    <div id="create-map-error" class="map-error" hidden><span>Some map tiles couldn’t load. Editing still works.</span><div class="map-warning-actions"><button id="retry-create-map" class="text-button">Retry</button><button id="dismiss-create-map" class="icon-button" aria-label="Dismiss map warning">${icon("close", 16)}</button></div></div>
+    <div id="map-error" class="map-error" hidden><span>Some map tiles couldn’t load. Editing still works.</span><div class="map-warning-actions"><button id="retry-map" class="text-button">Retry</button><button id="dismiss-map" class="icon-button" aria-label="Dismiss map warning">${icon("close", 16)}</button></div></div>
     <div class="map-legend" id="map-legend" hidden><span><i class="legend-solid"></i>Recorded track</span><span><i class="legend-dashed"></i>Walking connection</span></div>
   </section>
-  <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} Distance(km)</span><strong id="distance">0.00</strong></div><div class="metric"><span>${icon("up", 17)} Ascent(m)</span><strong id="ascent">0</strong></div><div class="metric"><span>${icon("down", 17)} Descent(m)</span><strong id="descent">0</strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} <span id="selection-caption">SELECTED SECTION</span></span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
+  <section id="analytics" class="analytics" aria-label="Live track analytics"><div class="metric"><span>${icon("route", 17)} Distance(km)</span><strong id="distance">0.00</strong></div><div class="metric"><span>${icon("up", 17)} Ascent(m)</span><strong id="ascent">0</strong></div><div class="metric"><span>${icon("down", 17)} Descent(m)</span><strong id="descent">0</strong></div><div class="metric selection-metric"><span>${icon("pin", 17)} <span id="selection-caption">SELECTED TRACK</span></span><strong id="point-count">No track selected</strong><span id="analytics-source" class="metric-note">Open a file to begin</span></div></section>
   <section class="profile-card" aria-label="Elevation profile"><div class="profile-heading"><span>ELEVATION PROFILE</span><span id="profile-range"></span></div><div id="profile"></div><div class="profile-note-slot"><div class="elevation-note profile-note-reserve" aria-hidden="true">${CONNECTION_ELEVATION_NOTE}</div><div id="elevation-note" class="elevation-note" hidden></div></div></section>
   <div id="editor" class="editor-grid">
-    <section class="card tracks-card"><div class="card-heading"><h2>Input Tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div><div class="card-footnote"><span>${icon("file", 14)} GPX files · originals stay untouched</span></div></section>
-    <section class="card section-card"><div class="card-heading"><h2>Edit Input Track</h2><span class="badge soft">A → B</span></div><div id="section-controls"></div></section>
+    <section class="card tracks-card"><div class="card-heading"><h2>Input Tracks <span id="source-count" class="badge">0</span></h2><button id="import" class="button secondary compact">${icon("plus", 16)}Open files</button></div><div id="track-list" class="track-list"></div></section>
   </div>
-  <section id="route-card" class="route-card"></section>
   <section id="create-card" class="card create-card" aria-label="Route Card" hidden>
     <div class="card-heading"><h2>Route Card <span id="waypoint-count" class="badge">0</span></h2><button id="expand-card" class="icon-button" aria-label="Expand Route Card" aria-expanded="false" title="Expand Route Card">${icon("expand", 18)}</button></div>
     <p id="card-source-note" class="card-source-note" hidden></p>
-    <div class="create-settings"><label><span id="card-name-label">Route name</span><input id="create-name" class="text-input" maxlength="120" value="My walking route"></label></div>
+    <div class="create-settings"><label><span id="card-name-label">Route name</span><input id="create-name" class="text-input" maxlength="120" value="Created Route"></label><button id="preview-route" class="button secondary compact" hidden>${icon("eye", 17)}Preview</button></div>
     <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><colgroup><col class="point-col"><col class="name-col"><col class="grid-col"><col class="height-col"><col class="card-extra distance-col"><col class="compact-delete"><col class="card-extra cumulative-distance-col"><col class="card-extra ascent-col"><col class="card-extra cumulative-ascent-col"></colgroup><thead><tr><th scope="col">Point</th><th class="point-name-cell" scope="col">Name</th><th id="coordinate-heading" scope="col">Grid ref.</th><th scope="col">Height<span class="heading-unit">(m)</span></th><th class="card-extra distance-cell" scope="col">Distance<span class="heading-unit">(km)</span></th><th class="compact-delete" scope="col"><span class="sr-only">Delete point</span></th><th class="card-extra" scope="col">Cumul<br>Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Ascent<span class="heading-unit">(m)</span></th><th class="card-extra" scope="col">Cumul<br>Ascent<span class="heading-unit">(m)</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="card-share-actions card-extra"><button id="create-share" class="button secondary">${icon("export", 17)}Share Text</button><button id="create-pdf" class="button secondary">${icon("file", 17)}Share PDF</button></div>
-    <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch Terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save route</button></div>
+    <div class="create-buttons"><button id="create-terrain" class="button secondary">${icon("mountain", 17)}Fetch Terrain</button><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save Route</button></div>
   </section>
   <footer><span>Your files stay on your device. Map & terrain requests use the internet.</span></footer>
 </main>
 <div id="notice" class="notice" role="status" hidden></div>
 <dialog id="dialog"><div id="dialog-content"></div></dialog>
 `;
-const map = new TrackMap(updateSelection, () => {
-  $("map-error").hidden = false;
-});
+const map = new InputMap(
+  () => {},
+  (failed) => {
+    if (!failed) dismissedTileWarning.edit = false;
+    $("map-error").hidden =
+      mode !== "edit" || !failed || dismissedTileWarning.edit;
+  },
+  {
+    insert: (index, point) =>
+      changeInput(
+        (track) => insertInputPoint(track, index, point),
+        index,
+        inputTool === "insert" ? "move" : inputTool,
+      ),
+    move: (index, point, handles) =>
+      changeInput(
+        (track) => reshapeInputHandle(track, index, point, handles),
+        index,
+      ),
+    select: (index) => {
+      selectedInputPoint = index;
+      updateInputSelectionControls();
+    },
+    preview: (track) => renderStats(track),
+    status: (visible, total) => {
+      $("input-point-status").textContent =
+        `${total.toLocaleString()} handles · ${visible.toLocaleString()} shown · tap the line to reveal a point`;
+    },
+  },
+);
 const createMap = new CreateMap(
   (index, point) => {
     if (
@@ -164,10 +213,24 @@ const createMap = new CreateMap(
     };
     renderStats(preview);
   },
-  () => {
-    $("create-map-error").hidden = mode !== "create";
+  (failed) => {
+    if (!failed) dismissedTileWarning.create = false;
+    $("create-map-error").hidden =
+      mode !== "create" || !failed || dismissedTileWarning.create;
   },
 );
+createMap.onSelect = (index) => {
+  if (busy) return;
+  selectedCreatePoint = index;
+  createMap.selectedIndex = index;
+  $<HTMLButtonElement>("create-delete").disabled = false;
+  renderMap();
+};
+new ResizeObserver(() => {
+  const height = $("input-edit-controls").getBoundingClientRect().height;
+  if (height)
+    $("map-panel").style.setProperty("--input-controls-height", `${height}px`);
+}).observe($("input-edit-controls"));
 for (const [name, view] of [
   ["edit", map],
   ["create", createMap],
@@ -228,6 +291,11 @@ const active = () =>
   [...workspace.tracks, ...(workspace.route ? [workspace.route] : [])].find(
     (t) => t.id === workspace.activeId,
   ) ?? null;
+const activeInput = () =>
+  !editWelcome
+    ? (workspace.tracks.find((track) => track.id === workspace.activeId) ??
+      null)
+    : null;
 const displayTracks = () => workspace.tracks;
 const displayMapTracks = () => [
   ...displayTracks(),
@@ -239,6 +307,8 @@ const allTracks = () => [
   ...(workspace.route ? [workspace.route] : []),
 ];
 function notification(message: string, error = false) {
+  // Routine actions stay quiet; warnings and errors remain visible until dismissed.
+  if (!error) return;
   const el = $("notice");
   el.className = `notice ${error ? "error" : ""}`;
   el.setAttribute("role", error ? "alert" : "status");
@@ -265,7 +335,7 @@ function setSaveState(full: string, short: string) {
     `<span class="save-full">${full}</span><span class="save-short" aria-hidden="true">${short}</span>`;
   $("save-state").setAttribute("aria-label", full);
   $("save-state").title =
-    `${full}. This refers to the workspace on this device; use Save section or Save route to export a GPX file.`;
+    `${full}. This refers to the workspace on this device; use Save Input Track or Save Route to export a GPX file.`;
 }
 let storageRevision = 0;
 function flushWorkspace() {
@@ -344,6 +414,11 @@ function replace(track: Track) {
     );
 }
 function select(track: Track) {
+  showAll = false;
+  inputEditing = false;
+  selectedInputPoint = null;
+  inputTool = "move";
+  map.resetSelection();
   editWelcome = false;
   workspace.activeId = track.id;
   workspace.selection = { start: 0, end: track.points.length - 1 };
@@ -366,49 +441,31 @@ function fitMap() {
     showAll ? undefined : workspace.selection,
   );
 }
-function updateSelection(selection: Selection) {
-  const t = active();
-  if (!t || busy) return;
-  workspace.selection = {
-    start: Math.max(
-      0,
-      Math.min(selection.end - 1, t.points.length - 2, selection.start),
-    ),
-    end: Math.max(
-      1,
-      selection.start + 1,
-      Math.min(t.points.length - 1, selection.end),
-    ),
-  };
-  const { start, end } = workspace.selection;
-  const a = $<HTMLInputElement>("range-start"),
-    b = $<HTMLInputElement>("range-end");
-  if (a) {
-    a.value = String(start);
-    b.value = String(end);
-    $("start-label").textContent = `pt ${start + 1}`;
-    a.setAttribute("aria-valuetext", `Point ${start + 1}`);
-    $("end-label").textContent = `pt ${end + 1}`;
-    b.setAttribute("aria-valuetext", `Point ${end + 1}`);
-    $("range-fill").style.left = `${(start / (t.points.length - 1)) * 100}%`;
-    $("range-fill").style.right =
-      `${100 - (end / (t.points.length - 1)) * 100}%`;
-  }
-  renderStats();
-  renderMap();
-  if (mode === "edit") renderPointCard();
-  persist();
-}
 function renderMap() {
   if (mode === "create") {
+    map.pointEditing = false;
     createMap.enabled = !busy;
     createMap.drawingMode = drawingMode;
+    createMap.selectedIndex = selectedCreatePoint;
     createMap.renderCreated(draft());
     $("map-empty").hidden = true;
     $("map-legend").hidden = true;
     return;
   }
   const tracks = editWelcome ? [] : displayMapTracks();
+  const input = activeInput();
+  const editing = !!input;
+  if (map.inputId !== input?.id) {
+    map.resetSelection();
+    selectedInputPoint = null;
+  }
+  map.inputId = input?.id ?? null;
+  map.pointEditing = editing;
+  map.enabled = !busy;
+  map.tool = inputTool;
+  map.interval = inputHandleInterval;
+  map.selectedIndex = selectedInputPoint;
+  $("map").classList.toggle("input-drawing", editing && inputTool !== "move");
   map.render(
     tracks,
     editWelcome ? null : active(),
@@ -416,7 +473,7 @@ function renderMap() {
     showAll,
   );
   $("map-empty").hidden = tracks.length > 0;
-  $("map-legend").hidden = !tracks.length;
+  $("map-legend").hidden = !tracks.length || editing;
 }
 function renderStats(preview?: Track) {
   const t =
@@ -424,7 +481,7 @@ function renderStats(preview?: Track) {
         ? (preview ?? createdTrack())
         : editWelcome
           ? null
-          : active(),
+          : (preview ?? active()),
     points =
       mode === "create"
         ? t!.points
@@ -450,7 +507,7 @@ function renderStats(preview?: Track) {
         ? workspace.createdTerrain && !preview
           ? "Terrain estimate · entire route"
           : "Straight-line route · live totals"
-        : "Selected section · live totals"
+        : "Whole track · live totals"
     : "Open a file to begin";
   $("profile-range").textContent = hasElevation
     ? `${metres(a.min!)}–${metres(a.max!)} m · ${t!.name}`
@@ -461,7 +518,7 @@ function renderStats(preview?: Track) {
     mode === "create" && !hasElevation
       ? "Ascent and descent are unavailable until terrain is fetched."
       : a.missingEdges
-        ? "Elevation is missing for some points. Ascent and descent are partial; distance includes the entire section."
+        ? "Elevation is missing for some points. Ascent and descent are partial; distance includes the entire track."
         : a.estimatedGap
           ? CONNECTION_ELEVATION_NOTE
           : "";
@@ -526,7 +583,7 @@ function renderTracks() {
     ? tracks
         .map((t) => {
           const a = analytics(t.points);
-          return `<div class="track-row ${!editWelcome && t.id === workspace.activeId ? "active" : ""}"><button class="track-select" data-id="${t.id}" aria-pressed="${!editWelcome && t.id === workspace.activeId}"><span class="track-symbol" style="--track-color:${t.color}">${icon("route", 20)}</span><span class="track-text"><strong>${esc(t.name)}</strong><small>${km(a.length)} km <span>·</span> ${t.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ↗` : "No elevation"} <span>·</span> ${t.points.length.toLocaleString()} pts</small></span>${!editWelcome && t.id === workspace.activeId ? '<span class="active-dot"></span>' : icon("chevron", 15)}</button><button class="icon-button delete-track" data-id="${t.id}" aria-label="Remove ${esc(t.name)}" title="Remove track">${icon("trash", 16)}</button></div>`;
+          return `<div class="track-row ${!editWelcome && t.id === workspace.activeId ? "active" : ""}"><button class="track-select" data-id="${t.id}" aria-pressed="${!editWelcome && t.id === workspace.activeId}"><span class="track-symbol" style="--track-color:${t.color}">${icon("route", 20)}</span><span class="track-text"><strong>${esc(t.name)}</strong><small>${km(a.length)} km <span>·</span> ${t.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ↗` : "No elevation"} <span>·</span> ${t.points.length.toLocaleString()} pts</small></span>${!editWelcome && t.id === workspace.activeId ? '<span class="active-dot"></span>' : icon("chevron", 15)}</button><button class="color-trigger input-track-colour" data-colour-id="${t.id}" style="--line-colour:${t.color}" aria-label="Choose line colour for ${esc(t.name)}" title="Choose track line colour"></button><button class="icon-button delete-track" data-id="${t.id}" aria-label="Remove ${esc(t.name)}" title="Remove track">${icon("trash", 16)}</button></div>`;
         })
         .join("")
     : '<div class="tracks-empty"><p>Open one or more GPX files.</p></div>';
@@ -536,6 +593,22 @@ function renderTracks() {
         if (!busy) select(workspace.tracks.find((t) => t.id === b.dataset.id)!);
       }),
   );
+  list
+    .querySelectorAll<HTMLButtonElement>("[data-colour-id]")
+    .forEach((button) => {
+      button.onclick = () => {
+        if (busy) return;
+        const track = workspace.tracks.find(
+          (t) => t.id === button.dataset.colourId,
+        );
+        if (track)
+          openColourPicker(track.color, (color) => {
+            const current = workspace.tracks.find((t) => t.id === track.id);
+            if (current && current.color !== color)
+              commit(() => replace({ ...current, color }));
+          });
+      };
+    });
   list.querySelectorAll<HTMLButtonElement>(".delete-track").forEach(
     (b) =>
       (b.onclick = () =>
@@ -556,67 +629,27 @@ function renderTracks() {
 }
 function renderControls() {
   const t = editWelcome ? null : active(),
-    box = $("section-controls");
-  if (!t) {
-    box.innerHTML = `<div class="controls-empty"><p>Choose an input track, then use A and B to select a section to save, split or add to Route Plan.</p></div><div class="route-plan-buttons"><button class="button secondary" disabled>Add to Route Plan</button><button id="open-route-plan" class="button secondary" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button></div>`;
+    box = $("input-plan-controls");
+  if (!t || t === workspace.route) {
+    inputEditing = false;
+    selectedInputPoint = null;
+    box.innerHTML = `<div class="route-plan-buttons"><button class="button secondary" disabled>Add to Route Plan</button><button id="open-route-plan" class="button secondary" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button></div>`;
     $("open-route-plan").onclick = routePlanDialog;
     return;
   }
-  const { start, end } = workspace.selection;
-  box.innerHTML = `<div class="selected-title"><span class="eyebrow">${t.kind === "route" ? "JOINED ROUTE" : "SELECTED TRACK"}</span><button id="rename" class="name-button" title="Rename track"><span class="selected-track-name">${esc(t.name)}</span>${icon("edit", 14)}</button></div>
-  <div class="selection-settings"><div class="selection-slider"><span class="range-end-label"><b>A</b><span aria-hidden="true">/</span><span id="start-label">pt ${start + 1}</span></span>
-  <div class="range-track" style="--track-colour:${t.color}"><div id="range-fill" style="left:${(start / (t.points.length - 1)) * 100}%;right:${100 - (end / (t.points.length - 1)) * 100}%"></div><input id="range-start" type="range" min="0" max="${t.points.length - 1}" value="${start}" aria-label="Section start point" aria-valuetext="Point ${start + 1}"><input id="range-end" type="range" min="0" max="${t.points.length - 1}" value="${end}" aria-label="Section end point" aria-valuetext="Point ${end + 1}"></div>
-  <span class="range-end-label"><b>B</b><span aria-hidden="true">/</span><span id="end-label">pt ${end + 1}</span></span>
-  </div><div class="line-color"><span>Line colour</span><button id="track-color" class="color-trigger" style="--line-colour:${t.color}" aria-label="Choose track line colour" title="Choose track line colour"></button></div></div>
-  <div class="edit-buttons"><button id="save-section" class="button secondary">${icon("export", 16)}Save section</button><button id="split" class="button secondary" ${end - start < 2 ? "disabled" : ""}>${icon("scissors", 16)}Split</button><button id="reverse" class="button secondary" title="Reverse the whole track">${icon("reverse", 16)}Reverse</button></div>
-  <div class="route-plan-buttons"><button id="add-route" class="button secondary" ${t === workspace.route ? "disabled" : ""}>Add to Route Plan</button><button id="open-route-plan" class="button secondary" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button></div>
-  <p class="control-hint">Drag map handles or use the sliders. Originals are never overwritten.</p>`;
-  $<HTMLInputElement>("range-start").oninput = (e) =>
-    updateSelection({
-      ...workspace.selection,
-      start: Math.min(
-        workspace.selection.end - 1,
-        Number((e.target as HTMLInputElement).value),
-      ),
-    });
-  $<HTMLInputElement>("range-end").oninput = (e) =>
-    updateSelection({
-      ...workspace.selection,
-      end: Math.max(
-        workspace.selection.start + 1,
-        Number((e.target as HTMLInputElement).value),
-      ),
-    });
-  $("rename").onclick = () => rename(t);
-  $("save-section").onclick = () =>
-    exportTrack(
-      section(
-        t,
-        workspace.selection,
-        workspace.selection.start === 0 &&
-          workspace.selection.end === t.points.length - 1
-          ? t.name
-          : undefined,
-      ),
-    );
-  $("split").onclick = () => splitDialog(t);
-  $("reverse").onclick = () =>
-    commit(() => {
-      replace(reverse(t));
-      workspace.selection = {
-        start: t.points.length - 1 - end,
-        end: t.points.length - 1 - start,
-      };
-    });
+  inputEditing = true;
+  workspace.selection = { start: 0, end: t.points.length - 1 };
+  box.innerHTML = `<div class="route-plan-buttons"><button id="add-route" class="button secondary">Add to Route Plan</button><button id="open-route-plan" class="button secondary" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button></div>`;
   $("add-route").onclick = () => {
     if (busy || t === workspace.route) return;
     if (
       commit(() => {
-        workspace.routePlan = addPlanSection(
-          workspace.routePlan ?? [],
-          t,
-          workspace.selection,
-        );
+        workspace.routePlan = addPlanSection(workspace.routePlan ?? [], t);
+        if (allInputsInPlan(workspace.tracks, workspace.routePlan)) {
+          workspace.activeId = null;
+          workspace.selection = { start: 0, end: 0 };
+          showAll = true;
+        }
         ensureTrackCapacity(0, 0);
       })
     ) {
@@ -625,15 +658,177 @@ function renderControls() {
     }
   };
   $("open-route-plan").onclick = routePlanDialog;
-  $("track-color").onclick = () =>
-    openColourPicker(t.color, (color) => {
-      if (color !== t.color) commit(() => replace({ ...t, color }));
-    });
+}
+function updateInputSelectionControls() {
+  const track = activeInput();
+  if (selectedInputPoint !== null && !track?.points[selectedInputPoint])
+    selectedInputPoint = null;
+  $<HTMLButtonElement>("input-delete").disabled =
+    busy || selectedInputPoint === null || !track || track.points.length <= 2;
+  const before = $<HTMLButtonElement>("trim-before"),
+    after = $<HTMLButtonElement>("trim-after");
+  if (before)
+    before.disabled =
+      busy ||
+      !track ||
+      selectedInputPoint === null ||
+      selectedInputPoint === 0 ||
+      selectedInputPoint >= track.points.length - 1;
+  if (after)
+    after.disabled =
+      busy ||
+      !track ||
+      selectedInputPoint === null ||
+      selectedInputPoint < 1 ||
+      selectedInputPoint === track.points.length - 1;
+  const inactive = !track?.points.length;
+  $("input-selection-strip").classList.toggle("inactive", inactive);
+  $("input-selection-strip").setAttribute("aria-disabled", String(inactive));
+  const label = $("input-selected-point");
+  if (label)
+    label.textContent =
+      selectedInputPoint === null
+        ? "Tap a map point to select it"
+        : `Point ${selectedInputPoint + 1} selected`;
+}
+function changeInput(
+  change: (track: Track) => Track,
+  selected: number | null = null,
+  tool = inputTool,
+): boolean {
+  const source = activeInput();
+  if (busy || mode !== "edit" || !inputEditing || !source) return false;
+  const succeeded = commit(() => {
+    const changed = change(source);
+    ensureTrackCapacity(0, changed.points.length - source.points.length);
+    workspace.tracks = workspace.tracks.map((track) =>
+      track.id === source.id ? changed : track,
+    );
+    workspace.selection = { start: 0, end: changed.points.length - 1 };
+    selectedInputPoint =
+      selected === null ? null : Math.min(selected, changed.points.length - 1);
+    inputTool = tool;
+    map.resetSelection();
+  });
+  if (!succeeded) render();
+  return succeeded;
+}
+for (const tool of ["move", "add", "insert"] as const)
+  $("input-" + tool).onclick = () => {
+    if (!busy && activeInput()) {
+      if (!inputEditing) {
+        inputEditing = true;
+        selectedInputPoint = null;
+        map.resetSelection();
+        workspace.selection = {
+          start: 0,
+          end: activeInput()!.points.length - 1,
+        };
+        showAll = false;
+        persist();
+      }
+      inputTool = tool;
+      render();
+    }
+  };
+$("input-delete").onclick = () => {
+  if (selectedInputPoint !== null) {
+    const index = selectedInputPoint;
+    changeInput((track) => deleteInputPoint(track, index), index, "move");
+  }
+};
+$("input-close").onclick = () => {
+  if (busy || !activeInput()) return;
+  if (!inputEditing) {
+    inputEditing = true;
+    workspace.selection = { start: 0, end: activeInput()!.points.length - 1 };
+    selectedInputPoint = null;
+    map.resetSelection();
+  }
+  changeInput(closeInputLoop, null, "move");
+};
+$("reverse").onclick = () => {
+  const track = activeInput();
+  if (!track || busy) return;
+  const selected = selectedInputPoint;
+  changeInput(
+    reverse,
+    selected === null ? null : track.points.length - 1 - selected,
+    "move",
+  );
+};
+for (const direction of ["before", "after"] as const)
+  $("trim-" + direction).onclick = () => {
+    if (selectedInputPoint === null) return;
+    const index = selectedInputPoint;
+    changeInput(
+      (track) => trimInputTrack(track, index, direction),
+      direction === "before" ? 0 : index,
+      "move",
+    );
+  };
+bindInputActions();
+function bindInputActions() {
+  $("input-terrain").onclick = () => {
+    const source = activeInput();
+    if (
+      busy ||
+      !inputEditing ||
+      mode !== "edit" ||
+      !source ||
+      !needsTerrain(source)
+    )
+      return;
+    openDialog(
+      `${dialogHeader("Fetch Terrain Heights")}<div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-input-terrain" class="button primary">Fetch Terrain Heights</button></div>`,
+    );
+    $("confirm-input-terrain").onclick = async () => {
+      busy = true;
+      terrainController = new AbortController();
+      render();
+      $("dialog-content").innerHTML =
+        `${dialogHeader("Fetching input terrain")}<p id="input-terrain-progress" role="status">Preparing changed legs…</p><div class="dialog-actions"><button id="cancel-input-terrain" class="button secondary">Cancel</button></div>`;
+      const cancel = () => terrainController?.abort();
+      $("cancel-input-terrain").onclick = cancel;
+      $<HTMLDialogElement>("dialog").oncancel = cancel;
+      try {
+        const sampled = await enrichTerrain(
+          prepareInputTerrain(source),
+          (message) => {
+            $("input-terrain-progress").textContent = message;
+          },
+          terrainController.signal,
+        );
+        const refreshed = finishInputTerrain(source, sampled);
+        ensureTrackCapacity(0, refreshed.points.length - source.points.length);
+        checkpoint();
+        workspace.tracks = workspace.tracks.map((track) =>
+          track.id === source.id ? refreshed : track,
+        );
+        workspace.selection = { start: 0, end: refreshed.points.length - 1 };
+        selectedInputPoint = null;
+        map.resetSelection();
+        persist();
+        notification(
+          "Changed input legs now include terrain estimates. Route Plan copies and the confirmed route are unchanged.",
+        );
+      } catch (error) {
+        report(error);
+      } finally {
+        busy = false;
+        terrainController = null;
+        $<HTMLDialogElement>("dialog").oncancel = null;
+        $<HTMLDialogElement>("dialog").close();
+        render();
+      }
+    };
+  };
 }
 let selectedPlanId: string | null = null;
 function routePlanDialog() {
   if (busy) return;
   const plan = workspace.routePlan ?? [];
+  const replacementInput = activeInput();
   if (!plan.some((track) => track.id === selectedPlanId))
     selectedPlanId = plan[0]?.id ?? null;
   const index = plan.findIndex((track) => track.id === selectedPlanId);
@@ -642,10 +837,11 @@ function routePlanDialog() {
     JSON.stringify(workspace.confirmedPlan ?? []) !==
       JSON.stringify(plan.map((track) => track.id));
   openDialog(
-    `${dialogHeader("Route Plan", "Select a section, then move it up or down to set the walking order.", true)}
-    <p class="dialog-note">${pending ? "Confirm Route builds the route in this order. The Route Card is unchanged until you confirm." : "This order is confirmed. Changes take effect when you confirm again."}</p>
-    <div class="plan-scroll" role="region" aria-label="Route Plan sections" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Section</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No sections yet. Select A–B in an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
+    `${dialogHeader("Route Plan", "Select a track, then move it up or down to set the walking order.", true)}
+    <p class="dialog-note">${pending ? "Confirm Route fetches missing heights and connections from Open Topo Data, then builds the route in this order. The Route Card stays unchanged until completion." : "This order is confirmed. Changes take effect when you confirm again."}</p>
+    <div class="plan-scroll" role="region" aria-label="Route Plan tracks" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Track</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No tracks yet. Edit an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
     <div class="plan-row-actions"><button id="plan-up" class="button secondary compact" ${index <= 0 ? "disabled" : ""}>Move up</button><button id="plan-down" class="button secondary compact" ${index < 0 || index === plan.length - 1 ? "disabled" : ""}>Move down</button><button id="plan-remove" class="button secondary compact" ${index < 0 ? "disabled" : ""}>Remove</button></div>
+    <button id="plan-replace" class="button secondary compact" ${!replacementInput ? "hidden" : ""} ${index < 0 ? "disabled" : ""}>Replace selected track with current input</button>
     <div class="dialog-actions"><button class="button secondary" data-close>Keep adding</button><button id="confirm-route-plan" class="button primary" ${!plan.length ? "disabled" : ""}>Confirm Route</button></div>`,
     "plan",
   );
@@ -669,6 +865,7 @@ function routePlanDialog() {
     $<HTMLButtonElement>("plan-down").disabled =
       selected < 0 || selected === plan.length - 1;
     $<HTMLButtonElement>("plan-remove").disabled = selected < 0;
+    $<HTMLButtonElement>("plan-replace").disabled = selected < 0;
   };
   $("dialog-content")
     .querySelectorAll<HTMLElement>("[data-plan-id]")
@@ -712,6 +909,30 @@ function routePlanDialog() {
         }
       };
     });
+  $("plan-replace").onclick = () => {
+    if (!replacementInput || busy) return;
+    const index = (workspace.routePlan ?? []).findIndex(
+      (t) => t.id === selectedPlanId,
+    );
+    if (index < 0) return;
+    if (
+      commit(() => {
+        const replacement = replacePlanSection(
+          workspace.routePlan!,
+          index,
+          replacementInput,
+          { start: 0, end: replacementInput.points.length - 1 },
+        );
+        const delta =
+          replacement[index].points.length -
+          workspace.routePlan![index].points.length;
+        ensureTrackCapacity(0, delta);
+        workspace.routePlan = replacement;
+        selectedPlanId = replacement[index].id;
+      })
+    )
+      routePlanDialog();
+  };
   $("plan-remove").onclick = () => {
     const from = (workspace.routePlan ?? []).findIndex(
       (track) => track.id === selectedPlanId,
@@ -730,71 +951,102 @@ function routePlanDialog() {
       routePlanDialog();
     }
   };
-  $("confirm-route-plan").onclick = () => {
-    if (busy || !workspace.routePlan?.length) return;
-    if (
-      commit(() => {
-        const ids = workspace.routePlan!.map((track) => track.id);
-        if (
-          !workspace.route ||
-          JSON.stringify(ids) !== JSON.stringify(workspace.confirmedPlan ?? [])
-        )
-          workspace.route = buildPlannedRoute(
-            workspace.routePlan!,
-            workspace.route,
-          );
-        workspace.confirmedPlan = ids;
-        workspace.activeId = workspace.route!.id;
-        workspace.selection = {
-          start: 0,
-          end: workspace.route!.points.length - 1,
-        };
-        editWelcome = false;
-        showAll = false;
-        ensureTrackCapacity(0, 0);
-      }, true)
-    ) {
-      $<HTMLDialogElement>("dialog").close();
-      notification(
-        "Route confirmed. The Route Card shows the full route in plan order.",
-      );
-    }
-  };
+  $("confirm-route-plan").onclick = confirmRoutePlan;
 }
-function renderRoute() {
-  const route = workspace.route,
-    card = $("route-card");
-  if (!route) {
-    card.innerHTML = "";
+function applyConfirmedPlan(route: Track, ids: string[]) {
+  if (
+    commit(() => {
+      ensureTrackCapacity(
+        0,
+        route.points.length - (workspace.route?.points.length ?? 0),
+      );
+      workspace.route = route;
+      workspace.confirmedPlan = ids;
+      workspace.activeId = route.id;
+      workspace.selection = { start: 0, end: route.points.length - 1 };
+      editWelcome = false;
+      showAll = false;
+    }, true)
+  )
+    $<HTMLDialogElement>("dialog").close();
+}
+async function confirmRoutePlan() {
+  if (busy || !workspace.routePlan?.length) return;
+  const ids = workspace.routePlan.map((track) => track.id);
+  const unchanged =
+    workspace.route &&
+    JSON.stringify(ids) === JSON.stringify(workspace.confirmedPlan ?? []);
+  let candidate: Track;
+  try {
+    candidate = unchanged
+      ? workspace.route!
+      : buildPlannedRoute(workspace.routePlan, workspace.route);
+  } catch (error) {
+    report(error);
     return;
   }
-  const a = analytics(route.points);
-  card.innerHTML = `<div class="route-summary"><span class="route-empty-icon">${icon("join", 26)}</span><div><span class="eyebrow">YOUR JOINED ROUTE</span><button id="rename-route" class="name-button">${esc(route.name)} ${icon("edit", 14)}</button><p>${km(a.length)} km <span>·</span> ${route.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ascent${a.estimatedGap || a.missingEdges ? " (estimated)" : ""}` : "Elevation unavailable"}${a.gapDistance ? ` <span>·</span> ${km(a.gapDistance)} km of walking connections` : ""}</p></div></div><div class="route-buttons"><button id="preview-route" class="button secondary">${icon("eye", 17)}Preview</button><button id="export-route" class="button primary">${icon("export", 17)}Save route</button><button id="remove-route" class="icon-button" aria-label="Remove joined route">${icon("trash", 17)}</button></div>`;
-  $("rename-route").onclick = () => rename(route);
-  $("preview-route").onclick = () => {
-    showAll = false;
-    select(route);
-    $("map-panel").scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-  $("export-route").onclick = () => exportTrack(route);
-  $("remove-route").onclick = () =>
-    commit(() => {
-      workspace.route = null;
-      if (workspace.activeId === route.id) {
-        workspace.activeId = workspace.tracks[0]?.id ?? null;
-        workspace.selection = {
-          start: 0,
-          end: workspace.tracks[0]?.points.length
-            ? workspace.tracks[0].points.length - 1
-            : 0,
-        };
-      }
-    });
+  if (!needsTerrain(candidate)) {
+    applyConfirmedPlan(candidate, ids);
+    return;
+  }
+  busy = true;
+  terrainController = new AbortController();
+  render();
+  openDialog(
+    `${dialogHeader("Fetching Route Plan terrain")}<p class="dialog-note">Missing and changed leg coordinates are sent to Open Topo Data. Recorded heights are kept.</p><p id="plan-terrain-progress" role="status">Preparing terrain…</p><div class="dialog-actions"><button id="cancel-plan-terrain" class="button secondary">Cancel</button></div>`,
+  );
+  const cancel = () => terrainController?.abort();
+  $("cancel-plan-terrain").onclick = cancel;
+  $<HTMLDialogElement>("dialog").oncancel = cancel;
+  let refreshed: Track | undefined;
+  let failure: unknown;
+  try {
+    refreshed = finishInputTerrain(
+      candidate,
+      await enrichTerrain(
+        prepareInputTerrain(candidate),
+        (message) => {
+          $("plan-terrain-progress").textContent = message;
+        },
+        terrainController.signal,
+      ),
+    );
+    ensureTrackCapacity(
+      0,
+      refreshed.points.length - (workspace.route?.points.length ?? 0),
+    );
+  } catch (error) {
+    failure = error;
+  } finally {
+    busy = false;
+    terrainController = null;
+    $<HTMLDialogElement>("dialog").oncancel = null;
+    render();
+  }
+  if (refreshed && !failure) {
+    applyConfirmedPlan(refreshed, ids);
+    return;
+  }
+  if (isCancelled(failure)) {
+    routePlanDialog();
+    return;
+  }
+  const message =
+    failure instanceof Error
+      ? failure.message
+      : "Terrain could not be fetched.";
+  openDialog(
+    `${dialogHeader("Terrain unavailable")}<p role="alert">${esc(message)}</p><p class="dialog-note">Your plan and previous confirmed route are unchanged. Confirming without terrain leaves heights incomplete and ascent partial.</p><div class="terrain-failure-actions"><button id="retry-plan-terrain" class="button primary">Retry terrain</button><button id="confirm-without-terrain" class="button secondary">Confirm without terrain</button><button id="back-to-plan" class="button secondary">Back to Route Plan</button></div>`,
+  );
+  $("retry-plan-terrain").onclick = confirmRoutePlan;
+  $("confirm-without-terrain").onclick = () =>
+    applyConfirmedPlan(candidate, ids);
+  $("back-to-plan").onclick = routePlanDialog;
 }
+
 function render() {
   renderTracks();
   renderControls();
-  renderRoute();
   renderMode();
   if (mode === "create") renderCreated();
   else renderPointCard();
@@ -805,7 +1057,7 @@ function render() {
   $<HTMLButtonElement>("redo").disabled =
     !(mode === "create" ? createRedo : redo).length || busy;
   $("view-toggle").innerHTML =
-    `${icon("eye", 16)}<span>${showAll ? "All tracks" : "Selected section"}</span>`;
+    `${icon("eye", 16)}<span>${showAll ? "All tracks" : "Selected track"}</span>`;
   for (const id of [
     "import",
     "empty-import",
@@ -831,6 +1083,24 @@ function render() {
     )
       b.disabled = true;
   });
+  const input = activeInput();
+  $("input-edit-controls").hidden = mode !== "edit";
+  $("input-point-tools").hidden = mode !== "edit";
+  $("input-extra-tools").hidden = mode !== "edit";
+  $<HTMLButtonElement>("reverse").disabled = busy || !input;
+  for (const tool of ["move", "add", "insert"] as const) {
+    $("input-" + tool).setAttribute(
+      "aria-pressed",
+      String(inputEditing && inputTool === tool),
+    );
+    $<HTMLButtonElement>("input-" + tool).disabled = busy || !input;
+  }
+  $<HTMLButtonElement>("input-close").disabled =
+    busy || !input || input.points.length < 3 || isClosedRoute(input);
+  const inputTerrain = $<HTMLButtonElement>("input-terrain");
+  if (inputTerrain)
+    inputTerrain.disabled = busy || !input || !needsTerrain(input);
+  updateInputSelectionControls();
   renderLocationButtons();
 }
 function ensureTrackCapacity(count: number, points: number) {
@@ -886,6 +1156,7 @@ async function importFiles(files?: ImportFile[]) {
       mode = "edit";
       editWelcome = false;
       workspace.activeId = tracks[0].id;
+      showAll = false;
       workspace.selection = { start: 0, end: tracks[0].points.length - 1 };
       persist();
     }
@@ -896,7 +1167,7 @@ async function importFiles(files?: ImportFile[]) {
       );
     else
       notification(
-        `${tracks.length} ${tracks.length === 1 ? "track" : "tracks"} imported. Choose a section to start editing.`,
+        `${tracks.length} ${tracks.length === 1 ? "track" : "tracks"} imported. Select a point to edit or trim the input track.`,
       );
   } catch (e) {
     report(e);
@@ -1006,83 +1277,6 @@ function rename(track: Track) {
   };
   $<HTMLInputElement>("track-name").select();
 }
-function splitDialog(track: Track) {
-  const { start, end } = workspace.selection;
-  if (end - start < 2) return;
-  openDialog(
-    `${dialogHeader("Split the selected section", "Choose the shared point where one track becomes two.")}<label class="field-label" for="split-point">Split at <strong id="split-label"></strong></label><input id="split-point" class="single-range" type="range" min="${start + 1}" max="${end - 1}" value="${Math.floor((start + end) / 2)}"><div id="split-summary" class="split-summary"></div><p class="dialog-note">Both new tracks include the split point. Your original track stays in the workspace.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-split" class="button primary">${icon("scissors", 17)}Split into two tracks</button></div>`,
-  );
-  const update = () => {
-    const point = Number($<HTMLInputElement>("split-point").value);
-    $("split-label").textContent = `point ${point + 1}`;
-    $("split-summary").innerHTML =
-      `<span>First section<strong>${km(analytics(track.points.slice(start, point + 1)).length)} km</strong></span><span>Second section<strong>${km(analytics(track.points.slice(point, end + 1)).length)} km</strong></span>`;
-  };
-  $<HTMLInputElement>("split-point").oninput = update;
-  update();
-  $("confirm-split").onclick = () => {
-    commit(() => {
-      const cropped = section(track, workspace.selection, track.name);
-      const parts = split(
-        cropped,
-        Number($<HTMLInputElement>("split-point").value) - start,
-      );
-      ensureTrackCapacity(2, cropped.points.length + 1);
-      workspace.tracks.push(...parts);
-      workspace.activeId = parts[0].id;
-      workspace.selection = { start: 0, end: parts[0].points.length - 1 };
-    }, true);
-    $<HTMLDialogElement>("dialog").close();
-  };
-}
-function terrainDialog() {
-  if (
-    !workspace.route ||
-    busy ||
-    !analytics(workspace.route.points).estimatedGap
-  )
-    return;
-  openDialog(
-    `${dialogHeader("Fetch Terrain Heights")}<div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-terrain" class="button primary">Fetch Terrain Heights</button></div>`,
-  );
-  $("confirm-terrain").onclick = async () => {
-    const route = workspace.route!;
-    busy = true;
-    terrainController = new AbortController();
-    render();
-    $("dialog-content").innerHTML =
-      `${dialogHeader("Fetching connection terrain")}<p id="terrain-progress" role="status">Preparing samples…</p><div class="dialog-actions"><button id="cancel-terrain" class="button secondary">Cancel</button></div>`;
-    const cancel = () => terrainController?.abort();
-    $("cancel-terrain").onclick = cancel;
-    $<HTMLDialogElement>("dialog").oncancel = cancel;
-    try {
-      const enriched = await enrichTerrain(
-        route,
-        (s) => {
-          $("terrain-progress").textContent = s;
-        },
-        terrainController.signal,
-      );
-      ensureTrackCapacity(0, enriched.points.length - route.points.length);
-      checkpoint();
-      workspace.route = enriched;
-      if (workspace.activeId === route.id)
-        workspace.selection = { start: 0, end: enriched.points.length - 1 };
-      persist();
-      notification(
-        "Connection terrain included in route ascent. Heights are terrain estimates.",
-      );
-    } catch (e) {
-      report(e);
-    } finally {
-      busy = false;
-      terrainController = null;
-      $<HTMLDialogElement>("dialog").oncancel = null;
-      $<HTMLDialogElement>("dialog").close();
-      render();
-    }
-  };
-}
 function createdSnapshot(): CreatedSnapshot {
   return structuredClone({ route: draft(), terrain: workspace.createdTerrain });
 }
@@ -1115,6 +1309,7 @@ function setMode(next: "edit" | "create") {
   const firstCreate = next === "create" && !createMapOpened;
   if (next === "create") createMapOpened = true;
   mode = next;
+  inputEditing = false;
   if (next === "edit") {
     editWelcome = true;
     showAll = true;
@@ -1147,13 +1342,12 @@ function renderMode() {
   $("edit-map-view").hidden = creating;
   $("create-map-view").hidden = !creating;
   $("editor").hidden = creating;
-  $("route-card").hidden = creating || editWelcome || !workspace.route;
   $("create-card").hidden = false;
   $("create-tools").hidden = !creating;
   $("view-toggle").hidden = creating || editWelcome;
   $("selection-caption").textContent = creating
     ? "CREATED ROUTE"
-    : "SELECTED SECTION";
+    : "SELECTED TRACK";
   $("mode-caption").textContent = creating
     ? "Make a route, one point at a time"
     : "Work with your GPX tracks";
@@ -1165,8 +1359,10 @@ function renderMode() {
     $(name + "-tab").setAttribute("aria-selected", String(name === mode));
     $(name + "-tab").tabIndex = name === mode ? 0 : -1;
   }
-  $("map-error").hidden = creating || !map.hasTileError();
-  $("create-map-error").hidden = !creating || !createMap.hasTileError();
+  $("map-error").hidden =
+    creating || !map.hasTileError() || dismissedTileWarning.edit;
+  $("create-map-error").hidden =
+    !creating || !createMap.hasTileError() || dismissedTileWarning.create;
 }
 const emptyCardRoute: Track = {
   id: "empty-card",
@@ -1192,7 +1388,7 @@ function routeCardContext() {
     terrain: undefined,
     source,
     offset: 0,
-    description: `Whole joined route · ${source.points.length} points`,
+    description: `Whole joined route · ${source.points.length} points${needsTerrain(source) ? " · Terrain incomplete — ascent is partial" : ""}`,
   };
 }
 function fitCardCoordinates() {
@@ -1289,7 +1485,11 @@ function renderCreated() {
   $<HTMLButtonElement>("draw-insert").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-close").disabled =
     busy || points.length < 3 || closed;
-  $("create-close").textContent = closed ? "Loop closed" : "Close loop";
+  $("create-close").textContent = "Close loop";
+  if (selectedCreatePoint !== null && !points[selectedCreatePoint])
+    selectedCreatePoint = null;
+  $<HTMLButtonElement>("create-delete").disabled =
+    busy || selectedCreatePoint === null;
   renderPointCard();
 }
 let cardSourceKey = "";
@@ -1304,7 +1504,9 @@ function renderPointCard() {
   $("waypoint-count").textContent = String(points.length);
   const nameField = $<HTMLInputElement>("create-name");
   nameField.value = route.name;
-  nameField.readOnly = mode === "edit";
+  nameField.readOnly = false;
+  $("preview-route").hidden = mode !== "edit" || !context;
+  $<HTMLButtonElement>("preview-route").disabled = busy || !context;
   nameField.closest<HTMLElement>(".create-settings")!.hidden =
     mode === "edit" && !context;
   $("card-name-label").textContent =
@@ -1312,15 +1514,11 @@ function renderPointCard() {
       ? "Route name"
       : context?.source === workspace.route
         ? "Route name"
-        : "Track / section";
+        : "Input track";
   $("card-source-note").hidden = mode === "create" || !context;
   $("card-source-note").textContent = context?.description ?? "";
-  $("create-save").setAttribute(
-    "aria-label",
-    mode === "create" ? "Save route" : "Save Route Card as GPX",
-  );
-  $("create-save").innerHTML =
-    `${icon("export", 17)}${mode === "create" || context?.source === workspace.route ? "Save route" : "Save section"}`;
+  $("create-save").setAttribute("aria-label", "Save Route");
+  $("create-save").innerHTML = `${icon("export", 17)}Save Route`;
   $("coordinate-heading").textContent = {
     latlon: "Lat/Lon",
     irish: "Irish Grid",
@@ -1510,11 +1708,12 @@ function renderPointCard() {
   $<HTMLButtonElement>("create-save").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-share").disabled = busy || points.length < 2;
   $<HTMLButtonElement>("create-pdf").disabled = busy || points.length < 2;
+  $("create-terrain").hidden = mode !== "create";
   $<HTMLButtonElement>("create-terrain").disabled =
     busy ||
-    (mode === "create"
-      ? points.length < 2 || !!workspace.createdTerrain
-      : !workspace.route || !analytics(workspace.route.points).estimatedGap);
+    mode !== "create" ||
+    points.length < 2 ||
+    !!workspace.createdTerrain;
   $<HTMLButtonElement>("create-clear").disabled = busy || !points.length;
   $<HTMLInputElement>("create-name").disabled = busy;
   requestAnimationFrame(updateCardScrollLimit);
@@ -1536,20 +1735,33 @@ for (const name of ["edit", "create"])
     setMode(next);
     $(next + "-tab").focus();
   };
+$("preview-route").onclick = () => {
+  if (busy || mode !== "edit" || !workspace.route) return;
+  if (cardExpanded) toggleCard();
+  showAll = false;
+  select(workspace.route);
+  $("map-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+};
 let nameEditStarted = false;
 $<HTMLInputElement>("create-name").oninput = (e) => {
-  if (busy || mode !== "create") return;
+  if (busy || (mode === "edit" && !workspace.route)) return;
   if (!nameEditStarted) {
-    createUndo.push(createdSnapshot());
-    if (createUndo.length > 30) createUndo.shift();
-    createRedo = [];
+    if (mode === "create") {
+      createUndo.push(createdSnapshot());
+      if (createUndo.length > 30) createUndo.shift();
+      createRedo = [];
+    } else checkpoint();
     nameEditStarted = true;
   }
   const name =
-    (e.target as HTMLInputElement).value.trim() || "My walking route";
-  workspace.created = { ...draft(), name };
-  if (workspace.createdTerrain)
-    workspace.createdTerrain = { ...workspace.createdTerrain, name };
+    (e.target as HTMLInputElement).value.trim() ||
+    (mode === "create" ? "Created Route" : "Edited Route");
+  if (mode === "edit") workspace.route = { ...workspace.route!, name };
+  else {
+    workspace.created = { ...draft(), name };
+    if (workspace.createdTerrain)
+      workspace.createdTerrain = { ...workspace.createdTerrain, name };
+  }
   $<HTMLButtonElement>("undo").disabled = false;
   $<HTMLButtonElement>("redo").disabled = true;
   persist();
@@ -1582,6 +1794,12 @@ $("draw-insert").onclick = () => {
     render();
   }
 };
+$("create-delete").onclick = () => {
+  if (selectedCreatePoint === null || busy) return;
+  const index = selectedCreatePoint;
+  selectedCreatePoint = null;
+  changeCreated(() => removeWaypoint(draft(), index));
+};
 $("create-close").onclick = () => {
   if (changeCreated(() => closeRoute(draft()))) {
     drawingMode = "add";
@@ -1592,6 +1810,10 @@ $("create-close").onclick = () => {
   }
 };
 $("create-save").onclick = () => {
+  if (mode === "create" && !workspace.createdTerrain) {
+    void fetchCreatedTerrain(true);
+    return;
+  }
   const context = routeCardContext();
   if (context && context.route.points.length >= 2)
     void exportTrack(context.terrain ?? context.route);
@@ -1624,6 +1846,14 @@ $("create-clear").onclick = () => {
     changeCreated(newCreatedRoute);
     $<HTMLDialogElement>("dialog").close();
   };
+};
+$("dismiss-create-map").onclick = () => {
+  dismissedTileWarning.create = true;
+  $("create-map-error").hidden = true;
+};
+$("dismiss-map").onclick = () => {
+  dismissedTileWarning.edit = true;
+  $("map-error").hidden = true;
 };
 $("retry-create-map").onclick = () => {
   $("create-map-error").hidden = true;
@@ -1662,14 +1892,6 @@ function toggleCard() {
     : "Expand Route Card";
   if (mode === "edit") renderPointCard();
   requestAnimationFrame(updateCardScrollLimit);
-  if (
-    cardExpanded &&
-    mode === "create" &&
-    !busy &&
-    draft().points.length >= 2 &&
-    !workspace.createdTerrain
-  )
-    $("create-terrain").click();
 }
 $("expand-card").onclick = toggleCard;
 $("create-share").onclick = async () => {
@@ -1705,75 +1927,101 @@ $("create-share").onclick = async () => {
   };
 };
 $("create-terrain").onclick = () => {
-  if (mode === "edit") {
-    terrainDialog();
-    return;
-  }
   if (mode !== "create" || busy || draft().points.length < 2) return;
   openDialog(
     `${dialogHeader("Add terrain to your new route")}<p>Route coordinates are sent to Open Topo Data to sample heights about every 90 metres along each straight leg. Ascent is an estimate. This does not make the route follow paths.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-create-terrain" class="button primary">Fetch route terrain</button></div>`,
   );
-  $("confirm-create-terrain").onclick = async () => {
-    busy = true;
-    terrainController = new AbortController();
-    render();
-    $("dialog-content").innerHTML =
-      `${dialogHeader("Fetching route terrain")}<p id="create-terrain-progress" role="status">Preparing route…</p><div class="dialog-actions"><button id="cancel-create-terrain" class="button secondary">Cancel</button></div>`;
-    const cancel = () => terrainController?.abort();
-    $("cancel-create-terrain").onclick = cancel;
-    $<HTMLDialogElement>("dialog").oncancel = cancel;
-    try {
-      const before = createdSnapshot(),
-        route = draft();
-      const sampled = await enrichTerrain(
-        {
-          ...route,
-          points: route.points.map((p, i) => ({
-            ...p,
-            gapBefore: i > 0,
-            terrain: undefined,
-          })),
-        },
-        (message) => {
-          $("create-terrain-progress").textContent = message;
-        },
-        terrainController.signal,
-      );
-      const heights = new Map(
-        sampled.points.map((p) => [`${p.lat},${p.lon}`, p.ele]),
-      );
-      createUndo.push(before);
-      if (createUndo.length > 30) createUndo.shift();
-      createRedo = [];
-      workspace.createdTerrain = {
-        ...sampled,
-        points: sampled.points.map(({ lat, lon, ele, name }) => ({
-          lat,
-          lon,
-          ele,
-          name,
-        })),
-      };
-      workspace.created = {
-        ...route,
-        points: route.points.map((p) => ({
-          ...p,
-          ele: heights.get(`${p.lat},${p.lon}`),
-        })),
-      };
-      persist();
-      notification("Terrain estimates added to route distance and ascent.");
-    } catch (error) {
-      report(error);
-    } finally {
-      busy = false;
-      terrainController = null;
-      $<HTMLDialogElement>("dialog").oncancel = null;
-      $<HTMLDialogElement>("dialog").close();
-      render();
-    }
-  };
+  $("confirm-create-terrain").onclick = () => fetchCreatedTerrain(false);
 };
+async function fetchCreatedTerrain(saveAfter: boolean) {
+  if (mode !== "create" || busy || draft().points.length < 2) return;
+  if (workspace.createdTerrain) {
+    if (saveAfter) await exportTrack(workspace.createdTerrain);
+    return;
+  }
+  busy = true;
+  terrainController = new AbortController();
+  render();
+  openDialog(
+    `${dialogHeader(saveAfter ? "Preparing route for saving" : "Fetching route terrain")}<p class="dialog-note">Route coordinates are sent to Open Topo Data for terrain heights.</p><p id="create-terrain-progress" role="status">Preparing route…</p><div class="dialog-actions"><button id="cancel-create-terrain" class="button secondary">Cancel</button></div>`,
+  );
+  const cancel = () => terrainController?.abort();
+  $("cancel-create-terrain").onclick = cancel;
+  $<HTMLDialogElement>("dialog").oncancel = cancel;
+  let failure: unknown;
+  let succeeded = false;
+  try {
+    const before = createdSnapshot(),
+      route = draft();
+    const sampled = await enrichTerrain(
+      {
+        ...route,
+        points: route.points.map((p, i) => ({
+          ...p,
+          gapBefore: i > 0,
+          terrain: undefined,
+        })),
+      },
+      (message) => {
+        $("create-terrain-progress").textContent = message;
+      },
+      terrainController.signal,
+    );
+    const heights = new Map(
+      sampled.points.map((p) => [`${p.lat},${p.lon}`, p.ele]),
+    );
+    createUndo.push(before);
+    if (createUndo.length > 30) createUndo.shift();
+    createRedo = [];
+    workspace.createdTerrain = {
+      ...sampled,
+      points: sampled.points.map(({ lat, lon, ele, name }) => ({
+        lat,
+        lon,
+        ele,
+        name,
+      })),
+    };
+    workspace.created = {
+      ...route,
+      points: route.points.map((p) => ({
+        ...p,
+        ele: heights.get(`${p.lat},${p.lon}`),
+      })),
+    };
+    persist();
+    succeeded = true;
+  } catch (error) {
+    failure = error;
+  } finally {
+    busy = false;
+    terrainController = null;
+    $<HTMLDialogElement>("dialog").oncancel = null;
+    $<HTMLDialogElement>("dialog").close();
+    render();
+  }
+  if (succeeded) {
+    if (saveAfter) await exportTrack(workspace.createdTerrain!);
+    return;
+  }
+  if (isCancelled(failure)) return;
+  if (!saveAfter) {
+    report(failure);
+    return;
+  }
+  const message =
+    failure instanceof Error
+      ? failure.message
+      : "Terrain could not be fetched.";
+  openDialog(
+    `${dialogHeader("Terrain unavailable")}<p role="alert">${esc(message)}</p><p class="dialog-note">Your route is unchanged. Retry to include terrain, or explicitly save with incomplete heights and partial ascent.</p><div class="terrain-failure-actions"><button id="retry-create-save" class="button primary">Retry terrain and save</button><button id="save-without-terrain" class="button secondary">Save without terrain</button><button class="button secondary" data-close>Cancel</button></div>`,
+  );
+  $("retry-create-save").onclick = () => fetchCreatedTerrain(true);
+  $("save-without-terrain").onclick = () => {
+    $<HTMLDialogElement>("dialog").close();
+    void exportTrack(draft());
+  };
+}
 $("import").onclick = () => importFiles();
 $("empty-import").onclick = () => importFiles();
 $("view-toggle").onclick = () => {
@@ -1841,8 +2089,34 @@ $("settings").onclick = () => {
       )
       .join(
         "",
-      )}</select></section><h3 class="settings-colour-heading">Created Route Colour</h3>${colourForm(draft().color, true)}<p id="colour-status" class="dialog-note" role="status"></p><section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section><button class="button primary full" data-close>Done</button>`,
+      )}</select></section><h3 class="settings-colour-heading">Created Route Colour</h3>${colourForm(draft().color, true)}<p id="colour-status" class="dialog-note" role="status"></p><section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section><section class="settings-point-naming"><h3>Input Track Editing</h3><p>Set how often editing handles appear. Spacing keeps every input point; Delete and Trim remove points only from the input. The Edited Route is unchanged.</p><div class="input-handle-options"><label for="settings-handle-interval">Handle every</label><input id="settings-handle-interval" class="text-input" type="number" min="1" max="150000" step="1" inputmode="numeric" value="${inputHandleInterval}"><span>points</span><button id="settings-apply-handles" class="button secondary compact">Apply</button></div><p id="settings-handle-status" class="dialog-note" role="status">Default: 20 points. First and last are always included. Fetch Terrain under the Edit map refreshes input heights; Confirm Route completes the output terrain.</p></section><button class="button primary full" data-close>Done</button>`,
   );
+  const handleInterval = $<HTMLInputElement>("settings-handle-interval");
+  handleInterval.oninput = () => {
+    $<HTMLButtonElement>("settings-apply-handles").disabled =
+      !handleInterval.validity.valid || !handleInterval.value;
+  };
+  $("settings-apply-handles").onclick = async () => {
+    if (!handleInterval.reportValidity() || !handleInterval.value) return;
+    inputHandleInterval = Number(handleInterval.value);
+    selectedInputPoint = null;
+    map.resetSelection();
+    render();
+    try {
+      await set(INPUT_HANDLE_KEY, inputHandleInterval);
+      $("settings-handle-status").textContent =
+        "Handle spacing saved on this device.";
+    } catch {
+      $("settings-handle-status").textContent =
+        "Handle spacing changed for this session, but could not be saved on this device.";
+    }
+  };
+  handleInterval.onkeydown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      $("settings-apply-handles").click();
+    }
+  };
   $("allow-point-naming").onclick = async () => {
     allowPointNaming = !allowPointNaming;
     $("allow-point-naming").setAttribute(
@@ -1925,6 +2199,13 @@ async function pendingFiles() {
 }
 async function init() {
   try {
+    const savedInterval = await get(INPUT_HANDLE_KEY);
+    if (
+      Number.isInteger(savedInterval) &&
+      savedInterval >= 1 &&
+      savedInterval <= MAX_POINTS
+    )
+      inputHandleInterval = savedInterval;
     const savedCoordinates = await get(COORDINATE_KEY);
     allowPointNaming = (await get(POINT_NAMING_KEY)) === true;
     if (isCoordinateSystem(savedCoordinates))

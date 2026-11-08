@@ -1,3 +1,5 @@
+import { confirmPlanWithoutTerrain } from "./input-helpers";
+import { trimBefore } from "./input-helpers";
 import { test, expect } from "@playwright/test";
 const gpx = (name: string, latitude: number) =>
   `<gpx version="1.1"><trk><name>${name}</name><trkseg>${Array.from({ length: 4 }, (_, i) => `<trkpt lat="${latitude + i * 0.001}" lon="-6"><ele>${100 + i * 10}</ele></trkpt>`).join("")}</trkseg></trk></gpx>`;
@@ -16,22 +18,18 @@ test.beforeEach(async ({ page }) => {
       buffer: Buffer.from(gpx(name, 53 + i)),
     })),
   );
-  await page
-    .getByRole("button", { name: "Dismiss message", exact: true })
-    .click();
+  await expect(page.locator("#notice")).toBeHidden();
 });
 test("stage sections, reorder clickable rows, recover the plan and confirm before the Route Card changes", async ({
   page,
 }) => {
-  await page
-    .getByRole("slider", { name: "Section start point", exact: true })
-    .fill("1");
+  await trimBefore(page, 2);
   await page
     .getByRole("button", { name: "Add to Route Plan", exact: true })
     .click();
   await expect(page.locator(".plan-grid tbody tr")).toHaveCount(1);
-  await expect(page.locator(".plan-grid")).toContainText("First · points 2–4");
-  await expect(page.locator("#route-card")).toBeHidden();
+  await expect(page.locator(".plan-grid")).toContainText("First");
+  await expect(page.locator("#route-card")).toHaveCount(0);
   await expect(page.locator("#create-name")).toHaveValue("");
   await expect(page.locator("#waypoint-rows [data-card-row]")).toHaveCount(0);
   await page.getByRole("button", { name: "Keep adding", exact: true }).click();
@@ -56,11 +54,9 @@ test("stage sections, reorder clickable rows, recover the plan and confirm befor
   await expect(page.locator(".plan-grid tbody tr").first()).toContainText(
     "Second",
   );
-  await expect(page.locator("#route-card")).toBeHidden();
-  await page
-    .getByRole("button", { name: "Confirm Route", exact: true })
-    .click();
-  await expect(page.locator("#card-source-note")).toHaveText(
+  await expect(page.locator("#route-card")).toHaveCount(0);
+  await confirmPlanWithoutTerrain(page);
+  await expect(page.locator("#card-source-note")).toContainText(
     "Whole joined route · 7 points",
   );
   await expect(page.locator(".grid-reference").first()).toHaveAttribute(
@@ -80,9 +76,7 @@ test("stage sections, reorder clickable rows, recover the plan and confirm befor
   );
   await page.locator(".plan-grid tbody tr").first().click();
   await page.getByRole("button", { name: "Move down", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Confirm Route", exact: true })
-    .click();
+  await confirmPlanWithoutTerrain(page);
   await expect(page.locator(".grid-reference").first()).toHaveAttribute(
     "title",
     /53\.001/,
@@ -108,10 +102,8 @@ test("remove staged sections and build after the source track has been removed",
     .getByRole("button", { name: "Remove Second", exact: true })
     .click();
   await page.getByRole("button", { name: "Route Plan", exact: true }).click();
-  await expect(page.locator(".plan-grid")).toContainText("First · points 1–4");
-  await page
-    .getByRole("button", { name: "Confirm Route", exact: true })
-    .click();
+  await expect(page.locator(".plan-grid")).toContainText("First");
+  await confirmPlanWithoutTerrain(page);
   await expect(page.locator("#waypoint-count")).toHaveText("4");
 });
 
@@ -142,8 +134,66 @@ test("long plans scroll while ordering and confirmation controls remain visible 
   await page.locator(".plan-grid tbody tr").last().click();
   await expect(page.locator("#plan-up")).toBeEnabled();
   await page.locator("#plan-up").click();
+  await confirmPlanWithoutTerrain(page);
+  await expect(page.locator("#waypoint-count")).not.toHaveText("0");
+});
+
+test("one editable route name and Preview live in the Route Card and survive reconfirmation", async ({
+  page,
+}) => {
   await page
-    .getByRole("button", { name: "Confirm Route", exact: true })
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
     .click();
-  await expect(page.locator("#route-card")).toBeVisible();
+  await confirmPlanWithoutTerrain(page);
+  await expect(page.locator("#route-card")).toHaveCount(0);
+  await expect(page.locator("#create-name")).toHaveValue("Edited Route");
+  await expect(page.locator("#create-name")).toBeEditable();
+  await expect(page.locator("#create-card #preview-route")).toBeVisible();
+  await expect(page.locator("#rename-route")).toHaveCount(0);
+  await page.locator("#create-name").fill("My ridge walk");
+  await page.locator("#create-name").blur();
+  await page.locator("#undo").click();
+  await expect(page.locator("#create-name")).toHaveValue("Edited Route");
+  await page.locator("#redo").click();
+  await expect(page.locator("#create-name")).toHaveValue("My ridge walk");
+  await page.locator(".track-select").filter({ hasText: "Second" }).click();
+  await page.locator("#preview-route").click();
+  await expect(page.locator("#point-count")).toHaveText("4 points");
+  await expect(page.locator("#section-controls #rename")).toHaveCount(0);
+  await page.locator(".track-select").filter({ hasText: "Second" }).click();
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await confirmPlanWithoutTerrain(page);
+  await expect(page.locator("#create-name")).toHaveValue("My ridge walk");
+});
+
+test("Edit Input Track clears when all inputs have contributed, and Undo restores the selection", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Keep adding", exact: true }).click();
+  await expect(page.locator("#input-add")).toBeEnabled();
+  await page.locator(".track-select").filter({ hasText: "Second" }).click();
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Keep adding", exact: true }).click();
+  await expect(page.locator("#section-controls #rename")).toHaveCount(0);
+  await expect(page.locator("#input-add")).toBeDisabled();
+  await expect(page.locator("#source-count")).toHaveText("2");
+  await expect(page.locator("#waypoint-count")).toHaveText("0");
+  await page.locator("#undo").click();
+  await expect(page.locator(".track-select[aria-pressed=true]")).toContainText(
+    "Second",
+  );
+  await expect(page.locator("#input-add")).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Keep adding", exact: true }).click();
+  await page.locator(".track-select").filter({ hasText: "First" }).click();
+  await expect(page.locator("#input-add")).toBeEnabled();
 });

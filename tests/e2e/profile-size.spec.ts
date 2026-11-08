@@ -21,6 +21,10 @@ test("elevation profile reserves its populated size from the start", async ({
     const profile = page.locator(".profile-card");
     await expect(page.locator("#profile")).toBeVisible();
     const height = (await profile.boundingBox())!.height;
+    expect((await page.locator("#profile").boundingBox())!.height).toBeCloseTo(
+      (width <= 640 ? 61 : 78) * 0.67,
+      1,
+    );
     await page.locator("#create-map").click({ position: { x: 80, y: 120 } });
     await page.locator("#create-map").click({ position: { x: 210, y: 210 } });
     await expect(page.locator("#elevation-note")).toBeVisible();
@@ -31,7 +35,7 @@ test("elevation profile reserves its populated size from the start", async ({
     expect((await profile.boundingBox())!.height).toBe(height);
     await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "Edit Input Track", exact: true }),
+      page.getByRole("heading", { name: /^Input Tracks/ }),
     ).toBeVisible();
     expect((await profile.boundingBox())!.height).toBe(height);
     // Start the next viewport with no saved draft, so the initial state is truly empty.

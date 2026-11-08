@@ -4,6 +4,7 @@ import {
   movePlanSection,
   buildPlannedRoute,
   MAX_PLAN_SECTIONS,
+  allInputsInPlan,
 } from "../src/route-plan";
 import {
   emptyWorkspace,
@@ -113,4 +114,38 @@ it("recovers a full legacy workspace while reserving capacity for its copied pla
   const restored = restoreSeparateWorkspace(workspace);
   expect(restored.routePlan![0].points).toHaveLength(150000);
   expect(validateWorkspace(restored)).toBe(true);
+});
+
+it("uses Edited Route by default and migrates the old default without changing custom names", () => {
+  const route = buildPlannedRoute([input()]);
+  expect(route.name).toBe("Edited Route");
+  expect(
+    restoreSeparateWorkspace({
+      ...emptyWorkspace(),
+      route: { ...route, name: "My joined route" },
+    }).route?.name,
+  ).toBe("Edited Route");
+  expect(
+    restoreSeparateWorkspace({
+      ...emptyWorkspace(),
+      route: { ...route, name: "My ridge walk" },
+    }).route?.name,
+  ).toBe("My ridge walk");
+});
+
+it("clears the input selection only when each listed input has contributed a section", () => {
+  const first = input("first"),
+    second = input("second", 54);
+  let plan = addPlanSection([], first, { start: 1, end: 2 });
+  expect(allInputsInPlan([first, second], plan)).toBe(false);
+  plan = addPlanSection(plan, first, { start: 2, end: 3 });
+  expect(allInputsInPlan([first, second], plan)).toBe(false);
+  plan = addPlanSection(plan, second, { start: 0, end: 1 });
+  expect(allInputsInPlan([first, second], plan)).toBe(true);
+  second.name = "Renamed input";
+  expect(allInputsInPlan([first, second], plan)).toBe(true);
+  expect(allInputsInPlan([], plan)).toBe(false);
+  expect(allInputsInPlan([first, second, input("third")], plan)).toBe(false);
+  const legacy = plan.map(({ inputTrackId, ...entry }) => entry);
+  expect(allInputsInPlan([first], legacy)).toBe(true);
 });

@@ -13,8 +13,15 @@ test.beforeEach(async ({ page }) => {
   });
 });
 async function confirmTerrain(page: import("@playwright/test").Page) {
+  if (
+    (await page.locator("#expand-card").getAttribute("aria-expanded")) ===
+    "true"
+  )
+    await page.locator("#expand-card").click();
+  await page.locator("#create-terrain").click();
   await page.locator("#confirm-create-terrain").click();
   await expect(page.locator("#dialog")).not.toBeVisible();
+  await page.locator("#expand-card").click();
 }
 async function setPointNaming(
   page: import("@playwright/test").Page,
@@ -165,9 +172,7 @@ for (const outcome of ["success", "failure", "cancel"] as const) {
     await page.goto("/");
     await page.locator("#create-map").click({ position: { x: 95, y: 120 } });
     await page.locator("#create-map").click({ position: { x: 125, y: 150 } });
-    await page
-      .getByRole("button", { name: "Expand Route Card", exact: true })
-      .click();
+    await page.locator("#create-terrain").click();
     await expect(page.locator("#confirm-create-terrain")).toBeVisible();
     await page.locator("#confirm-create-terrain").click();
     if (outcome === "cancel") {
@@ -182,6 +187,9 @@ for (const outcome of ["success", "failure", "cancel"] as const) {
     }
     await expect(page.locator("#expand-card")).toBeEnabled();
     await page
+      .getByRole("button", { name: "Expand Route Card", exact: true })
+      .click();
+    await page
       .getByRole("button", { name: "Collapse Route Card", exact: true })
       .click();
     await page
@@ -191,10 +199,7 @@ for (const outcome of ["success", "failure", "cancel"] as const) {
       "aria-expanded",
       "true",
     );
-    if (outcome !== "success") {
-      await expect(page.locator("#confirm-create-terrain")).toBeVisible();
-      await page.getByRole("button", { name: "Cancel", exact: true }).click();
-    }
+    await expect(page.locator("#dialog")).not.toBeVisible();
     await page
       .getByRole("button", { name: "Collapse Route Card", exact: true })
       .click();
@@ -205,39 +210,26 @@ for (const outcome of ["success", "failure", "cancel"] as const) {
   });
 }
 
-test("expansion confirmation does not fetch until accepted; cancelling leaves card usable", async ({
+test("Create card expansion never prompts or fetches terrain", async ({
   page,
 }) => {
   let requests = 0;
   page.on("request", (req) => {
     if (req.url().includes("/terrain/")) requests++;
   });
-  await page.route("**/*.tile.opentopomap.org/**", (route) => route.abort());
+  await page.route("**/*.tile.opentopomap.org/**", (r) => r.abort());
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Expand Route Card", exact: true })
-    .click();
-  await expect(page.locator("#dialog")).not.toBeVisible();
-  await page
-    .getByRole("button", { name: "Collapse Route Card", exact: true })
-    .click();
   await page.locator("#create-map").click({ position: { x: 95, y: 120 } });
   await page.locator("#create-map").click({ position: { x: 125, y: 150 } });
-  await page
-    .getByRole("button", { name: "Expand Route Card", exact: true })
-    .click();
+  await page.locator("#expand-card").click();
+  await expect(page.locator("#dialog")).not.toBeVisible();
+  expect(requests).toBe(0);
+  await expect(page.locator("#create-share")).toBeEnabled();
+  await page.locator("#expand-card").click();
+  await page.locator("#create-terrain").click();
   await expect(page.locator("#confirm-create-terrain")).toBeVisible();
   expect(requests).toBe(0);
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  await expect(page.locator("#expand-card")).toHaveAttribute(
-    "aria-expanded",
-    "true",
-  );
-  await expect(page.locator("#create-share")).toBeEnabled();
-  await page
-    .getByRole("button", { name: "Collapse Route Card", exact: true })
-    .click();
-  expect(requests).toBe(0);
 });
 
 test("point naming defaults off, swaps Distance, persists and preserves existing names", async ({

@@ -1,3 +1,4 @@
+import { needsTerrain } from "./input-edit";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { type Track } from "./model";
@@ -78,7 +79,9 @@ export function routecardPDF(
       doc.setFontSize(8);
       doc.setTextColor(90);
       doc.text(
-        "Straight-line distances; heights and ascent are estimates. Unavailable means missing elevation data.",
+        needsTerrain(terrain ?? route)
+          ? "Terrain incomplete: heights and ascent are partial. Distances join points by straight lines."
+          : "Straight-line distances; heights and ascent are estimates. Unavailable means missing elevation data.",
         14,
         198,
       );
