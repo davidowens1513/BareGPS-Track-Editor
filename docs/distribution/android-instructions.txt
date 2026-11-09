@@ -1,9 +1,9 @@
 BAREGPS ROUTE PLANNER — ANDROID
-Version 0.2.9 build 41 (release signed) | 8 November 2026
+Version 0.2.10 build 42 (release signed) | 9 November 2026
 
 INSTALL OR UPDATE
 
-BareGPS-Route-Planner-0.2.9.apk is the installable release-signed Android app.
+BareGPS-Route-Planner-0.2.10.apk is the installable release-signed Android app.
 The ZIP bundle contains the same APK, instructions and checksum. Download the
 APK directly, or extract the bundle and open the APK in Files / My Files.
 

@@ -85,6 +85,8 @@ let workspace = emptyWorkspace(),
   undo: Workspace[] = [],
   redo: Workspace[] = [];
 let editWelcome = true;
+let previewReturnInputId: string | null = null;
+let previewMode = false;
 let showAll = true,
   expanded = false,
   busy = false,
@@ -128,7 +130,7 @@ document.querySelector("#app")!.innerHTML = `
   <section id="map-panel" class="map-panel" aria-label="Track map">
     <div class="mode-tabs" role="tablist" aria-label="Route workspace"><button id="create-tab" role="tab" aria-selected="true" aria-controls="create-map-view">Create New</button><button id="edit-tab" role="tab" aria-selected="false" aria-controls="edit-map-view" tabindex="-1">Edit Existing</button><span id="mode-caption">Work with your GPX tracks</span></div>
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
-    <div id="edit-map-view" role="tabpanel" aria-labelledby="edit-tab"><div id="map"></div><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
+    <div id="edit-map-view" role="tabpanel" aria-labelledby="edit-tab"><div id="map"></div><button id="exit-preview" class="button secondary preview-mode" aria-label="Close Preview Mode" hidden><span aria-hidden="true">×</span> Preview Mode</button><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
     <div id="create-map-view" role="tabpanel" aria-labelledby="create-tab" hidden><div id="create-map" aria-label="Create a walking route"></div><button id="create-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="create-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span><p class="create-map-hint" id="create-map-hint">Tap the map to place your starting point.</p></div>
     <div id="create-tools" class="create-tools" role="group" aria-label="Route drawing controls" hidden><div class="drawing-modes" role="group" aria-label="Drawing mode"><button id="draw-add" aria-pressed="true">Add points</button><button id="draw-insert" aria-pressed="false">Insert point</button><button id="create-delete" disabled>Delete point</button><button id="create-close">Close loop</button></div></div>
     <div id="input-edit-controls" hidden>
@@ -160,6 +162,7 @@ document.querySelector("#app")!.innerHTML = `
 <div id="notice" class="notice" role="status" hidden></div>
 <dialog id="dialog"><div id="dialog-content"></div></dialog>
 `;
+document.body.classList.toggle("web-route-card", !Capacitor.isNativePlatform());
 const map = new InputMap(
   () => {},
   (failed) => {
@@ -414,6 +417,7 @@ function replace(track: Track) {
     );
 }
 function select(track: Track) {
+  previewMode = false;
   showAll = false;
   inputEditing = false;
   selectedInputPoint = null;
@@ -1045,6 +1049,8 @@ async function confirmRoutePlan() {
 }
 
 function render() {
+  $("exit-preview").hidden = mode !== "edit" || !previewMode;
+  $<HTMLButtonElement>("exit-preview").disabled = busy;
   renderTracks();
   renderControls();
   renderMode();
@@ -1309,6 +1315,7 @@ function setMode(next: "edit" | "create") {
   const firstCreate = next === "create" && !createMapOpened;
   if (next === "create") createMapOpened = true;
   mode = next;
+  previewMode = false;
   inputEditing = false;
   if (next === "edit") {
     editWelcome = true;
@@ -1427,13 +1434,16 @@ function updateCardScrollLimit() {
   const empty =
     $("waypoint-rows").querySelector<HTMLTableCellElement>(".waypoint-empty");
   if (empty)
-    empty.colSpan = cardExpanded
-      ? allowPointNaming
-        ? 8
-        : 7
-      : mode === "create"
-        ? 5
-        : 4;
+    empty.colSpan =
+      !Capacitor.isNativePlatform() && !cardExpanded
+        ? (allowPointNaming ? 8 : 7) + (mode === "create" ? 1 : 0)
+        : cardExpanded
+          ? allowPointNaming
+            ? 8
+            : 7
+          : mode === "create"
+            ? 5
+            : 4;
   if (cardExpanded) return;
   const table =
     $("create-card").querySelector<HTMLTableElement>(".waypoint-table")!;
@@ -1550,13 +1560,16 @@ function renderPointCard() {
   let rowHeight = 36;
   let lastFirst = -1,
     lastEnd = -1;
-  const colspan = cardExpanded
-    ? allowPointNaming
-      ? 8
-      : 7
-    : mode === "create"
-      ? 5
-      : 4;
+  const colspan =
+    !Capacitor.isNativePlatform() && !cardExpanded
+      ? (allowPointNaming ? 8 : 7) + (mode === "create" ? 1 : 0)
+      : cardExpanded
+        ? allowPointNaming
+          ? 8
+          : 7
+        : mode === "create"
+          ? 5
+          : 4;
   const spacer = (count: number) =>
     `<tr class="card-spacer" aria-hidden="true" style="height:${count * rowHeight}px"><td colspan="${colspan}" style="height:${count * rowHeight}px"></td></tr>`;
   function drawRows() {
@@ -1738,9 +1751,27 @@ for (const name of ["edit", "create"])
 $("preview-route").onclick = () => {
   if (busy || mode !== "edit" || !workspace.route) return;
   if (cardExpanded) toggleCard();
+  if (!previewMode)
+    previewReturnInputId = activeInput()?.id ?? workspace.tracks[0]?.id ?? null;
   showAll = false;
   select(workspace.route);
+  previewMode = true;
+  $("exit-preview").hidden = false;
   $("map-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+$("exit-preview").onclick = () => {
+  if (busy) return;
+  const input =
+    workspace.tracks.find((track) => track.id === previewReturnInputId) ??
+    workspace.tracks[0];
+  previewMode = false;
+  if (input) select(input);
+  else {
+    editWelcome = true;
+    showAll = true;
+    render();
+    fitMap();
+  }
 };
 let nameEditStarted = false;
 $<HTMLInputElement>("create-name").oninput = (e) => {

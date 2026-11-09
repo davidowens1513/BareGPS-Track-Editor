@@ -237,3 +237,23 @@ test("Edit Clear and Save are equal; clearing is undoable and keeps imported tra
     "Whole joined route",
   );
 });
+
+test("preview closes back to the selected input", async ({ page }) => {
+  await page
+    .getByRole("button", { name: "Add to Route Plan", exact: true })
+    .click();
+  await confirmPlanWithoutTerrain(page);
+  await page.locator(".track-select").first().click();
+  const selectedName = await page
+    .locator(".track-row.active strong")
+    .textContent();
+  await page.locator("#preview-route").click();
+  await expect(page.locator("#exit-preview")).toBeVisible();
+  await expect(page.locator("#reverse")).toBeDisabled();
+  await page.locator("#exit-preview").click();
+  await expect(page.locator("#exit-preview")).toBeHidden();
+  await expect(page.locator("#reverse")).toBeEnabled();
+  await expect(page.locator(".track-row.active strong")).toHaveText(
+    selectedName!,
+  );
+});

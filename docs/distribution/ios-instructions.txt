@@ -1,5 +1,5 @@
 BAREGPS ROUTE PLANNER — iOS
-Version 0.2.9 build 40 | 8 November 2026
+Version 0.2.10 build 42 | 9 November 2026
 
 XCODE SOURCE BUNDLE
 

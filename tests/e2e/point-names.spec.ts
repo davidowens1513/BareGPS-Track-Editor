@@ -94,7 +94,7 @@ test("centred main card supports deletion; expanded card shares PDF and Settings
   await page.goto("/");
   await page.locator("#create-map").click({ position: { x: 95, y: 120 } });
   await page.locator("#create-map").click({ position: { x: 175, y: 190 } });
-  await expect(page.locator(".waypoint-table thead th:visible")).toHaveCount(5);
+  await expect(page.locator(".waypoint-table thead th:visible")).toHaveCount(8);
   await page
     .getByRole("button", { name: "Remove point 1", exact: true })
     .click();
@@ -232,7 +232,7 @@ test("Create card expansion never prompts or fetches terrain", async ({
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
 });
 
-test("point naming defaults off, swaps Distance, persists and preserves existing names", async ({
+test("point naming defaults off, retains browser Distance, persists and preserves existing names", async ({
   page,
 }) => {
   await page.route("**/*.tile.opentopomap.org/**", (route) => route.abort());
@@ -242,7 +242,7 @@ test("point naming defaults off, swaps Distance, persists and preserves existing
   await page.locator("#create-map").click({ position: { x: 95, y: 120 } });
   await setPointNaming(page, true);
   await expect(page.locator("th.point-name-cell")).toBeVisible();
-  await expect(page.locator("th.distance-cell")).toBeHidden();
+  await expect(page.locator("th.distance-cell")).toBeVisible();
   const name = page.getByRole("textbox", {
     name: "Name for point 1 (optional)",
     exact: true,

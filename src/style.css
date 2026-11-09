@@ -3409,3 +3409,38 @@ body:not(.creating) .map-legend {
     height: 30.82px;
   }
 }
+
+.preview-mode {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 600;
+  min-height: 44px;
+  background: #fffffff5;
+  box-shadow: 0 1px 5px #17321f20;
+}
+.preview-mode[hidden] {
+  display: none;
+}
+
+/* Browser cards show the complete route measures without expanding. */
+body.web-route-card:not(.card-expanded) #create-card .waypoint-table {
+  width: 100%;
+  min-width: 680px;
+  font-size: 13px;
+}
+body.web-route-card:not(.card-expanded) #create-card col.card-extra {
+  display: table-column;
+}
+body.web-route-card:not(.card-expanded) #create-card th.card-extra,
+body.web-route-card:not(.card-expanded) #create-card td.card-extra {
+  display: table-cell;
+}
+body.web-route-card:not(.card-expanded) #create-card .waypoint-table col {
+  width: auto;
+}
+body.web-route-card:not(.card-expanded) #create-card .waypoint-table th,
+body.web-route-card:not(.card-expanded) #create-card .waypoint-table td {
+  font-size: 13px;
+  padding: 8px 6px;
+}
