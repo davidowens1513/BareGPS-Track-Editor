@@ -1,0 +1,99 @@
+{
+  "published_at_utc": "2026-11-09T10:52:01.756198+00:00",
+  "version": "0.2.11",
+  "build": 50,
+  "website": "https://appsbyonzy.dev",
+  "cloudflare_publication": "Success observed for full 118-file production upload",
+  "app_source_commit": "31c5976f29f27a55b6bf953c5cc7351be119f59c",
+  "app_package_commit": "9c5338b",
+  "website_source_commit": "c8db4c7",
+  "main_content_matches": true,
+  "preview_assets": [
+    {
+      "path": "tools/baregps-route-planner/assets/html2canvas.esm-DXEQVQnt.js",
+      "sha256": "7b07a9ca175c614e8e7de447198d35b0d161dd50db2c63b5f7fd6ea0e1e876f2"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/index-CJCKVvp-.js",
+      "sha256": "4e313605996b3b11760a0d5903749d6cf06815dcce6e20f8c98e6ac57968ffa2"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/index-cbSrbmx4.css",
+      "sha256": "51da65e94da1d6a79898392289faaeeffb8bb65ba86b8f6c613a24f2c956c43c"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/index.es-BW0z6i7x.js",
+      "sha256": "92486e2404b9007181dd66081358aa36bbfed0cc615a66d5100b0f89f24374ab"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/purify.es-18JuyMri.js",
+      "sha256": "d20e7581818a4ef09a7a0e1bc84597c51fa253aea2b5b55935d5d7809793a28d"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/routecard-pdf-CPBEG3AZ.js",
+      "sha256": "15ce1035e098b4a115b8e1fb710cd08654961b97a11bb047529ea0ab122e22ef"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/web-09R3hBm0.js",
+      "sha256": "7a4de67570fe3e8bef6aee8448e319f18c649cb4cdfc04de21bdbfc5efc61ac4"
+    },
+    {
+      "path": "tools/baregps-route-planner/index.html",
+      "sha256": "39d374c6a29b82e11e513f4ac8b8cdd3aa118436ead0c8129c37dbfb8a4de04c"
+    },
+    {
+      "path": "tools/baregps-route-planner/logo.svg",
+      "sha256": "372dcd79e2bfc65db85c2e99d1a02e8e57497ffff2110bc59b5dd00a652dd6dd"
+    }
+  ],
+  "public_manifest_matches": true,
+  "public_checksums_match": true,
+  "downloads": [
+    {
+      "path": "tools/baregps-track-editor/0.2.11/android/BareGPS-Route-Planner-0.2.11.apk",
+      "bytes": 4017565,
+      "sha256": "85a50aa138f8ef11978a438bdb905713dec57600f0e451d73994e392e3687106"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.11/android/BareGPS-Route-Planner-android-Bundle-0.2.11.zip",
+      "bytes": 3632125,
+      "sha256": "2ff6c0311dbde690440f68e667a1482a66d5afc0a7a2aa4b2f9e875178aaac61"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.11/android/instructions.txt",
+      "bytes": 5930,
+      "sha256": "26392f173a0feea80ba92999af083567f274b65de1eae4d194ff432007464759"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.11/ios/BareGPS-Route-Planner-ios-Bundle-0.2.11.zip",
+      "bytes": 1017891,
+      "sha256": "610eba70b29c632aad307ade88c9b8a0b02316055f7acdad8705f94841f91f37"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.11/ios/instructions.txt",
+      "bytes": 5757,
+      "sha256": "79ca396aef6e856e689b23245da82b68fb306974e733e7458d0537fe80c7937c"
+    }
+  ],
+  "public_android": {
+    "build": 50,
+    "release_signed": true,
+    "debuggable": false,
+    "signing_certificate_sha256": "8176a4bb5fb5fb0b672346343558c4bb58433e71dda5ebd5dd9aad1bd2c283d9"
+  },
+  "fresh_installs": {
+    "Samsung Galaxy A07": "old installation uninstalled after private backup; exact public release APK installed and launched; installed APK bytes match published artifact; version 0.2.11 build 50; not debuggable",
+    "iPhone 14": "old installation uninstalled after private backup; matching development-signed version 0.2.11 build 50 installed and launched"
+  },
+  "private_backups": "Both original app containers archived and verified before uninstall. Retained locally outside repositories and public packages, with the matching former Android development APK for recovery.",
+  "temporary_native_test_apps": "removed after tests",
+  "checks": {
+    "unit_passed": 75,
+    "browser_passed": 122,
+    "native_android": "passed with export readback",
+    "native_ios": "passed with export readback",
+    "format": "passed",
+    "builds": "passed"
+  },
+  "not_a_testflight_or_store_validation": true
+}
