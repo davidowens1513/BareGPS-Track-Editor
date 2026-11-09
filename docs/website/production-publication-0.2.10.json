@@ -1,0 +1,90 @@
+{
+  "version": "0.2.10",
+  "build": 42,
+  "website": "https://appsbyonzy.dev",
+  "verified_at": "2026-11-09T08:50:55.530720+00:00",
+  "app_source_commit": "5b78f6d128219d18f7d536184ca3569a49d87734",
+  "app_package_commit": "f2de816",
+  "website_commit": "a5ef654",
+  "phones": {
+    "iphone14": "installed and cold-launched; development build 42",
+    "samsung_a07": "installed and cold-launched; development build 42 matching existing signer"
+  },
+  "public_android": "release signed, non-debuggable, permanent certificate verified during packaging",
+  "website_content_matches": true,
+  "cloudflare_email_obfuscation": "expected footer-only transformation",
+  "preview_assets": [
+    {
+      "path": "tools/baregps-route-planner/assets/html2canvas.esm-DXEQVQnt.js",
+      "sha256": "7b07a9ca175c614e8e7de447198d35b0d161dd50db2c63b5f7fd6ea0e1e876f2"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/index-CSXcHxhg.css",
+      "sha256": "c13ed2ea38c9e0379ff32be2e44919901eb186bada7e0d5c3ac4d810bf59bc0c"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/index-s-BphvhY.js",
+      "sha256": "2bb3d3087840f8559e598d12deedf1745f9bd0c877e9db136d8aef43c5d82f3c"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/index.es-DjYQCYgx.js",
+      "sha256": "abe1ba6fb4303eadc8108a1b1058123d147b1f4e00f7dc322abac8ed485a304c"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/purify.es-18JuyMri.js",
+      "sha256": "d20e7581818a4ef09a7a0e1bc84597c51fa253aea2b5b55935d5d7809793a28d"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/routecard-pdf-DN2hwk5x.js",
+      "sha256": "92d4d8ff0eadd08ec229f97b7b07409fc52af2160889f9f482d70590fca4e986"
+    },
+    {
+      "path": "tools/baregps-route-planner/assets/web-OBbNXQaW.js",
+      "sha256": "20dedddf4454302080c7bc9a6a90afee5b5beb36d47faa593ff5a44ce9dbe30e"
+    },
+    {
+      "path": "tools/baregps-route-planner/index.html",
+      "sha256": "92dfc8df6fa387a542c3f23b7b13abf15b1b9c8dd1c6d4987f8325e2ebffe673"
+    },
+    {
+      "path": "tools/baregps-route-planner/logo.svg",
+      "sha256": "372dcd79e2bfc65db85c2e99d1a02e8e57497ffff2110bc59b5dd00a652dd6dd"
+    }
+  ],
+  "downloads": [
+    {
+      "path": "tools/baregps-track-editor/0.2.10/android/BareGPS-Route-Planner-0.2.10.apk",
+      "bytes": 4014925,
+      "sha256": "fec7b49fb489d64489545c9d8f413b9a25fdbf407f41dcb6492cc9739711e9eb"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.10/android/BareGPS-Route-Planner-android-Bundle-0.2.10.zip",
+      "bytes": 3628657,
+      "sha256": "de9de3f6fb22fadaf184e7543b9aeda43d8d61d8e4dc9379874e35062f44f3bb"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.10/android/instructions.txt",
+      "bytes": 5589,
+      "sha256": "e7972ae0eb104e5f0444295af50b16d4163d4ff44722e37ee106ba0a9e8fdbb3"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.10/ios/BareGPS-Route-Planner-ios-Bundle-0.2.10.zip",
+      "bytes": 1009206,
+      "sha256": "d04786127f304dda96697aa1811a1b240dd98f065ee3173ef97ad0fbdf169f40"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.2.10/ios/instructions.txt",
+      "bytes": 5982,
+      "sha256": "f84d3927132e30f0cbb504b4d204f93ec020b061749cd365f9c68d808f3f0716"
+    }
+  ],
+  "tests": {
+    "unit_passed": 75,
+    "browser_final_suite_passed": 93,
+    "browser_final_suite_total": 94,
+    "map_timing_recheck": "all 6 passed",
+    "preview_return": "desktop and phone passed",
+    "format": "passed",
+    "builds": "passed"
+  }
+}
