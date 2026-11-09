@@ -81,6 +81,7 @@ test("add, delete, close, terrain confirmation and interval recovery work on inp
   await expect(page.locator("#point-count")).toHaveText("62 points");
   await expect(page.locator("#input-delete")).toBeEnabled();
   await page.locator("#input-delete").click();
+  await page.locator("#confirm-delete").click();
   await expect(page.locator("#point-count")).toHaveText("61 points");
   await page.locator("#input-close").click();
   await expect(page.locator("#point-count")).toHaveText("62 points");
@@ -99,7 +100,7 @@ test("add, delete, close, terrain confirmation and interval recovery work on inp
     });
   });
   await page.locator("#input-terrain").click();
-  await expect(page.locator("#dialog h2")).toHaveText("Fetch Terrain Heights");
+  await expect(page.locator("#dialog h2")).toHaveText("Fetch Input Terrain");
   expect(fetches).toBe(0);
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   expect(fetches).toBe(0);

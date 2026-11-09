@@ -95,9 +95,16 @@ test("centred main card supports deletion; expanded card shares PDF and Settings
   await page.locator("#create-map").click({ position: { x: 95, y: 120 } });
   await page.locator("#create-map").click({ position: { x: 175, y: 190 } });
   await expect(page.locator(".waypoint-table thead th:visible")).toHaveCount(8);
+  await expect(page.locator(".waypoint-table thead th").last()).toHaveClass(
+    "compact-delete",
+  );
+  await expect(
+    page.locator("#waypoint-rows tr").first().locator("td").last(),
+  ).toHaveClass("compact-delete");
   await page
     .getByRole("button", { name: "Remove point 1", exact: true })
     .click();
+  await page.locator("#confirm-delete").click();
   await expect(page.locator("#waypoint-rows tr")).toHaveCount(1);
   await page.locator("#undo").click();
   await expect(page.locator("#waypoint-rows tr")).toHaveCount(2);
@@ -135,10 +142,13 @@ test("centred main card supports deletion; expanded card shares PDF and Settings
     .getByRole("button", { name: "About and keyboard shortcuts", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "About", exact: true }),
+    page.getByRole("heading", { name: "BareGPS Route Planner", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Grid references", exact: true }),
+    page.getByRole("heading", {
+      name: "Grid references and coordinates",
+      exact: true,
+    }),
   ).toBeVisible();
 });
 
@@ -259,12 +269,13 @@ test("point naming defaults off, retains browser Distance, persists and preserve
   await setPointNaming(page, false);
   await expect(name).toBeHidden();
   await expect(page.locator(".waypoint-table thead th:visible")).toHaveCount(7);
-  const centred = await page.locator(".waypoint-table").evaluate((table) => {
-    const t = table.getBoundingClientRect(),
-      area = table.parentElement!.getBoundingClientRect();
-    return Math.abs(t.x + t.width / 2 - (area.x + area.width / 2)) < 1;
+  const fillsWidth = await page.locator(".waypoint-table").evaluate((table) => {
+    const width = table.getBoundingClientRect().width;
+    return (
+      Math.abs(width - Math.max(680, table.parentElement!.clientWidth)) < 2
+    );
   });
-  expect(centred).toBe(true);
+  expect(fillsWidth).toBe(true);
   await page
     .getByRole("button", { name: "Collapse Route Card", exact: true })
     .click();

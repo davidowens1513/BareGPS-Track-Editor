@@ -1,106 +1,106 @@
 BAREGPS ROUTE PLANNER — ANDROID
-Version 0.2.10 build 42 (release signed) | 9 November 2026
+Version 0.2.11 build 50 (release signed) | 9 November 2026
 
 INSTALL OR UPDATE
+BareGPS-Route-Planner-0.2.11.apk is the non-debuggable release-signed app.
+The ZIP contains the same APK, installation instructions and checksum.
+Download the APK or extract the ZIP, then open it in Files / My Files.
+Follow Android's normal installation and security prompts. Revoke any temporary
+browser/Files installation permission afterwards if desired. Do not disable
+security protections to force installation.
 
-BareGPS-Route-Planner-0.2.10.apk is the installable release-signed Android app.
-The ZIP bundle contains the same APK, instructions and checksum. Download the
-APK directly, or extract the bundle and open the APK in Files / My Files.
-
-If Android asks, allow installation from the browser or Files app you used.
-You can disable that installation permission again afterwards. Follow your
-device's normal security checks. If installation is blocked, do not disable
-security protections to force it.
+Updates from the permanent release identity install in place. Older debug-signed
+development apps use a different identity: export important routes before
+uninstalling them, because uninstalling removes the entire local workspace.
+Then install the release APK and import the exported routes. GPX export is
+not a complete project backup. Keep the permanent signing identity for updates.
 
 USING BAREGPS ROUTE PLANNER
 
 CREATE NEW
+Tap the map to add points. Insert point adds between neighbours, then returns
+to Add points. Drag numbered markers, delete a selected point, or Close loop.
+Lines are straight and do not automatically follow paths. Name the route in
+its card. Fetch Terrain estimates heights; Save Route fetches terrain still
+needed before export, or offers an explicit Save without terrain after failure.
 
-Add points in walking order on the map. The four bordered buttons are Add
-points, Insert point, Delete point and Close loop. Tap a numbered marker to
-select it for deletion, or drag it to move. Lines are straight and do not
-follow paths automatically. The default route name is Created Route.
-
-Fetch Terrain on the reduced Route Card manually previews heights. Save Route
-also fetches any terrain still needed before exporting, and reuses terrain
-already fetched. Expanding or sharing the card never starts a fetch. Failed
-saving offers Retry terrain and save, or explicit Save without terrain.
-Cancel preserves the route. Export defaults to Created Route.gpx.
+Open in Edit copies the drawing and available heights into Input Tracks and
+selects the copy. The Create draft stays unchanged. This does not fetch terrain,
+add a plan entry or confirm output. The two copies are independent.
 
 EDIT EXISTING
+Open GPX files and select an input. Use Add, Insert, Delete and Close loop,
+or Trim before/after and Reverse. A trim retains the selected point and at
+least two points overall. Deletion, removal, trimming and clearing ask for
+confirmation. Cancel keeps data unchanged; Undo can restore confirmed edits.
 
-Open GPX file(s), then choose an input in Input Tracks. The whole input is
-editable immediately; there are no A-B sections or sliders. The map toolbar
-matches Create. Below it, four equal-width buttons offer Trim before,
-Trim after, Reverse and Fetch Terrain. A thin strip shows the selected point.
-Trim retains that point and removes all points on the chosen side, keeping
-at least two points. Undo restores edits. Each input row has its own colour
-circle beside the bin. The bin removes a workspace input, not its source file.
+The pencil immediately left of each input's colour circle opens Rename Input
+Track. Names change only the workspace copy; original filenames and existing
+plan snapshots remain unchanged. Each input also has a colour control and bin.
 
-Editing handles default to every 20 points, including the first and last.
-Settings > Input Track Editing changes spacing without removing points.
-Up to 200 handles appear at once; zoom/pan or tap the line to reveal others.
-Moving handles tapers the movement through intervening dense points.
-Moved points lose stale heights/times; trimming keeps retained metadata.
-Fetch Terrain under the map refreshes missing or invalidated input heights.
+Editing handles default to every 20 points, including endpoints, with at most
+200 shown at once. Settings changes spacing without removing underlying points.
+Moving handles tapers through dense points; changed points lose stale heights
+and times. Trim preserves retained metadata. Fetch Terrain refreshes the input.
 
-Add to Route Plan copies the whole edited input. Route Plan reopens the list;
-select rows to Move up, Move down or Remove. Inputs and plan copies remain
-independent. Replace selected track with current input explicitly updates a
-saved row. Once all listed inputs have been added, the input selection clears.
+Add to Route Plan is the full-width button below editing tools. Route Plan is
+below Input Tracks. Add copies the whole input; later edits do not change plan
+snapshots. Select a row to reorder, remove or explicitly replace it with the
+current input. Confirm Route alone builds/updates the output card, fetching
+missing heights and connections while retaining valid recorded heights. Cancel
+or failure keeps the previous output. Confirm without terrain explicitly makes
+an incomplete result. There is no Preview button in the Route Plan dialog.
 
-Confirm Route fetches missing heights, edited legs and new connections from
-Open Topo Data, preserving recorded heights. Only completion updates the
-Route Card; complete terrain is reused for an unchanged plan. Fetch failure
-keeps the plan and previous route intact. Retry terrain tries again; Back to
-Route Plan returns to planning; Confirm without terrain explicitly builds an
-incomplete route with partial ascent clearly marked. Cancel keeps prior data.
+The confirmed output defaults to Edited Route. Its Route Card has an editable
+name and Preview. Use the x Preview Mode control at the map's upper left to
+return to the input. Clear route and Save Route are beneath the reduced card.
+Clearing the output/plan preserves inputs and the Create draft. There is no
+separate input export button.
 
-The confirmed output defaults to Edited Route. Its Route Card has Rename and
-Preview, with Clear route and Save Route underneath. There is no bottom Fetch
-Terrain in Edit. Save Route exports the confirmed output as Edited Route.gpx.
-Clear asks before clearing the output and plan; input tracks and Create remain.
-There is no separate input export button.
+ROUTE CARDS, PROFILE AND SHARING
+Native compact cards show Point, coordinates, Height and Distance; enabling
+point naming swaps Name for compact Distance. Web cards show all measures
+without expansion, with Create bins at the far right. Expanded web tables
+fill the available width. Expand scrolls the complete card with only Share
+Text and Share PDF as footer actions, plus collapse at the top. Expansion and
+sharing never fetch terrain. Native sharing uses system sheets; browser
+fallbacks allow text copying or PDF download. All points are exported.
 
-ROUTE CARDS, PROFILES AND SHARING
+The taller elevation graph is blank until heights are available. Its status
+below identifies Terrain not fetched, Terrain up to date, Terrain needs refresh
+or Terrain incomplete. Estimates and partial ascent are labelled; missing
+height is not zero. Terrain progress x, Cancel and Escape request cancellation
+without silently replacing the route.
 
-Reduced cards scroll after six point rows. Expand for distance, cumulative
-distance, ascent and cumulative ascent; Share Text and Share PDF stay visible.
-Both share the complete route, including offscreen rows. Heights and ascent
-are estimates, and incomplete terrain is labelled. The elevation profile has
-the same reserved size before and after loading, now one third shorter.
+SETTINGS AND GUIDE
+The cog opens separated Grid references, Created Route Colour, Allow Point
+Naming and Input Track Editing sections. Naming defaults off and hiding names
+does not erase them. Preferences are kept on the device. Grid systems include
+Lat/Long (WGS84), Irish Grid, British Grid, ITM, MGRS, UTM and USNG. GPX always
+uses WGS84; regional conversions are approximate, not surveying measurements.
 
-SETTINGS, COLOUR AND GRID REFERENCES
+The ? guide has a visible overview, expandable task headings and Credits &
+Attributions. Copyright: AppsbyOnzy, appsbyonzy@gmail.com.
+BareGPS family home: https://appsbyonzy.dev
 
-The cog opens Grid references, Created Route Colour, Allow Point Naming and
-Input Track Editing. Naming is off by default. On displays editable names
-(up to 10 characters) instead of Distance in the reduced card; [Name] marks
-an empty name. Off hides names without deleting them. Preferences persist.
+SCOPE AND SAVED WORK
+This is a walking-route planner, not live navigation, activity recording or
+emergency assistance. Check access and walkable ground independently. There
+is no downloadable offline map pack. Maps and terrain need internet; relevant
+coordinates are sent to map/terrain providers. Service and terrain-job limits
+apply. Recorded height noise can inflate ascent.
 
-New imported tracks without a stored colour start red, blue and pink; new
-joined routes start green. Input colours are adjustable in Input Tracks.
-The Create colour is in Settings. Colour changes preserve terrain.
+GPX exports preserve planned geometry and supported point data, not every
+activity extension, standalone waypoint, description or original segment
+boundary. Other apps may draw continuous connections. Retained timestamps can
+run backwards after Reverse or jump between joined recordings. Keep originals.
 
-Available Systems retains full descriptions for Lat/Long (WGS84), Irish Grid,
-British Grid, ITM, MGRS, UTM and USNG. Cards use shorter headings. The choice
-updates cards, sharing and map-centre readouts; GPX always uses WGS84.
-Regional grid conversions are approximate and precision is not GPS accuracy.
-
-MAPS, LOCATION, WARNINGS AND DATA
-
-The location button requests one position fix and shows an accuracy circle.
-It never adds a point or records in the background. Map tiles and terrain
-need internet access. Terrain fetching sends relevant coordinates to Open
-Topo Data. Map failures do not prevent editing; Retry reloads tiles and X
-dismisses warnings clear of the position button. Warnings clear on recovery.
-Routine success banners are suppressed; warnings and errors remain visible.
-
-Saved on device means workspace recovery, not an exported GPX backup. Export
-important routes before uninstalling or clearing app data. Create and Edit
-have separate drafts, maps and Undo histories. To edit a Create route, save
-its GPX, then open it in Edit. Undo history does not survive reopening.
+Saved on device means workspace recovery, not a complete project backup or
+cloud sync. Export important routes before uninstalling or clearing app/browser
+data. Fresh installation removes the workspace. Undo history does not survive
+reopening. The original file changes only if you choose to overwrite it.
 
 SOURCE AND SUPPORT
-
 https://github.com/davidowens1513/BareGPS-Track-Editor
 https://appsbyonzy.dev/#tools
+appsbyonzy@gmail.com

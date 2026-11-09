@@ -17,7 +17,7 @@ The app opens in **Create New**, with an empty map at Carrauntoohil. Create reta
 - Moving, adding or removing points clears terrain estimates. Fetch again after reshaping. Missing heights/ascent are marked unavailable; zero in the metrics does not supply a missing height.
 - Name the route in its card and choose **Created Route Colour** in Settings, then **Save route** exports GPX. **Clear route** asks before clearing Create points, with Undo available. Edit tracks remain in place.
 
-**Fetch Terrain**, **Clear route** and **Save route** are equal-width controls on the reduced Create Route Card. Create New fetches heights manually along the drawing. In Edit, Fetch Terrain under the map refreshes the input; Confirm Route fetches missing heights and new connections before building the output. Edit’s Route Card has only Clear route and Save Route. Lines connect points directly and do not automatically follow roads or paths.
+**Fetch Terrain**, **Clear route**, **Save route** and **Open in Edit** form a two-column action grid on the reduced Create Route Card. Open in Edit makes an independent input copy, retaining available terrain while leaving Create unchanged; it does not fetch or confirm a plan. Create New fetches heights manually along the drawing. In Edit, Fetch Terrain under the map refreshes the input; Confirm Route fetches missing heights and new connections before building the output. Edit’s Route Card has only Clear route and Save Route. Lines connect points directly and do not automatically follow roads or paths.
 
 ## Edit Existing
 
@@ -28,7 +28,7 @@ The app opens in **Create New**, with an empty map at Carrauntoohil. Create reta
 3. **Trim before** and **Trim after** remove the points on the chosen side while retaining the selected point. At least two points must remain. Use both trims to keep a desired portion; Undo/Redo restores changes. Trimming preserves retained elevations and timestamps.
 4. **Reverse** changes its direction. **Fetch Terrain** refreshes edited legs after **Fetch Terrain Heights** confirmation. Each Input Tracks row has its own colour picker beside the bin. Source files are not overwritten automatically.
 5. **Add to Route Plan** copies the entire current input. Select rows to move or remove them. Later input edits leave those snapshots unchanged; select an edited input and use **Replace selected track with current input** to replace a planned row in place. **Confirm Route** alone builds/updates the output Route Card, default **Edited Route**. Existing plans from earlier versions remain available.
-6. When all listed inputs have contributed, the input controls clear; reselect an input to continue. Plans survive reopening and use Edit Undo/Redo. The confirmed card remains whole while editing inputs, with Rename and Preview beside its name (use × Preview Mode at the upper left of the map to return to editing) and Clear route and Save Route beneath it. Clear route keeps imported inputs and the Create draft, and can be undone.
+6. When all listed inputs have contributed, the input controls clear; reselect an input to continue. Plans survive reopening and use Edit Undo/Redo. The confirmed card remains whole while editing inputs, with its editable name and Preview (use × Preview Mode at the upper left of the map to return to editing) and Clear route and Save Route beneath it. Clear route keeps imported inputs and the Create draft, and can be undone.
 
 ## Route Cards and sharing
 
@@ -143,13 +143,13 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App \
 
 For a physical iPhone, choose the App scheme, your connected device and your own Apple development team in Xcode. Normal Apple signing and provisioning rules apply. Run `npm ci` before opening the bundled Xcode source: its local Swift package depends on the installed geolocation plugin.
 
-Native document-picker tests are in `android/app/src/androidTest` and `ios/App/AppUITests`. Use a disposable test emulator/simulator with `tests/native-fixture.gpx` in Files/Downloads. Android runs them with `./gradlew :app:connectedDebugAndroidTest`; iOS uses the App scheme's UI tests.
+Native file-workflow tests are in `android/app/src/androidTest` and `ios/App/AppUITests`. Run them through `scripts/testing/run-native-tests.py` using the isolated `com.baregps.trackeditor.nativetest` identity, including on physical phones. The runner never clears or replaces the working app. See [native acceptance testing](docs/testing/native-acceptance.md) for setup, scope and results. Do not run these tests directly against the working installation.
 
 ## Website and downloads
 
 The browser Preview runs the same application at [appsbyonzy.dev/tools/baregps-route-planner/](https://appsbyonzy.dev/tools/baregps-route-planner/). Build it with `npm run build:web` and copy `web-dist/` into the website's `tools/baregps-route-planner/` directory. The scoped Cloudflare Pages worker in `scripts/website/terrain-worker.mjs` proxies validated terrain requests; `_routes.json` limits execution to that endpoint. The rest of the website and its downloads are static.
 
-The public platform bundles are v0.2.10 in `releases/bundles/0.2.10/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes a release-signed, non-debuggable APK (build 42), a ZIP bundle and instructions. iOS is also build 42. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
+The public platform bundles are v0.2.11 in `releases/bundles/0.2.11/`, linked from [Tools](https://appsbyonzy.dev/#tools). Android includes a release-signed, non-debuggable APK (build 50), a ZIP bundle and instructions. iOS source is also build 50. iOS includes source, prebuilt web assets and Xcode instructions; it is not a publicly signed IPA. **Will be available through App Store**. Packaging excludes signing identities, private keys and provisioning profiles. The distribution verifier checks download hashes and archive contents.
 
 ## Source layout and dependencies
 
@@ -173,10 +173,18 @@ Maps use [OpenTopoMap](https://opentopomap.org/) with attribution to [OpenStreet
 
 Moved points lose stale heights and timestamps. Terrain pending flags survive recovery and GPX export. Fetch Terrain refreshes changed legs after confirmation, preserving unaffected metadata. Input edits, trims and terrain fetches do not alter queued Route Plan copies or the confirmed Edited Route until explicit replacement and confirmation.
 
-**Add to Route Plan** and **Route Plan** sit below the eight map editing buttons; the empty Edit Input Track panel has been removed. The point-selection message has its own thin strip, greyed out without editable input points. **Trim before**, **Trim after**, **Reverse** and **Fetch Terrain** share an equal-width single row below the map editing toolbar. Input export has been removed; use **Save Route** after confirming the plan.
+**Add to Route Plan** sits below the editing controls; **Route Plan** is below Input Tracks. Both are full-width green buttons with their existing availability rules. The visible point-selection strip has been removed. **Trim before**, **Trim after**, **Reverse** and **Fetch Terrain** share an equal-width single row below the map editing toolbar. Input export has been removed; use **Save Route** after confirming the plan.
 
 ### Terrain workflow
 
 Create offers a manual **Fetch Terrain** on the reduced card; **Save Route** also fetches any terrain still needed before exporting and reuses existing terrain. Failure offers Retry terrain and save or an explicit Save without terrain. Expansion and sharing never prompt or fetch. Edit’s map fetch refreshes the current input, including missing or invalidated heights. **Confirm Route** fetches any missing heights, edited legs and new connections in the output, preserving valid recorded elevations and reusing complete terrain for an unchanged plan. Plan snapshots and inputs are unchanged by output terrain sampling.
 
-Fetch failures leave the plan and previous output intact. Users may retry, return to Route Plan, or explicitly **Confirm without terrain**; incomplete results are labelled with partial ascent. Cancel keeps prior data. The Edit Route Card has no Fetch Terrain control. Elevation charts in both modes are 33% shorter with the same reserved empty/populated size.
+Fetch failures leave the plan and previous output intact. Users may retry, return to Route Plan, or explicitly **Confirm without terrain**; incomplete results are labelled with partial ascent. Cancel keeps prior data. The Edit Route Card has no Fetch Terrain control. The elevation graph has a taller, stable empty/populated height, a blank area before heights are available, and a terrain status below it without reserved blank space.
+
+## Current release — 0.2.11, build 50
+
+The ? guide has an always-visible overview, expandable task sections and Credits & Attributions. Settings sections are separated. Dialogs share green titles, readable text and action-specific confirmation labels; deletions, trimming and clearing ask first. Terrain progress ×, Cancel and Escape all request cancellation. The profile status identifies unfetched, current, stale or incomplete terrain.
+
+Input tracks can be renamed with their pencil. The web Route Card shows all measures before expansion, puts the Create bin at the far right and fills the available width when expanded. Native compact cards retain their reduced columns. The proposed Route Plan dialog Preview is not included.
+
+For this release, both connected phones receive clean installs after private app-container backups. Samsung receives the same non-debuggable, permanently signed APK as the public download; iPhone receives a development-signed build matching the source bundle. Private backups and signing files are outside both repositories and public packages.

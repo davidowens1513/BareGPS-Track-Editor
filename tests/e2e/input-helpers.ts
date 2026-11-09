@@ -45,10 +45,12 @@ export async function selectInputPoint(page: Page, point: number) {
 export async function trimBefore(page: Page, point: number) {
   await selectInputPoint(page, point);
   await page.locator("#trim-before").click();
+  await page.locator("#confirm-delete").click();
 }
 export async function trimAfter(page: Page, point: number) {
   await selectInputPoint(page, point);
   await page.locator("#trim-after").click();
+  await page.locator("#confirm-delete").click();
 }
 
 export async function savedWorkspace(page: Page): Promise<any> {

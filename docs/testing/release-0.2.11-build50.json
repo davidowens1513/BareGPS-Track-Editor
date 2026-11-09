@@ -1,0 +1,40 @@
+{
+  "version": "0.2.11",
+  "build": 50,
+  "date": "2026-11-09",
+  "verified_at_utc": "2026-11-09T10:44:37.473250+00:00",
+  "unit_tests_passed": 75,
+  "browser_tests_passed": 122,
+  "format_and_builds": "passed",
+  "native_tests": {
+    "android": {
+      "result": "PASS",
+      "isolated_app": "com.baregps.trackeditor.nativetest",
+      "build_type": "Debug test copy of release sources",
+      "results": "/private/tmp/baregps-release50-native-android",
+      "export_verification": {
+        "file": "/private/tmp/baregps-release50-native-android/export.gpx",
+        "points": 5,
+        "reversed_order": true,
+        "heights_preserved": true,
+        "names_preserved": true
+      }
+    },
+    "ios": {
+      "result": "PASS",
+      "isolated_app": "com.baregps.trackeditor.nativetest",
+      "build_type": "Debug test copy of release sources",
+      "results": "/private/tmp/baregps-release50-native-ios",
+      "export_verification": {
+        "file": "/private/tmp/baregps-release50-native-ios/export.gpx",
+        "points": 5,
+        "reversed_order": true,
+        "heights_preserved": true,
+        "names_preserved": true
+      }
+    }
+  },
+  "public_android": "permanent release identity, non-debuggable; packaging verifies signature",
+  "fresh_install": "Requested after publication; private pre-clean app-container backups verified and stored outside repositories. Final installation result recorded in publication evidence.",
+  "not_a_testflight_or_store_validation": true
+}

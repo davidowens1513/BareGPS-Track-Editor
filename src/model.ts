@@ -16,6 +16,7 @@ export interface Track {
   source: string;
   kind: "track" | "route";
   inputTrackId?: string;
+  terrainNeedsRefresh?: boolean;
 }
 export interface Selection {
   start: number;

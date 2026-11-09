@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("elevation profile reserves its populated size from the start", async ({
+test("elevation graph retains its height and status leaves no reserved blank space", async ({
   page,
 }) => {
   await page.route("**/*.tile.opentopomap.org/**", (route) => route.abort());
@@ -20,24 +20,29 @@ test("elevation profile reserves its populated size from the start", async ({
     await page.goto("/");
     const profile = page.locator(".profile-card");
     await expect(page.locator("#profile")).toBeVisible();
-    const height = (await profile.boundingBox())!.height;
+    const height = (await page.locator("#profile").boundingBox())!.height;
     expect((await page.locator("#profile").boundingBox())!.height).toBeCloseTo(
-      (width <= 640 ? 61 : 78) * 0.67,
+      (width <= 640 ? 61 : 78) * 0.67 + 24,
       1,
     );
     await page.locator("#create-map").click({ position: { x: 80, y: 120 } });
     await page.locator("#create-map").click({ position: { x: 210, y: 210 } });
     await expect(page.locator("#elevation-note")).toBeVisible();
-    expect((await profile.boundingBox())!.height).toBe(height);
+    expect((await page.locator("#profile").boundingBox())!.height).toBe(height);
+    const cardBounds = (await profile.boundingBox())!;
+    const noteBounds = (await page.locator("#elevation-note").boundingBox())!;
+    expect(
+      cardBounds.y + cardBounds.height - noteBounds.y - noteBounds.height,
+    ).toBeLessThan(14);
     await page.locator("#create-terrain").click();
     await page.locator("#confirm-create-terrain").click();
     await expect(page.locator("#profile svg")).toBeVisible();
-    expect((await profile.boundingBox())!.height).toBe(height);
+    expect((await page.locator("#profile").boundingBox())!.height).toBe(height);
     await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
     await expect(
       page.getByRole("heading", { name: /^Input Tracks/ }),
     ).toBeVisible();
-    expect((await profile.boundingBox())!.height).toBe(height);
+    expect((await page.locator("#profile").boundingBox())!.height).toBe(height);
     // Start the next viewport with no saved draft, so the initial state is truly empty.
     await page.evaluate(
       () =>

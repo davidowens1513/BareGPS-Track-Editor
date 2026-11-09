@@ -29,6 +29,8 @@ test("whole input editing trims both sides, preserves metadata and protects exis
   await expect(page.locator("#input-point-tools")).toBeVisible();
   await expect(page.locator("#input-plan-controls button")).toHaveText([
     "Add to Route Plan",
+  ]);
+  await expect(page.locator("#route-plan-controls button")).toHaveText([
     "Route Plan 0",
   ]);
   await expect(page.locator("#save-input")).toHaveCount(0);

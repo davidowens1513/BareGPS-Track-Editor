@@ -89,6 +89,7 @@ test("remove staged sections and build after the source track has been removed",
     .getByRole("button", { name: "Add to Route Plan", exact: true })
     .click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
+  await page.locator("#confirm-delete").click();
   await expect(
     page.getByRole("button", { name: "Confirm Route", exact: true }),
   ).toBeDisabled();
@@ -98,9 +99,11 @@ test("remove staged sections and build after the source track has been removed",
     .click();
   await page.getByRole("button", { name: "Keep adding", exact: true }).click();
   await page.getByRole("button", { name: "Remove First", exact: true }).click();
+  await page.locator("#confirm-delete").click();
   await page
     .getByRole("button", { name: "Remove Second", exact: true })
     .click();
+  await page.locator("#confirm-delete").click();
   await page.getByRole("button", { name: "Route Plan", exact: true }).click();
   await expect(page.locator(".plan-grid")).toContainText("First");
   await confirmPlanWithoutTerrain(page);
@@ -196,4 +199,47 @@ test("Edit Input Track clears when all inputs have contributed, and Undo restore
   await page.getByRole("button", { name: "Keep adding", exact: true }).click();
   await page.locator(".track-select").filter({ hasText: "First" }).click();
   await expect(page.locator("#input-add")).toBeEnabled();
+});
+
+test("input pencil renames independently of selection and plan snapshots, with Cancel and Undo", async ({
+  page,
+}) => {
+  await page.locator("#add-route").click();
+  await page.getByRole("button", { name: "Keep adding", exact: true }).click();
+  await page.locator(".track-select").filter({ hasText: "Second" }).click();
+  await page.getByRole("button", { name: "Rename First", exact: true }).click();
+  await expect(page.locator("#track-name")).toHaveValue("First");
+  await page.locator("#track-name").fill("First renamed");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Rename First", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Rename First", exact: true }).click();
+  await page.locator("#track-name").fill("First renamed");
+  await page.getByRole("button", { name: "Save name", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Rename First renamed", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".track-row.active strong")).toHaveText("Second");
+  await page.locator("#open-route-plan").click();
+  await expect(page.locator(".plan-grid")).toContainText("First");
+  await expect(page.locator(".plan-grid")).not.toContainText("First renamed");
+  await page.getByRole("button", { name: "Keep adding", exact: true }).click();
+  await page.locator("#undo").click();
+  await expect(
+    page.getByRole("button", { name: "Rename First", exact: true }),
+  ).toBeVisible();
+  await page.locator("#redo").click();
+  await expect(
+    page.getByRole("button", { name: "Rename First renamed", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#save-state")).toHaveAttribute(
+    "aria-label",
+    "Saved on device",
+  );
+  await page.reload();
+  await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Rename First renamed", exact: true }),
+  ).toBeVisible();
 });

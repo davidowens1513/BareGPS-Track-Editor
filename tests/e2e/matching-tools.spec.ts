@@ -16,6 +16,7 @@ test("Create and input editing have identical toolbars and selected Create point
   await page.locator("#create-map .track-handle").first().click();
   await expect(page.locator("#create-delete")).toBeEnabled();
   await page.locator("#create-delete").click();
+  await page.locator("#confirm-delete").click();
   await expect(page.locator("#waypoint-count")).toHaveText("1");
   await expect(page.locator("#create-delete")).toBeDisabled();
   await page.locator("#undo").click();
@@ -39,13 +40,13 @@ test("Create and input editing have identical toolbars and selected Create point
     "1px",
   );
   await page.locator("#edit-tab").click();
-  await expect(page.locator("#input-selection-strip")).toHaveAttribute(
-    "aria-disabled",
-    "true",
-  );
-  expect(
-    (await page.locator("#input-selection-strip").boundingBox())!.height,
-  ).toBeLessThanOrEqual(16);
+  await expect(page.locator("#input-selection-strip")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Add to Route Plan", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.locator("#route-plan-controls #open-route-plan"),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Edit Input Track", exact: true }),
   ).toHaveCount(0);
@@ -67,10 +68,7 @@ test("Create and input editing have identical toolbars and selected Create point
   await expect(page.locator("#notice")).toBeHidden();
   await expect(page.locator("#input-point-tools")).toBeVisible();
   await expect(page.locator("#input-add")).toBeEnabled();
-  await expect(page.locator("#input-selection-strip")).toHaveAttribute(
-    "aria-disabled",
-    "false",
-  );
+  await expect(page.locator("#input-selection-strip")).toHaveCount(0);
   await page.locator("#input-add").click();
   await expect(page.locator("#input-points-mode")).toHaveCount(0);
   const input = page.locator("#input-point-tools .drawing-modes");

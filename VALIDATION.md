@@ -112,3 +112,9 @@ The release includes Create New/Edit Existing labels, compact Input Tracks and E
 64 unit tests and all 58 desktop/phone browser checks passed. TypeScript, formatting, whitespace and Android/signed iPhone builds passed. About was visually reviewed at 320, 390 and 1280 pixels. Both phones received v0.2.8 build 30 update installs in place; Samsung launched successfully. The iPhone launch result is recorded with the publication evidence. Existing data was retained.
 
 Both phones launched v0.2.8 build 30 successfully. The website description, preview and downloads were published; all preview assets and five download checksums match the release, previous paths remain available, and the live terrain proxy returned OK. Final publication evidence is in docs/website/production-publication-0.2.8.json.
+
+## 9 November 2026 — v0.2.11 build 50
+
+Current guide/credits, Settings copy, input rename, Create-to-Edit handoff, terrain status/profile, confirmation dialogs, cancellation controls and Edit plan-button layout are consolidated in this release. Browser cards show full measures and a rightmost Create bin; expanded cards retain only sharing footer actions. Route Plan dialog Preview and its proposed equal-sized buttons were reverted.
+
+75 unit tests and all 122 desktop/phone browser checks passed, including all nine Create/input/plan terrain-cancellation variants using ×, Cancel and Escape. TypeScript, formatting and builds passed. Native Files/share workflow tests passed on the actual iPhone 14 and Samsung A07 using isolated Debug test identities; both output files were read back and checked for all five coordinates, reversed order, heights and names. See docs/testing/release-0.2.11-build50.json. Final clean installation and public-readback results are recorded in the publication evidence, separately from these workflow tests.

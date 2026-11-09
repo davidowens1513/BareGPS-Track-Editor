@@ -162,6 +162,9 @@ test("Create Save Route fetches before export and reuses fetched terrain", async
   });
   await page.locator("#create-map").click({ position: { x: 95, y: 120 } });
   await page.locator("#create-map").click({ position: { x: 125, y: 150 } });
+  await expect(page.locator("#elevation-note")).toContainText(
+    "Terrain not fetched",
+  );
   await page.locator("#expand-card").click();
   await expect(page.locator("#dialog")).not.toBeVisible();
   expect(requests).toBe(0);
@@ -173,12 +176,24 @@ test("Create Save Route fetches before export and reuses fetched terrain", async
   const xml = await fs.readFile((await download.path())!, "utf8");
   expect(xml).toContain("<ele>777</ele>");
   expect(requests).toBeGreaterThan(0);
+  await expect(page.locator("#elevation-note")).toContainText(
+    "Terrain up to date",
+  );
   const count = requests;
   pending = page.waitForEvent("download");
   await page.locator("#create-save").click();
   download = await pending;
   expect(download.suggestedFilename()).toBe("Created Route.gpx");
   expect(requests).toBe(count);
+  await page.locator("#create-map").click({ position: { x: 195, y: 210 } });
+  await expect(page.locator("#elevation-note")).toContainText(
+    "Terrain needs refresh",
+  );
+  await savedWorkspace(page);
+  await page.reload();
+  await expect(page.locator("#elevation-note")).toContainText(
+    "Terrain needs refresh",
+  );
 });
 test("Create saving failure does not export until Save without terrain is chosen", async ({
   page,
@@ -204,3 +219,77 @@ test("Create saving failure does not export until Save without terrain is chosen
   expect(xml).not.toContain("<ele>");
   await expect(page.locator("#waypoint-count")).toHaveText("2");
 });
+
+for (const flow of ["create", "input", "plan"] as const) {
+  for (const close of ["cross", "cancel", "escape"] as const) {
+    test(`${flow} terrain: ${close} cancels an in-flight request without committing late heights`, async ({
+      page,
+    }) => {
+      let release: () => void = () => {};
+      let requestStarted: () => void = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const started = new Promise<void>((resolve) => {
+        requestStarted = resolve;
+      });
+      await page.route("**/terrain/**", async (route) => {
+        requestStarted();
+        await held;
+        await route
+          .fulfill({ json: heights(route.request().url()) })
+          .catch(() => {});
+      });
+      if (flow === "create") {
+        await page.route("**/*.tile.opentopomap.org/**", (r) => r.abort());
+        await page.goto("/");
+        await page
+          .locator("#create-map")
+          .click({ position: { x: 90, y: 120 } });
+        await page
+          .locator("#create-map")
+          .click({ position: { x: 180, y: 190 } });
+      } else {
+        await load(page);
+        if (flow === "input")
+          await page.locator(".track-select").filter({ hasText: "B" }).click();
+        else await stageBoth(page);
+      }
+      const before = await savedWorkspace(page);
+      if (flow === "create") {
+        await page.locator("#create-terrain").click();
+        await page.locator("#confirm-create-terrain").click();
+      } else if (flow === "input") {
+        await page.locator("#input-terrain").click();
+        await expect(page.locator("#dialog")).toContainText("Open Topo Data");
+        await page.locator("#confirm-input-terrain").click();
+      } else await page.locator("#confirm-route-plan").click();
+      await started;
+      await expect(
+        page.getByRole("button", { name: "Cancel operation", exact: true }),
+      ).toBeVisible();
+      if (close === "cross")
+        await page
+          .getByRole("button", { name: "Cancel operation", exact: true })
+          .click();
+      else if (close === "escape") await page.keyboard.press("Escape");
+      else
+        await page
+          .locator(
+            `#cancel-${flow === "plan" ? "plan" : flow === "input" ? "input" : "create"}-terrain`,
+          )
+          .click();
+      release();
+      if (flow === "plan")
+        await expect(page.locator("#confirm-route-plan")).toBeVisible();
+      else await expect(page.locator("#dialog")).toBeHidden();
+      const after = await savedWorkspace(page);
+      expect(after.created).toEqual(before.created);
+      expect(after.createdTerrain).toEqual(before.createdTerrain);
+      expect(after.tracks).toEqual(before.tracks);
+      expect(after.routePlan).toEqual(before.routePlan);
+      expect(after.route).toEqual(before.route);
+      await expect(page.locator("#edit-tab")).toBeEnabled();
+    });
+  }
+}
