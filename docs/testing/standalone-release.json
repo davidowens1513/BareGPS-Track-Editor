@@ -4,8 +4,7 @@
   "version": "0.3.0",
   "build": 59,
   "bundle_id": "com.baregps.trackeditor",
-  "unit_tests": 92,
-  "additional_terrain_endpoint_tests": 2,
+  "unit_tests": 94,
   "standalone_browser_checks": 4,
   "browser_sizes": [
     "1280x900",
@@ -14,7 +13,7 @@
   "native_android": "Release-signed build succeeded; installed and launched on Samsung Galaxy A07",
   "native_ios": "Development-signed build succeeded; installed and launched on iPhone 14",
   "ios_download": "Xcode source bundle; not IPA/TestFlight",
-  "website": "Prepared and checked locally; publication verification recorded separately",
+  "website": "Published and byte-verified at https://appsbyonzy.dev; see docs/website/standalone-products-2026-11-10.json",
   "no_workspace_migration": true,
   "readme_updated": true,
   "not_store_or_testflight_validation": true,
@@ -23,5 +22,6 @@
     "src/about.ts": "cbb77313261f89b44010bf57a02af514abab8b063d0b349854176db036667303",
     "public/logo.svg": "466a7a73aae5016f904519205ba340950fe1f3d626e451e5c7794d2059bb55c2",
     "README.md": "114cfd2520c6836d94acd098bfd4a903cdb2bc035f885aed68955ed6aac6259c"
-  }
+  },
+  "terrain_endpoint_tests_included": true
 }

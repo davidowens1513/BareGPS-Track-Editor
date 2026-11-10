@@ -1,0 +1,78 @@
+{
+  "website": "https://appsbyonzy.dev",
+  "separate_tools_sections": true,
+  "apps": [
+    {
+      "app": "BareGPS Route Maker",
+      "version": "0.1.0",
+      "downloads": [
+        {
+          "path": "/tools/baregps-route-maker/0.1.0/android/BareGPS-Route-Maker-0.1.0.apk",
+          "bytes": 4016981,
+          "sha256": "b6c15223421c6217c0236e3ba2fa3044be20a67a7c4a8c30df00c4bd03d7bccf"
+        },
+        {
+          "path": "/tools/baregps-route-maker/0.1.0/android/BareGPS-Route-Maker-android-Bundle-0.1.0.zip",
+          "bytes": 3628759,
+          "sha256": "3929b485d3f37b783116981f5aedbbd84b1a537f5710845718f8356908b92994"
+        },
+        {
+          "path": "/tools/baregps-route-maker/0.1.0/android/instructions.txt",
+          "bytes": 360,
+          "sha256": "2a4a996f2e2c83675a54568515c04412abfaa3929834b5b4d05fe2d42b3c244e"
+        },
+        {
+          "path": "/tools/baregps-route-maker/0.1.0/ios/BareGPS-Route-Maker-ios-Bundle-0.1.0.zip",
+          "bytes": 1017186,
+          "sha256": "f7ad38d62976b887cc1d57f0b48f20ab0ee05c80dd2f179fa520a9fcb07348ef"
+        },
+        {
+          "path": "/tools/baregps-route-maker/0.1.0/ios/instructions.txt",
+          "bytes": 467,
+          "sha256": "cbad80e49ddb74224c5e52cf29c536e8e377b0bd7e61e187c0f59c7796b7c0ac"
+        }
+      ],
+      "preview_assets_match": true,
+      "terrain_validation_status": 400
+    },
+    {
+      "app": "BareGPS Track Editor",
+      "version": "0.3.0",
+      "downloads": [
+        {
+          "path": "/tools/baregps-track-editor/0.3.0/android/BareGPS-Track-Editor-0.3.0.apk",
+          "bytes": 4016857,
+          "sha256": "c14a45a1264a5cb7b4c009afbbaa80baa05da2b8b6fde760545ca3f2710c6375"
+        },
+        {
+          "path": "/tools/baregps-track-editor/0.3.0/android/BareGPS-Track-Editor-android-Bundle-0.3.0.zip",
+          "bytes": 3628101,
+          "sha256": "b52e19ecd2bf02c9d9e6e3e3ece4cc0db962e90fb4863f266e94bce6a3970eb2"
+        },
+        {
+          "path": "/tools/baregps-track-editor/0.3.0/android/instructions.txt",
+          "bytes": 363,
+          "sha256": "939bd28eb7f18311e435f52588019672b0ea68bb34a4bbac2edaa35c4acec347"
+        },
+        {
+          "path": "/tools/baregps-track-editor/0.3.0/ios/BareGPS-Track-Editor-ios-Bundle-0.3.0.zip",
+          "bytes": 1012466,
+          "sha256": "0d2d1f6fd4bc8a2f8cab74d2e82f5d0eb1abe787e6e490648d32004c8aebc883"
+        },
+        {
+          "path": "/tools/baregps-track-editor/0.3.0/ios/instructions.txt",
+          "bytes": 470,
+          "sha256": "6e11b4badf37ba54936f714241b400829e8f34b877d60962cf1373e601ddb291"
+        }
+      ],
+      "preview_assets_match": true,
+      "terrain_validation_status": 400
+    }
+  ],
+  "date": "2026-11-10",
+  "cloudflare_result": "Success observed in the existing appsbyonzy production project; 90 assets uploaded",
+  "git_readmes_verified": true,
+  "real_terrain_responses": "OK for both product routes using the standard test coordinate",
+  "native_installation": "Both apps installed and launched side by side on Samsung Galaxy A07 and iPhone 14",
+  "website_unrelated_sections_preserved": true
+}
