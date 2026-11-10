@@ -1,0 +1,5 @@
+c14a45a1264a5cb7b4c009afbbaa80baa05da2b8b6fde760545ca3f2710c6375  android/BareGPS-Track-Editor-0.3.0.apk
+b52e19ecd2bf02c9d9e6e3e3ece4cc0db962e90fb4863f266e94bce6a3970eb2  android/BareGPS-Track-Editor-android-Bundle-0.3.0.zip
+939bd28eb7f18311e435f52588019672b0ea68bb34a4bbac2edaa35c4acec347  android/instructions.txt
+0d2d1f6fd4bc8a2f8cab74d2e82f5d0eb1abe787e6e490648d32004c8aebc883  ios/BareGPS-Track-Editor-ios-Bundle-0.3.0.zip
+6e11b4badf37ba54936f714241b400829e8f34b877d60962cf1373e601ddb291  ios/instructions.txt

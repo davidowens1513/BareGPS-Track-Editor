@@ -1,3 +1,5 @@
+> Historical combined-app validation through build 50. For the standalone Track Editor release, see `docs/testing/standalone-release.json` and the current README.
+
 # Validation record
 
 Checked on 6 November 2026. This records the actual verification scope, rather than treating a successful compile as proof of every interaction.

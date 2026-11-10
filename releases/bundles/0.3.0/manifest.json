@@ -1,0 +1,32 @@
+{
+  "version": "0.3.0",
+  "app_source_commit": "b5a6391787003b251ec4ffd2708d70f0c10abffd",
+  "android": {
+    "build": 59,
+    "release_signed": true,
+    "debuggable": false,
+    "signing_certificate_sha256": "8176a4bb5fb5fb0b672346343558c4bb58433e71dda5ebd5dd9aad1bd2c283d9"
+  },
+  "files": {
+    "android/BareGPS-Track-Editor-0.3.0.apk": {
+      "bytes": 4016857,
+      "sha256": "c14a45a1264a5cb7b4c009afbbaa80baa05da2b8b6fde760545ca3f2710c6375"
+    },
+    "android/BareGPS-Track-Editor-android-Bundle-0.3.0.zip": {
+      "bytes": 3628101,
+      "sha256": "b52e19ecd2bf02c9d9e6e3e3ece4cc0db962e90fb4863f266e94bce6a3970eb2"
+    },
+    "android/instructions.txt": {
+      "bytes": 363,
+      "sha256": "939bd28eb7f18311e435f52588019672b0ea68bb34a4bbac2edaa35c4acec347"
+    },
+    "ios/BareGPS-Track-Editor-ios-Bundle-0.3.0.zip": {
+      "bytes": 1012466,
+      "sha256": "0d2d1f6fd4bc8a2f8cab74d2e82f5d0eb1abe787e6e490648d32004c8aebc883"
+    },
+    "ios/instructions.txt": {
+      "bytes": 470,
+      "sha256": "6e11b4badf37ba54936f714241b400829e8f34b877d60962cf1373e601ddb291"
+    }
+  }
+}
