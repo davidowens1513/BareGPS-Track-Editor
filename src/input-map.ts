@@ -1,6 +1,6 @@
 import L from "leaflet";
 import { TrackMap } from "./map";
-import { isClosedRoute } from "./create";
+import { isClosedRoute } from "./track-geometry";
 import {
   inputHandleIndices,
   MAX_VISIBLE_INPUT_HANDLES,

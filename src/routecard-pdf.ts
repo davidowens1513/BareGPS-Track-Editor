@@ -1,4 +1,4 @@
-import { needsTerrain } from "./input-edit";
+import { needsTerrain } from "./terrain-state";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { type Track } from "./model";

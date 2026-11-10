@@ -26,6 +26,12 @@ Cancellation returns promptly and late results are ignored. Each complete respon
 
 Lines connect points directly; they do not automatically follow paths. Check access and walkability. No navigation, activity recording, accounts, cloud sync or offline map packs are provided.
 
+## Source layout
+
+Track Editor contains input editing, simplification, Route Plan and confirmed-output UI only. It has no creation map, drawing actions, creation settings or drawing undo stack. Closed-loop geometry lives in a small editing helper.
+
+The two products have independent entry points and storage models; there is no product-mode switch. The current main branch includes source cleanup after the versioned release linked above.
+
 ## Run and build
 
 Requirements: Node.js with npm, installed dependencies, Xcode for iOS, Android SDK and Java 21 for Android.
@@ -39,14 +45,14 @@ npm run build
 npm run native:sync
 ```
 
-The default browser tests cover this standalone product. Historical combined-app browser fixtures are retained under `tests/legacy-e2e/`; they assume the old tabs and are not the current acceptance suite. Shared low-level modules remain where needed for geometry, coordinates, terrain and export.
+The browser tests exercise this standalone product. The old combined-app browser fixtures and cloning runners have been removed; they remain available in Git history. Shared geometry, terrain, coordinate and export helpers are retained only where this product uses them.
 
 ```sh
 npm run ios
 npm run android
 ```
 
-Native tests inherited from the combined project are historical until adapted to the standalone workflows; do not treat their earlier passes as validation of this release. Build/install and product-specific browser acceptance are recorded separately in `docs/testing/`.
+Native smoke fixtures cover iOS launch and Android identity. Broader physical-device save/share, lifecycle and failure acceptance remains a release gate. Source cleanup verification is recorded separately from the published release evidence in `docs/testing/`.
 
 ## Android signing and installation
 

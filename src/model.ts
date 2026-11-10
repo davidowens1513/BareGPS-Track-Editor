@@ -25,9 +25,6 @@ export interface Selection {
 }
 export interface Workspace {
   version: 1;
-  tool?: "create" | "edit";
-  created?: Track;
-  createdTerrain?: Track;
   tracks: Track[];
   routePlan?: Track[];
   confirmedPlan?: string[];
@@ -331,7 +328,6 @@ export function validateWorkspace(value: unknown): value is Workspace {
   const w = value as Workspace;
   if (
     w.version !== 1 ||
-    (w.tool !== undefined && w.tool !== "create" && w.tool !== "edit") ||
     !Array.isArray(w.tracks) ||
     w.tracks.length > 100 ||
     (w.routePlan !== undefined &&
@@ -352,8 +348,6 @@ export function validateWorkspace(value: unknown): value is Workspace {
     ...w.tracks,
     ...(w.routePlan ?? []),
     ...(w.route ? [w.route] : []),
-    ...(w.created ? [w.created] : []),
-    ...(w.createdTerrain ? [w.createdTerrain] : []),
   ];
   return (
     all.every(
@@ -369,14 +363,11 @@ export function validateWorkspace(value: unknown): value is Workspace {
         ["track", "route"].includes(t.kind) &&
         /^#[0-9a-f]{6}$/i.test(t.color) &&
         Array.isArray(t.points) &&
-        t.points.length >= (t === w.created ? 0 : 2) &&
-        (t !== w.created || t.points.length <= 1000) &&
+        t.points.length >= 2 &&
         (t.simplified === undefined || typeof t.simplified === "boolean") &&
         t.points.length <=
           (w.tracks.includes(t) ? MAX_INPUT_POINTS : MAX_POINTS) &&
-        (t === w.created ||
-          t === w.createdTerrain ||
-          (total += t.points.length) <= MAX_INPUT_POINTS * 4) &&
+        (total += t.points.length) <= MAX_INPUT_POINTS * 4 &&
         t.points.every(
           (p) =>
             p &&
@@ -398,41 +389,26 @@ export function validateWorkspace(value: unknown): value is Workspace {
       0,
     ) <= MAX_POINTS &&
     (w.activeId === null ||
-      [
-        ...w.tracks,
-        ...(w.route ? [w.route] : []),
-        ...(w.created ? [w.created] : []),
-      ].some((t) => t.id === w.activeId))
+      [...w.tracks, ...(w.route ? [w.route] : [])].some(
+        (t) => t.id === w.activeId,
+      ))
   );
 }
 
 /** Retain all route data while migrating the shared-screen selection back to Edit. */
 export function restoreSeparateWorkspace(saved: Workspace): Workspace {
   const workspace = structuredClone(saved);
-  if (workspace.created && workspace.activeId === workspace.created.id) {
-    const editTrack = workspace.route ?? workspace.tracks[0];
-    workspace.activeId = editTrack?.id ?? null;
-    workspace.selection = {
-      start: 0,
-      end: Math.max(0, (editTrack?.points.length ?? 1) - 1),
-    };
-  }
-  if (
-    workspace.created &&
-    ["My walking route", "Created Track"].includes(workspace.created.name)
-  ) {
-    workspace.created.name = "Created Route";
-    if (
-      workspace.createdTerrain &&
-      ["My walking route", "Created Track"].includes(
-        workspace.createdTerrain.name,
-      )
-    )
-      workspace.createdTerrain.name = "Created Route";
-  }
   if (workspace.route?.name === "My joined route")
     workspace.route.name = "Edited Route";
-  delete workspace.tool;
+  // Drop obsolete combined-app fields rather than carrying drawing state.
+  const legacy = workspace as Workspace & {
+    created?: unknown;
+    createdTerrain?: unknown;
+    tool?: unknown;
+  };
+  delete legacy.created;
+  delete legacy.createdTerrain;
+  delete legacy.tool;
   if (workspace.routePlan === undefined) {
     workspace.routePlan = workspace.route
       ? [

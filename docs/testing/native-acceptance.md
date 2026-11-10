@@ -1,3 +1,5 @@
+> Historical combined-app instructions. The cloning runners described below were removed during standalone source cleanup. Use the current README and product-specific smoke fixtures.
+
 # Native workflow acceptance tests
 
 These tests use actual system Files/document pickers and share sheets on physical phones. Web controls are driven through XCTest on iOS and Espresso Web on Android; Android system dialogs use UI Automator. No native file plugin is mocked.

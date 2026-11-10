@@ -1,4 +1,4 @@
-import { needsTerrain } from "./input-edit";
+import { needsTerrain } from "./terrain-state";
 import { analytics, type Track } from "./model";
 import {
   coordinateSystems,

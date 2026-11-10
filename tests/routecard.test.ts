@@ -1,9 +1,17 @@
 import { it, expect } from "vitest";
 import { routecardText, routecardRows } from "../src/routecard";
-import { newCreatedRoute } from "../src/create";
+import type { Track } from "../src/model";
+const testRoute = (): Track => ({
+  id: "test",
+  name: "Test route",
+  source: "test",
+  kind: "route",
+  color: "#16724d",
+  points: [],
+});
 it("formats named and unnamed points with coordinates, distances and available heights", () => {
   const route = {
-    ...newCreatedRoute(),
+    ...testRoute(),
     name: "Hill walk",
     points: [
       { lat: 53, lon: -6, name: "Gate & bridge", ele: 120 },
@@ -29,7 +37,7 @@ it("sums terrain climbs within each leg and carries cumulative ascent", () => {
     { lat: 53.002, lon: -6, ele: 100 },
     { lat: 53.004, lon: -6, ele: 130 },
   ];
-  const route = { ...newCreatedRoute(), points };
+  const route = { ...testRoute(), points };
   const terrain = {
     ...route,
     points: [
@@ -53,7 +61,7 @@ it("sums terrain climbs within each leg and carries cumulative ascent", () => {
 
 it("summarises to 30 original checkpoints and aggregates the full winding route", () => {
   const route = {
-    ...newCreatedRoute(),
+    ...testRoute(),
     points: Array.from({ length: 200 }, (_, i) => ({
       lat: 53 + i * 0.00001,
       lon: -6 + (i % 2) * 0.001,
@@ -98,7 +106,7 @@ it("summarises to 30 original checkpoints and aggregates the full winding route"
 
 it("keeps every named point even when names take the summary above 30", () => {
   const route = {
-    ...newCreatedRoute(),
+    ...testRoute(),
     points: Array.from({ length: 70 }, (_, i) => ({
       lat: 53,
       lon: -6,
@@ -114,7 +122,7 @@ it("keeps every named point even when names take the summary above 30", () => {
 
 it("handles coincident points and preserves missing ascent across omitted rows", () => {
   const route = {
-    ...newCreatedRoute(),
+    ...testRoute(),
     points: Array.from({ length: 100 }, (_, i) => ({
       lat: 53,
       lon: -6,

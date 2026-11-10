@@ -22,7 +22,7 @@ test("standalone Editor imports, confirms and saves without a Create mode", asyn
 }) => {
   await expect(page).toHaveTitle("BareGPS Track Editor");
   await expect(page.getByRole("tab")).toHaveCount(0);
-  await expect(page.locator("#create-map")).toBeHidden();
+  await expect(page.locator("#create-map")).toHaveCount(0);
   await expect(page.locator(".edit-workflow")).toBeVisible();
   const chooser = page.waitForEvent("filechooser");
   await page.locator("#empty-import").click();
@@ -86,4 +86,29 @@ test("dense originals survive simplification preview, cancellation and accepted 
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("only the editing map exists, and input colour changes close correctly and undo", async ({
+  page,
+}) => {
+  await expect(page.locator(".leaflet-container")).toHaveCount(1);
+  await expect(page.locator("#create-map-view")).toHaveCount(0);
+  const chooser = page.waitForEvent("filechooser");
+  await page.locator("#empty-import").click();
+  await (
+    await chooser
+  ).setFiles({
+    name: "colour.gpx",
+    mimeType: "text/xml",
+    buffer: Buffer.from(gpx(3)),
+  });
+  const colour = page.locator(".input-track-colour").first();
+  const before = await colour.getAttribute("style");
+  await colour.click();
+  await page.locator("#colour-hex").fill("#aa3344");
+  await page.getByRole("button", { name: "Apply colour", exact: true }).click();
+  await expect(page.locator("#dialog")).not.toBeVisible();
+  await expect(colour).toHaveAttribute("style", /aa3344/);
+  await page.locator("#undo").click();
+  await expect(colour).toHaveAttribute("style", before!);
 });

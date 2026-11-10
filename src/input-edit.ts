@@ -1,5 +1,5 @@
 import { distance, MAX_POINTS, type Point, type Track } from "./model";
-import { isClosedRoute } from "./create";
+import { isClosedRoute } from "./track-geometry";
 
 export type InputPointTool = "move" | "add" | "insert";
 export const MAX_VISIBLE_INPUT_HANDLES = 200;
@@ -195,14 +195,7 @@ export function closeInputLoop(track: Track): Track {
   return insertInputPoint(track, track.points.length, first);
 }
 
-export function needsTerrain(track: Track): boolean {
-  return track.points.some(
-    (point) =>
-      point.ele === undefined ||
-      point.terrainPending ||
-      (point.gapBefore && !point.terrain),
-  );
-}
+export { needsTerrain } from "./terrain-state";
 
 // The temporary marker survives terrain sampling, but is never persisted or exported.
 type IndexedPoint = Point & { inputOriginalIndex?: number };

@@ -272,38 +272,28 @@ describe("terrain sampling", () => {
 });
 import { vi } from "vitest";
 
-it("recovers shared-screen work into separate screens without losing routes or terrain", () => {
-  const imported = track();
-  const created = { ...track(), id: "drawing", kind: "route" as const };
-  const joined = { ...track(), id: "joined", kind: "route" as const };
+it("restores Editor work while dropping obsolete drawing fields", () => {
+  const imported = track(),
+    joined = { ...track(), id: "joined", kind: "route" as const };
   const saved = {
     ...emptyWorkspace(),
-    tool: "edit" as const,
     tracks: [imported],
-    created,
-    createdTerrain: { ...created, id: "terrain" },
     route: joined,
-    activeId: created.id,
-    selection: { start: 1, end: 3 },
+    activeId: joined.id,
+    selection: { start: 0, end: 4 },
+    created: { ...track(), id: "drawing" },
+    createdTerrain: { ...track(), id: "terrain" },
+    tool: "edit",
   };
   expect(validateWorkspace(saved)).toBe(true);
   const restored = restoreSeparateWorkspace(saved);
-  expect(restored.created).toEqual(saved.created);
-  expect(restored.createdTerrain).toEqual(saved.createdTerrain);
+  expect(restored).not.toHaveProperty("created");
+  expect(restored).not.toHaveProperty("createdTerrain");
+  expect(restored).not.toHaveProperty("tool");
   expect(restored.tracks).toEqual(saved.tracks);
   expect(restored.route).toEqual(saved.route);
-  expect(restored.activeId).toBe(joined.id);
-  expect(restored.selection).toEqual({ start: 0, end: 4 });
-  expect(restored.tool).toBeUndefined();
-  expect(saved.activeId).toBe(created.id);
+  expect(saved.created.id).toBe("drawing");
   expect(validateWorkspace(restored)).toBe(true);
-  const drawingOnly = restoreSeparateWorkspace({
-    ...saved,
-    tracks: [],
-    route: null,
-  });
-  expect(drawingOnly.activeId).toBeNull();
-  expect(drawingOnly.created).toEqual(created);
 });
 
 describe("5,000-point limit", () => {
