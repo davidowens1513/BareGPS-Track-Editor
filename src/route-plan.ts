@@ -25,7 +25,7 @@ export function addPlanSection(
     ) > MAX_POINTS
   )
     throw new Error(
-      "The Route Plan is too large. Keep it below 150,000 points.",
+      "The Route Plan is too large. Keep it at or below 5,000 points.",
     );
   return [...plan, { ...snapshot, inputTrackId: input.id }];
 }
@@ -108,7 +108,7 @@ export function replacePlanSection(
     result.reduce((count, track) => count + track.points.length, 0) > MAX_POINTS
   )
     throw new Error(
-      "The Route Plan is too large. Keep it below 150,000 points.",
+      "The Route Plan is too large. Keep it at or below 5,000 points.",
     );
   return result;
 }

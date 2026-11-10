@@ -91,7 +91,7 @@ test("remove staged sections and build after the source track has been removed",
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await page.locator("#confirm-delete").click();
   await expect(
-    page.getByRole("button", { name: "Confirm Route", exact: true }),
+    page.getByRole("button", { name: "Confirm Plan", exact: true }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Keep adding", exact: true }).click();
   await page
@@ -241,5 +241,53 @@ test("input pencil renames independently of selection and plan snapshots, with C
   await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Rename First renamed", exact: true }),
+  ).toBeVisible();
+});
+
+test("input plan ticks sit between colour and bin and follow plan membership", async ({
+  page,
+}) => {
+  const first = page.locator(".track-row").filter({
+    has: page.locator(".track-select strong", { hasText: "First" }),
+  });
+  const second = page.locator(".track-row").filter({
+    has: page.locator(".track-select strong", { hasText: "Second" }),
+  });
+  await expect(
+    page.getByRole("img", { name: "In Route Plan", exact: true }),
+  ).toHaveCount(0);
+  await page.locator("#add-route").click();
+  await page.getByRole("button", { name: "Keep adding", exact: true }).click();
+  await expect(
+    first.getByRole("img", { name: "In Route Plan", exact: true }),
+  ).toBeVisible();
+  await expect(
+    second.getByRole("img", { name: "In Route Plan", exact: true }),
+  ).toHaveCount(0);
+  expect(
+    await first
+      .locator(".input-track-colour + .input-plan-status + .delete-track")
+      .count(),
+  ).toBe(1);
+  await second.locator(".track-select").click();
+  await expect(
+    first.getByRole("img", { name: "In Route Plan", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#save-state")).toContainText("Saved on device");
+  await page.reload();
+  await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
+  await expect(
+    first.getByRole("img", { name: "In Route Plan", exact: true }),
+  ).toBeVisible();
+  await page.locator("#open-route-plan").click();
+  await page.getByRole("button", { name: "Remove", exact: true }).click();
+  await page.locator("#confirm-delete").click();
+  await page.getByRole("button", { name: "Keep adding", exact: true }).click();
+  await expect(
+    page.getByRole("img", { name: "In Route Plan", exact: true }),
+  ).toHaveCount(0);
+  await page.locator("#undo").click();
+  await expect(
+    first.getByRole("img", { name: "In Route Plan", exact: true }),
   ).toBeVisible();
 });

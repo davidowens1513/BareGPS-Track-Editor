@@ -24,3 +24,9 @@ release-signing.properties
 key.properties
 
 web-dist/
+
+# Also exclude external local cache symlinks.
+node_modules
+android/app/build
+android/build
+.vite

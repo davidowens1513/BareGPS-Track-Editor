@@ -19,7 +19,7 @@ parser.add_argument('--apk',type=Path,default=root/'android/app/build/outputs/ap
 parser.add_argument('--platform',choices=['both','android','ios'],default='both')
 args=parser.parse_args()
 output=args.output.resolve()
-filename_prefix='BareGPS-Route-Planner'
+filename_prefix='BareGPS-Track-Editor'
 output.mkdir(parents=True,exist_ok=True)
 commit = subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
 apk=args.apk.resolve()
@@ -31,7 +31,7 @@ tools = build_tools[-1]
 certificate = subprocess.check_output([str(tools / 'apksigner'), 'verify', '--verbose', '--print-certs', str(apk)], text=True)
 assert 'CN=Android Debug' not in certificate, 'Refusing to package a debug-signed APK.'
 expected_certificate = (root/'docs/distribution/android-release-certificate.sha256').read_text().strip()
-assert re.search(r'certificate SHA-256 digest: ([0-9a-f]+)',certificate)[1] == expected_certificate, 'APK is not signed by the permanent Route Planner release identity.'
+assert re.search(r'certificate SHA-256 digest: ([0-9a-f]+)',certificate)[1] == expected_certificate, 'APK is not signed by the permanent Track Editor release identity.'
 badging = subprocess.check_output([str(tools / 'aapt'), 'dump', 'badging', str(apk)], text=True)
 assert 'application-debuggable' not in badging, 'Refusing to package a debuggable APK.'
 assert "package: name='com.baregps.trackeditor'" in badging, 'Unexpected Android application identity.'
@@ -58,7 +58,7 @@ for platform in (['ios','android'] if args.platform=='both' else [args.platform]
     bundle=directory/f'{filename_prefix}-{platform}-Bundle-{version}.zip'
     with zipfile.ZipFile(bundle,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
         archive.write(guide,'instructions.txt')
-        archive.writestr('BUILD-INFO.json',json.dumps({'app':'BareGPS Route Planner','version':version,'platform':platform,'app_source_commit':commit},indent=2)+'\n')
+        archive.writestr('BUILD-INFO.json',json.dumps({'app':'BareGPS Track Editor','version':version,'platform':platform,'app_source_commit':commit},indent=2)+'\n')
         if platform=='android':
             filename=f'{filename_prefix}-{version}.apk'
             shutil.copy(apk,directory/filename)

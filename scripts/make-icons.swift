@@ -1,7 +1,7 @@
 import AppKit
 
 // UIColor.systemGreen in light appearance, matching BareGPS Ireland's title.
-let brandGreen = NSColor(srgbRed: 52/255, green: 199/255, blue: 89/255, alpha: 1)
+let brandGreen = NSColor(srgbRed: 255/255, green: 59/255, blue: 48/255, alpha: 1)
 let sizes = [1024, 512, 192, 162, 144, 108, 96, 81, 72, 54, 48, 36]
 func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x, y: 48-y) }
 for size in sizes {

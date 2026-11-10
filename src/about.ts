@@ -1,117 +1,10 @@
 export const aboutGuide = `
-<div id="about-guide" class="about-guide">
-  <section class="about-overview" aria-labelledby="about-overview-title">
-    <h3 id="about-overview-title">Overview</h3>
-    <p><strong>BareGPS Route Planner helps you turn a walking idea or existing GPX tracks into a practical route and a shareable Route Card.</strong> Draw and reshape routes on a map, trim and combine inputs in walking order, inspect distance and elevation, choose regional grid references, and save GPX or share text and PDF cards. Create New and Edit Existing give each task its own workspace; Open in Edit connects them when you are ready.</p>
-    <p><strong>Designed for planning.</strong> Lines connect points directly, including joins between tracks; they do not automatically follow roads or paths. Check access and walkable ground yourself. Live navigation, turn-by-turn guidance, activity recording and emergency assistance are outside the app’s scope. The current-position button gives a single location fix, not tracking.</p>
-    <p><strong>Useful estimates, with clear boundaries.</strong> Heights and ascent support planning, rather than surveying or safety-critical decisions. Map tiles and terrain services need internet and are subject to availability and processing limits; there is no downloadable offline map pack. GPX exports carry planned geometry and supported point information, rather than preserving every item in an activity file. Keep your original GPX files and export routes you want to retain: Saved on device is workspace recovery, not a project backup or cloud sync.</p>
-  </section>
-
-  <details id="about-create" class="about-section">
-    <summary><h3>Create New</h3></summary>
-    <div class="about-section-content">
-      <p><strong>Draw.</strong> Tap the map to place your start and each next point. Add points extends the route on every tap, even near an existing line. Insert point adds between neighbours when you tap the line, then returns to Add points. Drag numbered markers to reshape; tap a marker and use Delete point, or use its Route Card bin. Close loop joins the end precisely to the start, including the return distance.</p>
-      <p><strong>Prepare and save.</strong> Name the route in its card. Fetch Terrain estimates heights along its legs; Save Route fetches any terrain still needed before GPX export. Previously fetched terrain is reused. If a fetch fails, retry or explicitly choose Save without terrain. Clear route asks before clearing the drawing; Undo can restore it. Edit inputs remain intact.</p>
-      <p><strong>Continue in Edit.</strong> With at least two points, Open in Edit copies the route and available terrain into Input Tracks, selects it and opens its editing handles. Your Create draft stays unchanged. The copies are independent, no terrain is fetched by the handoff, and nothing is added to Route Plan or confirmed automatically.</p>
-    </div>
-  </details>
-
-  <details id="about-edit" class="about-section">
-    <summary><h3>Edit Existing: input tracks</h3></summary>
-    <div class="about-section-content">
-      <p><strong>Open and select.</strong> Open GPX files, then select a track in Input Tracks. The map, metrics and elevation profile follow the selected input; the confirmed Route Card remains separate. Importing and editing do not overwrite the original file.</p>
-      <p><strong>Shape the input.</strong> Add points extends the end; Insert point adds near the line; Delete point removes the selected point; Close loop joins the end to the start. Drag numbered handles to reshape. Dense points between handles move with a taper towards neighbouring handles. Tap the line to reveal an additional existing point.</p>
-      <p><strong>Trim and reverse.</strong> Select a numbered handle. Trim before or Trim after removes points on that side while keeping the selected point and at least two points overall. Use both trims to keep a middle portion. Reverse changes the walking direction. Undo/Redo restores edits.</p>
-      <p><strong>Name, colour and heights.</strong> Use the pencil beside an input to rename its workspace copy. The original filename and existing Route Plan snapshots stay unchanged. Each input has a colour circle beside its bin. Moving points clears affected stale heights and times; trimming retains the remaining points’ data. Fetch Terrain below the map refreshes the input after confirmation. It does not update existing plan copies or the confirmed output.</p>
-      <p><strong>Handle spacing.</strong> Settings → Input Track Editing starts at one handle every 20 points, always including endpoints. At most 200 handles appear at once; zoom or pan to reveal others. Spacing changes the controls, not the underlying point count.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>Route Plan and confirmed output</h3></summary>
-    <div class="about-section-content">
-      <p><strong>Add and arrange.</strong> Add to Route Plan, below the editing controls, stores a snapshot of the whole current input. Route Plan sits below Input Tracks and reopens the saved plan. Select plan rows to Move up, Move down or Remove; Alt + Up/Down also reorders a selected row. When every listed input has contributed, the input selection clears. Select an input again to keep editing.</p>
-      <p><strong>Update a snapshot deliberately.</strong> Later input edits leave saved plan copies unchanged. Select the edited input, open Route Plan, select its old row and choose Replace selected track with current input. Its position is retained.</p>
-      <p><strong>Confirm Route.</strong> This builds the output in walking order and updates the Route Card, initially named Edited Route. It fetches missing or invalidated heights and new connections, retaining valid recorded heights. Unchanged complete terrain is reused. Dashed map lines mark straight connections between separated inputs; their distance counts towards the walk.</p>
-      <p><strong>Failure and cancellation.</strong> Retry terrain tries again; Back to Route Plan preserves the previous output. Confirm without terrain explicitly creates an incomplete result with partial ascent. Confirm Route can retry later. Cancelling a fetch leaves the plan and previous confirmed route unchanged.</p>
-      <p><strong>Preview and clear.</strong> Preview shows the confirmed output on the map. Use the × Preview Mode control at the upper left to return to the input. Changes to the plan replace the output only when confirmed again. Clear route asks before clearing the plan and confirmed output; it keeps Input Tracks and the Create draft. Undo restores the cleared route.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>Route Cards, saving and sharing</h3></summary>
-    <div class="about-section-content">
-      <p><strong>Read the card.</strong> Point numbers follow walking order; tap one to locate it on the map. Cards scroll after six rows in the normal view. Create has point bins at the right; Edit displays the entire confirmed route and has no point bins. Large Edit cards display a moving window of rows, while calculations and exports retain all points.</p>
-      <p><strong>App and web layouts.</strong> The native app’s compact card shows Point, grid reference, Height and Distance; enabling point names swaps Distance for Name. Expand for per-leg and cumulative distance and ascent. On the web, those measures are visible before expansion, and the expanded table fills the available width. Narrow windows can scroll sideways.</p>
-      <p><strong>Export.</strong> Save Route exports GPX using the card’s route name. Share Text creates a route summary and point table; Share PDF creates a landscape card. Expansion and sharing never fetch terrain. Where system sharing is unavailable, text can be copied and PDFs download. Very dense tracks can produce unwieldy text or PDFs: use GPX for exchanging detailed route geometry.</p>
-      <p><strong>Name points.</strong> Enable Allow Point Naming in Settings to show editable names, with new names limited to 10 characters. Hiding names keeps stored names intact. Names in the confirmed Edit card use Edit Undo.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>Terrain status and elevation</h3></summary>
-    <div class="about-section-content">
-      <p>The status below the elevation profile follows the route or input currently shown: <strong>Terrain not fetched</strong> means heights are unavailable; <strong>Terrain up to date</strong> means heights are available with no known pending geometry changes; <strong>Terrain needs refresh</strong> means edits have invalidated heights; <strong>Terrain incomplete</strong> means some heights or connection estimates are missing. “Up to date” is a data state, not a guarantee of accuracy or a recent survey.</p>
-      <p>Terrain requests send route coordinates to Open Topo Data, using its Mapzen dataset and sampling legs at roughly 90-metre intervals. Create fetches from its Route Card or before Save; Edit fetches the input below the map, or completes output terrain during Confirm Route. Changing Create geometry invalidates its previous terrain.</p>
-      <p>Ascent adds positive height changes; descent adds negative changes. Heights are not smoothed, so noisy recorded data can inflate totals. Missing card heights show a dash. A zero ascent metric does not mean flat ground when heights are unavailable. Incomplete heights give partial totals; unsampled connections may miss hills between endpoints.</p>
-      <p>Terrain is an external service with request and job limits. A dense GPX without heights can be editable yet too large for a terrain job; very long legs can also need intermediate points. Service availability is separate from local editing. Failed or cancelled fetches leave the existing route intact.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>Maps and current position</h3></summary>
-    <div class="about-section-content">
-      <p>Both screens use OpenTopoMap. Fit frames the relevant tracks; Expand map gives more room. Maps need internet; no offline tile pack is provided. You can import and edit locally without maps. A confirmed Edit route can export offline; Create Save offers an explicit Save without terrain choice if its fetch fails.</p>
-      <p>The crosshair requests one current-position fix after you tap it and grant permission. A dot and accuracy circle show the result; it never adds a route point or starts background tracking. Position accuracy depends on the device and conditions.</p>
-      <p>Retry reloads failed tiles; × dismisses a map warning. Warnings clear when failed tiles recover or leave view, and reconnecting retries failures. Map detail and direct connecting lines do not establish a right of access or a safe walking route.</p>
-    </div>
-  </details>
-
-  <details id="about-settings" class="about-section">
-    <summary><h3>Settings</h3></summary>
-    <div class="about-section-content">
-      <p>Open the cog beneath ?. Preferences are remembered on this device.</p>
-      <p><strong>Created Route Colour.</strong> Choose from the spectrum, presets or a hex value, then Apply colour. This sets the Create line and export colour; existing terrain is retained. Inputs have independent colour controls. New imports without a saved colour begin red, blue and pink; joined routes begin green.</p>
-      <p><strong>Allow Point Naming.</strong> Off by default. It shows or hides the Name column without deleting names.</p>
-      <p><strong>Input Track Editing.</strong> Handle every sets input editing-handle spacing; Apply saves it and updates the editor. It never simplifies the track. Deletion and trimming change inputs, while plan snapshots and the confirmed output remain separate.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>Grid references and coordinates</h3></summary>
-    <div class="about-section-content">
-      <p>Settings offers Lat/Long (WGS84), Irish National Grid, British National Grid, Irish Transverse Mercator (ITM), MGRS, UTM and USNG. Your choice applies to map-centre readouts, both Route Cards and text/PDF exports. GPX always stores WGS84 latitude/longitude.</p>
-      <p>Irish and British grid references use approximate datum conversions. ITM uses ETRS89; global formats use WGS84. Regional grids identify positions outside their coverage. UTM, MGRS and USNG cover 80°S to 84°N. Reference precision does not imply matching GPS accuracy; these are planning references, not surveying measurements. Long values may use smaller text to fit.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>GPX support and intended use</h3></summary>
-    <div class="about-section-content">
-      <p>Exports contain planned route geometry and supported point information, including names and available elevations. Some imported content, including standalone waypoints, activity extensions such as heart rate, and original descriptions, is not preserved. Keep original files for your complete recording or archive.</p>
-      <p>Export writes one track segment and uses BareGPS gap extensions for discontinuities. Other apps may ignore that styling and draw continuous lines between parts. Check the exported route in your intended app or device.</p>
-      <p>Retained timestamps can run backwards after Reverse, or jump between recordings when joining tracks. Geometry edits can remove affected times. Use outputs as planned routes, rather than evidence of a recorded activity, speed or chronology.</p>
-      <p>Create supports up to 1,000 waypoints; GPX tracks support up to 150,000 points, subject to workspace limits. These are data limits, not a promise that every phone or terrain job handles the largest file comfortably. Working with smaller inputs can make editing and sharing more practical.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>Local saving, data and recovery</h3></summary>
-    <div class="about-section-content">
-      <p><strong>Saved on device</strong> means automatic workspace recovery, not a GPX export or a complete project backup. Export routes you want to keep before uninstalling, clearing app or browser data, or changing devices. There is no built-in cloud sync or full-project backup/restore. A GPX export does not preserve the complete input library and planning workspace.</p>
-      <p>Importing and editing happen locally. Network requests are used for maps and terrain; map requests reveal the viewed area and terrain requests include route coordinates. The browser terrain relay uses Cloudflare before reaching Open Topo Data. Sharing or exporting passes the chosen output to the destination you select. This guide describes the workflow; it is not a complete privacy policy.</p>
-      <p>Original files stay untouched unless you choose to overwrite one when saving. The Input Tracks bin removes the workspace copy, not its original file. Native apps use system file controls; browsers use available file access or downloads.</p>
-    </div>
-  </details>
-
-  <details class="about-section">
-    <summary><h3>Undo and keyboard shortcuts</h3></summary>
-    <div class="about-section-content">
-      <p>Deleting points, removing inputs or plan entries, trimming and clearing routes all ask for confirmation first. Cancel keeps the current data unchanged. Confirmed removals can be undone.</p>
-      <p>Create and Edit keep separate Undo/Redo histories. Use the header arrows, ⌘/Ctrl + Z to undo, or ⌘/Ctrl + Shift + Z to redo. Workspace recovery survives reopening; Undo history does not.</p>
-      <p>Escape closes a dialog or collapses an expanded card or map. In Route Plan, Alt + Up/Down reorders the selected row. Expand any heading in this guide to read it; activate it again to close it.</p>
-    </div>
-  </details>
+<div id="about-guide" class="about-guide"><section class="about-overview"><h3>Overview</h3><p><strong>BareGPS Track Editor</strong> Import, simplify, edit and combine GPX tracks into a confirmed walking-route plan.</p><p>This is a standalone app, with no mode tabs.</p></section><details id="about-edit" class="about-section"><summary><h3>Open and edit tracks</h3></summary><div class="about-section-content"><p>Open Track imports GPX files; select an input in Input Tracks. Imported originals can contain up to 150,000 points per file, subject to the 15 MB file and workspace limits. Large originals can be simplified before planning. The pencil renames an input copy; its colour control changes the line colour. Original files are never overwritten by editing.</p><p>Add points, Insert point, Delete point and Close loop change the selected input. Select a handle and Trim before/after to retain the desired portion, or Reverse to change direction. Dense original points between spaced handles move with a taper; tap the line to reveal a point. Settings controls original handle spacing.</p><p>Simplify previews a target of 10 handles/km with at most 10 metres deviation. Compare original and simplified lines and toggle either one. Bends, names and gap endpoints may require more points. Accept creates a separate simplified input; the original is kept. Each simplified handle controls one point. Zoom in to reveal handles hidden at wider views. Changed legs require terrain refreshed; recorded timestamps are omitted when simplification changes geometry.</p><p>Fetch Terrain below the map refreshes the selected input. It does not update previously added plan copies. Retained recorded timestamps may run backwards after Reverse or jump between joined recordings; output is a planned route, not proof of a recorded activity.</p></div></details><details class="about-section"><summary><h3>Route Plan and confirmed output</h3></summary><div class="about-section-content"><p>Add to Route Plan saves a copy of the selected input. Repeat opening, editing and adding tracks as needed. A green tick between the input colour and bin means some or all of that input is in the plan; it does not mean confirmed or unchanged since adding.</p><p>Open Route Plan to reorder, remove or replace a selected entry with the current input. Later input edits do not automatically update plan copies. Confirm Plan assembles the output and fetches required terrain. Plans and terrain remain limited to 5,000 points.</p><p>Dashed joins are straight connections between inputs and count towards distance. Confirm without terrain explicitly accepts an incomplete result. A failed or cancelled confirmation preserves the previous output. Preview shows the confirmed route; its close control returns to the input.</p><p>Save Route exports the confirmed output. Clear route removes the plan and output after confirmation while retaining inputs; Undo restores it. There is no route-drawing screen in this app; use BareGPS Route Maker to create a route from scratch.</p></div></details>
+<details class="about-section"><summary><h3>Terrain and height estimates</h3></summary><div class="about-section-content"><p>Fetch Terrain sends route coordinates to Open Topo Data, using the Mapzen dataset. Legs are sampled at roughly 90-metre intervals. Maps and heights need internet; availability is not guaranteed. The browser preview uses a Cloudflare relay.</p><p>The primary ascent/descent metrics show u/a for missing, incomplete or invalidated heights. Ascent sums positive height changes; descent sums negative changes. Heights are not smoothed, so recorded noise can inflate totals. Changed geometry needs terrain refreshed.</p><p>Terrain jobs are limited to 5,000 points including inserted samples. Each complete response has a 20-second deadline; the whole job has a three-minute deadline. Cancel returns control promptly and late results are ignored. On phones a request may finish in the background, but cannot change the route after cancellation.</p></div></details>
+<details class="about-section"><summary><h3>Route Cards and sharing</h3></summary><div class="about-section-content"><p>The default card contains 30 checkpoints, keeping start, finish and all named points. Many names can take it above 30. Full Card shows all points. Distance and ascent between checkpoints use the full route geometry; GPX always retains all route points.</p><p>Tap a point number to locate it on the map. Expand the card for leg and cumulative distance/ascent. Share Text and Share PDF follow the selected card view. Sharing and expansion never fetch terrain. Where system sharing is unavailable, text can be copied and PDFs download.</p></div></details>
+<details class="about-section"><summary><h3>Maps, coordinates and Settings</h3></summary><div class="about-section-content"><p>Fit frames the route; Expand map provides more room. OpenTopoMap needs internet; no offline map pack is included. The crosshair requests one location fix after permission, not ongoing tracking. Retry reloads failed tiles and the close control dismisses a warning.</p><p>Settings offers Lat/Long (WGS84), Irish National Grid, British National Grid, ITM, MGRS, UTM and USNG. The choice applies to map readouts and text/PDF cards; GPX uses WGS84. Regional conversions are approximate and coordinate precision does not imply GPS accuracy.</p><p>Allow Point Naming shows or hides the Name column without deleting stored names. Preferences are remembered on this device.</p></div></details>
+<details class="about-section"><summary><h3>Storage, privacy and limitations</h3></summary><div class="about-section-content"><p>Work is saved locally on this device when storage is available. Autosave is recovery, not a full-project backup or cloud sync. Export important routes and keep original GPX files. Clearing app/browser data or uninstalling can remove local work.</p><p>Map requests reveal the map areas being viewed to the provider; terrain requests send coordinates to Open Topo Data, through the relay in the web preview. Saving and sharing send files only to the destination you choose. This guide is not a complete privacy policy.</p><p>Lines join route points directly; they do not automatically follow roads or paths. Check access, terrain and safe walkability independently. These apps provide planning estimates, not navigation, activity recording, surveying or emergency assistance.</p><p>Exports write one GPX track segment with supported names, heights and gap extensions. Other apps may ignore custom gap styling. Unsupported activity metadata is not preserved. Check output in the app or device where you intend to use it.</p></div></details>
+<details class="about-section"><summary><h3>Keyboard shortcuts</h3></summary><div class="about-section-content"><p>Use Command/Ctrl + Z to undo and Command/Ctrl + Shift + Z to redo. Escape closes a dialog or collapses an expanded view. Undo history is for the current session; saved route data is restored separately.</p></div></details>
   <details id="about-credits" class="about-section">
     <summary><h3>Credits &amp; Attributions</h3></summary>
     <div class="about-section-content">
@@ -123,5 +16,4 @@ export const aboutGuide = `
       <p><strong>Web hosting.</strong> The web preview and its terrain relay are hosted through Cloudflare.</p>
     </div>
   </details>
-  <button class="button primary full" data-close>Done</button>
-</div>`;
+<button class="button primary full" data-close>Done</button></div>`;

@@ -30,7 +30,75 @@ export function sampleGaps(track: Track): Track {
     );
   return { ...track, points };
 }
+// Bound the complete job, including pacing, requests and response bodies.
 export async function enrichTerrain(
+  track: Track,
+  progress: (s: string) => void,
+  signal: AbortSignal,
+): Promise<Track> {
+  signal.throwIfAborted();
+  const controller = new AbortController();
+  const cancel = () => controller.abort(signal.reason);
+  signal.addEventListener("abort", cancel, { once: true });
+  const timer = setTimeout(
+    () =>
+      controller.abort(
+        new Error(
+          "Terrain job timed out. Your route is unchanged. Try again later.",
+        ),
+      ),
+    180000,
+  );
+  try {
+    return await runTerrain(track, progress, controller.signal);
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", cancel);
+  }
+}
+
+// Native requests cannot be stopped by this transport. Detach promptly on abort;
+// the settled handlers consume late responses/errors without applying results.
+async function bounded<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  signal: AbortSignal,
+  timeoutMs: number,
+): Promise<T> {
+  signal.throwIfAborted();
+  const controller = new AbortController();
+  let cancel!: () => void;
+  let timer: ReturnType<typeof setTimeout>;
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const abort = (reason: unknown) => {
+        controller.abort(reason);
+        reject(reason);
+      };
+      cancel = () => abort(signal.reason);
+      signal.addEventListener("abort", cancel, { once: true });
+      timer = setTimeout(
+        () =>
+          abort(
+            new Error(
+              "Terrain request timed out. Your route is unchanged. Try again later.",
+            ),
+          ),
+        timeoutMs,
+      );
+      Promise.resolve()
+        .then(() => {
+          controller.signal.throwIfAborted();
+          return operation(controller.signal);
+        })
+        .then(resolve, reject);
+    });
+  } finally {
+    clearTimeout(timer!);
+    signal.removeEventListener("abort", cancel);
+  }
+}
+
+async function runTerrain(
   track: Track,
   progress: (s: string) => void,
   signal: AbortSignal,
@@ -53,62 +121,54 @@ export async function enrichTerrain(
   for (let start = 0; start < indices.length; start += 100) {
     signal.throwIfAborted();
     if (start)
-      await new Promise<void>((resolve, reject) => {
-        const id = setTimeout(resolve, 1100);
-        signal.addEventListener(
-          "abort",
-          () => {
-            clearTimeout(id);
-            reject(new DOMException("Cancelled", "AbortError"));
-          },
-          { once: true },
-        );
-      });
+      await bounded(
+        () =>
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, 1100);
+          }),
+        signal,
+        2000,
+      );
+    signal.throwIfAborted();
     progress(`Fetching terrain · ${Math.floor(start / 100) + 1} of ${batches}`);
     const batch = indices.slice(start, start + 100);
     const locations = batch
       .map((i) => `${result.points[i].lat},${result.points[i].lon}`)
       .join("|");
-    let data: { status?: string; results?: { elevation: number | null }[] };
-    if (Capacitor.isNativePlatform()) {
-      const response = await CapacitorHttp.get({
-        url: "https://api.opentopodata.org/v1/mapzen",
-        params: { locations },
-        connectTimeout: 15000,
-        readTimeout: 20000,
-      });
-      if (response.status !== 200)
-        throw new Error(
-          "Terrain service is unavailable or busy. Your track is unchanged. Try again later.",
-        );
-      data = response.data;
-    } else {
-      const requestController = new AbortController();
-      const cancel = () => requestController.abort();
-      signal.addEventListener("abort", cancel, { once: true });
-      const timeout = setTimeout(
-        () =>
-          requestController.abort(
-            new Error("Terrain request timed out. Try again later."),
-          ),
-        20000,
-      );
-      let response: Response;
-      try {
-        response = await fetch(
+    const data = await bounded(
+      async (requestSignal) => {
+        if (Capacitor.isNativePlatform()) {
+          const response = await CapacitorHttp.get({
+            url: "https://api.opentopodata.org/v1/mapzen",
+            params: { locations },
+            connectTimeout: 15000,
+            readTimeout: 20000,
+          });
+          if (response.status !== 200)
+            throw new Error(
+              "Terrain service is unavailable or busy. Your track is unchanged.",
+            );
+          return response.data as {
+            status?: string;
+            results?: { elevation: number | null }[];
+          };
+        }
+        const response = await fetch(
           `${import.meta.env.BASE_URL}terrain/v1/mapzen?locations=${encodeURIComponent(locations)}`,
-          { signal: requestController.signal },
+          { signal: requestSignal },
         );
-      } finally {
-        clearTimeout(timeout);
-        signal.removeEventListener("abort", cancel);
-      }
-      if (!response.ok)
-        throw new Error(
-          "Terrain service is unavailable or busy. Your track is unchanged.",
-        );
-      data = await response.json();
-    }
+        if (!response.ok)
+          throw new Error(
+            "Terrain service is unavailable or busy. Your track is unchanged.",
+          );
+        return (await response.json()) as {
+          status?: string;
+          results?: { elevation: number | null }[];
+        };
+      },
+      signal,
+      20000,
+    );
     signal.throwIfAborted();
     if (
       data.status !== "OK" ||
@@ -125,5 +185,6 @@ export async function enrichTerrain(
       if (result.points[index].gapBefore) result.points[index].terrain = true;
     });
   }
+  signal.throwIfAborted();
   return result;
 }

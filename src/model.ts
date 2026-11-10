@@ -17,6 +17,7 @@ export interface Track {
   kind: "track" | "route";
   inputTrackId?: string;
   terrainNeedsRefresh?: boolean;
+  simplified?: boolean;
 }
 export interface Selection {
   start: number;
@@ -35,7 +36,8 @@ export interface Workspace {
   selection: Selection;
 }
 export const MAX_BYTES = 15 * 1024 * 1024;
-export const MAX_POINTS = 150000;
+export const MAX_POINTS = 5000;
+export const MAX_INPUT_POINTS = 150000;
 export const COLORS = [
   "#d32f2f",
   "#2563eb",
@@ -172,7 +174,7 @@ export function join(
   else if (distance(last, part[0]) > 1) part[0].gapBefore = true;
   if (result.points.length + part.length > MAX_POINTS)
     throw new Error(
-      "This route is too large. Keep the route below 150,000 points.",
+      "This route is too large. Keep the route at or below 5,000 points.",
     );
   result.points.push(...part);
   return result;
@@ -198,6 +200,7 @@ export function parseGPX(
   xml: string,
   filename: string,
   colourOffset = 0,
+  pointLimit = MAX_POINTS,
 ): Track[] {
   if (new TextEncoder().encode(xml).length > MAX_BYTES)
     throw new Error(
@@ -228,9 +231,9 @@ export function parseGPX(
     const points: Point[] = [];
     for (const group of groups) {
       for (const [i, el] of group.entries()) {
-        if (++count > MAX_POINTS)
+        if (++count > pointLimit)
           throw new Error(
-            "This file has more than 150,000 points. Please divide it into smaller files.",
+            `This file has more than ${pointLimit.toLocaleString("en-IE")} points. Please divide it into smaller files.`,
           );
         const latText = el.getAttribute("lat"),
           lonText = el.getAttribute("lon");
@@ -321,7 +324,7 @@ const escapeXML = (s: string) =>
       })[c]!,
   );
 export function exportGPX(track: Track): string {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BareGPS Route Planner" xmlns="http://www.topografix.com/GPX/1/1" xmlns:b="https://baregps.app/gpx/1"><metadata><name>${escapeXML(track.name)}</name><desc>Dashed gaps are straight-line walking connections included in distance and ascent. Elevation may be estimated.</desc></metadata><trk><name>${escapeXML(track.name)}</name><extensions><b:color>${track.color}</b:color></extensions><trkseg>\n${track.points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele !== undefined ? `<ele>${p.ele}</ele>` : ""}${p.time ? `<time>${escapeXML(p.time)}</time>` : ""}${p.name ? `<name>${escapeXML(p.name)}</name>` : ""}${p.gapBefore || p.terrainPending ? `<extensions>${p.gapBefore ? "<b:gapBefore>true</b:gapBefore>" : ""}${p.gapBefore && p.terrain ? "<b:terrain>true</b:terrain>" : ""}${p.terrainPending ? "<b:terrainPending>true</b:terrainPending>" : ""}</extensions>` : ""}</trkpt>`).join("\n")}\n</trkseg></trk></gpx>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BareGPS Track Editor" xmlns="http://www.topografix.com/GPX/1/1" xmlns:b="https://baregps.app/gpx/1"><metadata><name>${escapeXML(track.name)}</name><desc>Dashed gaps are straight-line walking connections included in distance and ascent. Elevation may be estimated.</desc></metadata><trk><name>${escapeXML(track.name)}</name><extensions><b:color>${track.color}</b:color></extensions><trkseg>\n${track.points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele !== undefined ? `<ele>${p.ele}</ele>` : ""}${p.time ? `<time>${escapeXML(p.time)}</time>` : ""}${p.name ? `<name>${escapeXML(p.name)}</name>` : ""}${p.gapBefore || p.terrainPending ? `<extensions>${p.gapBefore ? "<b:gapBefore>true</b:gapBefore>" : ""}${p.gapBefore && p.terrain ? "<b:terrain>true</b:terrain>" : ""}${p.terrainPending ? "<b:terrainPending>true</b:terrainPending>" : ""}</extensions>` : ""}</trkpt>`).join("\n")}\n</trkseg></trk></gpx>\n`;
 }
 export function validateWorkspace(value: unknown): value is Workspace {
   if (!value || typeof value !== "object") return false;
@@ -368,10 +371,12 @@ export function validateWorkspace(value: unknown): value is Workspace {
         Array.isArray(t.points) &&
         t.points.length >= (t === w.created ? 0 : 2) &&
         (t !== w.created || t.points.length <= 1000) &&
-        t.points.length <= MAX_POINTS &&
+        (t.simplified === undefined || typeof t.simplified === "boolean") &&
+        t.points.length <=
+          (w.tracks.includes(t) ? MAX_INPUT_POINTS : MAX_POINTS) &&
         (t === w.created ||
           t === w.createdTerrain ||
-          (total += t.points.length) <= MAX_POINTS * 4) &&
+          (total += t.points.length) <= MAX_INPUT_POINTS * 4) &&
         t.points.every(
           (p) =>
             p &&

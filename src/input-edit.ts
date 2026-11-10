@@ -23,7 +23,8 @@ export function inputHandleIndices(
   extra: Iterable<number> = [],
 ): number[] {
   if (!Number.isInteger(interval) || interval < 1 || interval > MAX_POINTS)
-    throw new Error("Choose a handle interval between 1 and 150,000 points.");
+    throw new Error("Choose a handle interval between 1 and 5,000 points.");
+  if (track.simplified) interval = 1;
   const indices = new Set<number>();
   for (let i = 0; i < track.points.length; i += interval) indices.add(i);
   if (track.points.length) indices.add(track.points.length - 1);
@@ -50,7 +51,7 @@ export function insertInputPoint(
   if (!Number.isInteger(index) || index < 0 || index > track.points.length)
     throw new Error("That input segment has changed. Try again.");
   if (track.points.length >= MAX_POINTS)
-    throw new Error("This input track has reached the 150,000 point limit.");
+    throw new Error("This input track has reached the 5,000 point limit.");
   if (
     [track.points[index - 1], track.points[index]].some(
       (neighbour) => neighbour && distance(neighbour, point) < 0.5,
@@ -245,7 +246,7 @@ export function finishInputTerrain(original: Track, sampled: Track): Track {
         : {}),
     };
   }
-  return { ...original, points };
+  return { ...original, points, terrainNeedsRefresh: false };
 }
 
 /** Keep the selected point and every point on the requested side. */

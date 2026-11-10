@@ -92,3 +92,22 @@ it("declines provider redirects using the redirect mode supported by Cloudflare"
   expect(upstream).toHaveBeenCalledOnce();
   expect(upstream.mock.calls[0][1]?.redirect).toBe("manual");
 });
+
+it.each(["baregps-route-maker", "baregps-track-editor"])(
+  "serves terrain for standalone %s",
+  async (slug) => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ status: "OK", results: [{ elevation: 100 }] }),
+      ),
+    );
+    const response = await worker.fetch(
+      new Request(
+        `https://appsbyonzy.dev/tools/${slug}/terrain/v1/mapzen?locations=53,-6`,
+      ),
+      env(),
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).results[0].elevation).toBe(100);
+  },
+);

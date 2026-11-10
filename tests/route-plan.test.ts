@@ -67,11 +67,11 @@ describe("intermediate Route Plan", () => {
     ).toThrow(/500/);
     const large = {
       ...input(),
-      points: Array.from({ length: 150000 }, () => ({ lat: 53, lon: -6 })),
+      points: Array.from({ length: 5000 }, () => ({ lat: 53, lon: -6 })),
     };
     expect(() =>
       addPlanSection([large], input(), { start: 0, end: 1 }),
-    ).toThrow(/150,000/);
+    ).toThrow(/5,000/);
   });
   it("validates persisted plans and rejects malformed plan data", () => {
     const plan = addPlanSection([], input(), { start: 0, end: 3 });
@@ -100,7 +100,7 @@ describe("intermediate Route Plan", () => {
 });
 
 it("recovers a full legacy workspace while reserving capacity for its copied plan", () => {
-  const points = Array.from({ length: 150000 }, () => ({ lat: 53, lon: -6 }));
+  const points = Array.from({ length: 5000 }, () => ({ lat: 53, lon: -6 }));
   const route = { ...input("legacy-route"), points, kind: "route" as const };
   const workspace = {
     ...emptyWorkspace(),
@@ -112,7 +112,7 @@ it("recovers a full legacy workspace while reserving capacity for its copied pla
   };
   expect(validateWorkspace(workspace)).toBe(true);
   const restored = restoreSeparateWorkspace(workspace);
-  expect(restored.routePlan![0].points).toHaveLength(150000);
+  expect(restored.routePlan![0].points).toHaveLength(5000);
   expect(validateWorkspace(restored)).toBe(true);
 });
 

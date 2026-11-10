@@ -11,7 +11,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>BareGPS Route Planner</string>
+	<string>BareGPS Track Editor</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

@@ -5,7 +5,7 @@
   font-synthesis: none;
   font-size: 14px;
   --green: #146644;
-  --brand-green: #34c759;
+  --brand-green: #ff3b30;
   --dark: #253f33;
   --muted: #7b857a;
   --border: #b8c6ae;
@@ -3167,7 +3167,7 @@ body:not(.creating) .map-legend {
   line-height: 1.2;
 }
 
-/* The four secondary input actions always share one equal-width row. */
+/* Secondary input actions share one equal-width row. */
 .input-extra-tools {
   height: auto;
   min-height: 46px;
@@ -3437,4 +3437,187 @@ body.creating:not(.card-expanded) #create-card .create-buttons {
   height: 32px;
   margin-right: 3px;
   color: #3f6747;
+}
+
+/* Keep plan membership between the input colour and remove controls. */
+.input-plan-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  color: #3f6747;
+}
+
+/* A compact starting guide in Edit's existing Open Files panel. */
+body:not(.creating) .map-empty {
+  justify-content: center;
+  padding: 12px;
+}
+.edit-workflow {
+  width: min(600px, 100%);
+  padding: 18px 16px;
+  border: 1px solid #dce5d3;
+  border-radius: 14px;
+  background: #fffffff5;
+  box-shadow: 0 6px 24px #17321f12;
+  pointer-events: auto;
+}
+.map-empty .edit-workflow h2 {
+  margin: 0 0 16px;
+  color: #2c4c37;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+}
+.edit-workflow ol {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 0;
+  margin: 0 0 18px;
+  list-style: none;
+}
+.edit-workflow li {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  color: #3f5144;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.edit-workflow li:not(:last-child)::after {
+  position: absolute;
+  top: 6px;
+  left: calc(100% + 2px);
+  content: "→";
+  color: #8a9e80;
+  font-size: 16px;
+}
+.workflow-number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #edf3e8;
+  color: #3f6747;
+  font-size: 12px;
+}
+.edit-workflow li:first-child .workflow-number {
+  background: #3f6747;
+  color: white;
+}
+.map-empty .edit-workflow #empty-import {
+  transform: none;
+}
+@media (max-width: 560px) {
+  .edit-workflow {
+    padding: 14px 10px;
+  }
+  .map-empty .edit-workflow h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .edit-workflow ol {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .edit-workflow li {
+    font-size: 11px;
+    gap: 6px;
+  }
+  .edit-workflow li:not(:last-child)::after {
+    left: calc(100% - 1px);
+    font-size: 12px;
+  }
+  .workflow-number {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.workflow-repeat {
+  position: relative;
+  width: 60%;
+  height: 28px;
+  margin: -8px 0 12px;
+  color: #64845b;
+}
+.workflow-repeat svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.workflow-repeat span {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 7px;
+  background: #fff;
+  color: #3f6747;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+#create-card .card-heading h2 {
+  flex: 1;
+}
+#card-detail-toggle {
+  flex-shrink: 0;
+}
+#card-summary-note {
+  padding: 0 14px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+#simplify-map {
+  height: 240px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.simplify-counts {
+  line-height: 1.6;
+}
+.simplify-legend {
+  display: flex;
+  gap: 20px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.simplify-legend label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.simplify-legend span {
+  width: 20px;
+  height: 0;
+  border-top: 3px solid #89908b;
+}
+.simplify-legend .simplified-line {
+  border-color: #16724d;
+}
+#input-extra-tools .drawing-modes {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* Standalone product: no mode switch or mode caption. */
+.map-empty {
+  top: 34px;
+}
+.map-expanded #edit-map-view,
+.map-expanded #create-map-view {
+  height: calc(100% - 34px);
+}
+
+/* Removing the tabs moves the Editor toolbar up by one row. */
+body:not(.creating) #map-error {
+  top: 40px;
 }

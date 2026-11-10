@@ -14,6 +14,7 @@ export function routecardPDF(
   system: CoordinateSystem,
   terrain?: Track,
   pointOffset = 0,
+  full = false,
 ): Blob {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const km = (n: number) => (n / 1000).toFixed(2);
@@ -29,8 +30,14 @@ export function routecardPDF(
   doc.setFontSize(9);
   doc.setTextColor(70);
   doc.text(`Coordinates: ${coordinateSystems[system]}`, 14, top);
+  const rows = routecardRows(route, terrain, full);
+  doc.text(
+    `${rows.length} checkpoints from ${route.points.length} route points`,
+    14,
+    top + 5,
+  );
   autoTable(doc, {
-    startY: top + 5,
+    startY: top + 10,
     margin: { top: 14, bottom: 20, left: 14, right: 14 },
     head: [
       [
@@ -44,8 +51,8 @@ export function routecardPDF(
         "Cumul Ascent\n(m)",
       ],
     ],
-    body: routecardRows(route, terrain).map((r, i) => [
-      String(i + 1 + pointOffset),
+    body: rows.map((r) => [
+      String(r.index + 1 + pointOffset),
       r.point.name || "",
       formatCoordinate(r.point, system),
       height(r.point.ele),
@@ -80,13 +87,13 @@ export function routecardPDF(
       doc.setTextColor(90);
       doc.text(
         needsTerrain(terrain ?? route)
-          ? "Terrain incomplete: heights and ascent are partial. Distances join points by straight lines."
-          : "Straight-line distances; heights and ascent are estimates. Unavailable means missing elevation data.",
+          ? "Terrain incomplete: heights and ascent are partial. Distances follow the full route."
+          : "Full-route distances; heights and ascent are estimates. Unavailable means missing elevation data.",
         14,
         198,
       );
       doc.text(
-        `BareGPS Route Planner | Page ${doc.getNumberOfPages()}`,
+        `BareGPS Track Editor | Page ${doc.getNumberOfPages()}`,
         14,
         203,
       );

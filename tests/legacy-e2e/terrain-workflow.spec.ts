@@ -38,7 +38,7 @@ const heights = (url: string) => ({
     .split("|")
     .map(() => ({ elevation: 777 })),
 });
-test("Confirm Route fetches missing legs, preserves recorded heights and reuses completed terrain", async ({
+test("Confirm Plan fetches missing legs, preserves recorded heights and reuses completed terrain", async ({
   page,
 }) => {
   let requests = 0;
@@ -293,3 +293,20 @@ for (const flow of ["create", "input", "plan"] as const) {
     });
   }
 }
+
+test("primary height totals stay u/a for incomplete heights and become available after fetching", async ({
+  page,
+}) => {
+  await page.route("**/terrain/**", (route) =>
+    route.fulfill({ json: heights(route.request().url()) }),
+  );
+  await load(page);
+  await page.locator(".track-select").filter({ hasText: "B" }).click();
+  await expect(page.locator("#ascent")).toHaveText("u/a");
+  await expect(page.locator("#descent")).toHaveText("u/a");
+  await page.locator("#input-terrain").click();
+  await page.locator("#confirm-input-terrain").click();
+  await expect(page.locator("#dialog")).not.toBeVisible();
+  await expect(page.locator("#ascent")).not.toHaveText("u/a");
+  await expect(page.locator("#descent")).not.toHaveText("u/a");
+});

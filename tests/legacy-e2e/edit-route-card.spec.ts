@@ -22,9 +22,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");
-  await page
-    .getByRole("button", { name: "Open GPX file(s)", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Open Track", exact: true }).click();
   await (
     await chooser
   ).setFiles([
@@ -177,6 +175,13 @@ test("large Edit cards scroll through all points without rendering the entire tr
     .getByRole("button", { name: "Add to Route Plan", exact: true })
     .click();
   await confirmPlanWithoutTerrain(page);
+  await expect(page.locator("#waypoint-count")).toHaveText("30");
+  await expect(page.locator("#waypoint-rows tr[data-card-row]")).toHaveCount(
+    30,
+  );
+  await expect(page.locator("#card-summary-note")).toContainText("30 of 2000");
+  await expect(page.locator('[data-card-row="1999"]')).toHaveCount(1);
+  await page.getByRole("button", { name: "Full Card", exact: true }).click();
   await expect(page.locator("#waypoint-count")).toHaveText("2000");
   await expect(page.locator("#notice")).toBeHidden();
   expect(
@@ -197,6 +202,11 @@ test("large Edit cards scroll through all points without rendering the entire tr
   await page
     .getByRole("button", { name: "Collapse Route Card", exact: true })
     .click();
+  await page.getByRole("button", { name: "Summary Card", exact: true }).click();
+  await expect(page.locator("#waypoint-count")).toHaveText("30");
+  await expect(page.locator("#waypoint-rows tr[data-card-row]")).toHaveCount(
+    30,
+  );
   const pending = page.waitForEvent("download");
   await page.locator("#create-save").click();
   const fs = await import("node:fs/promises");

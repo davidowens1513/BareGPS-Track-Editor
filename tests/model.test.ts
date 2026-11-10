@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   analytics,
+  MAX_POINTS,
   distance,
   emptyWorkspace,
   exportGPX,
@@ -107,7 +108,7 @@ describe("track editing and walking totals", () => {
     expect(a.ascent).toBe(20);
   });
   it("handles the maximum supported point count without argument-stack overflow", () => {
-    const points = Array.from({ length: 150000 }, (_, i) => ({
+    const points = Array.from({ length: MAX_POINTS }, (_, i) => ({
       lat: 50,
       lon: i / 100000,
       ele: i % 100,
@@ -303,4 +304,24 @@ it("recovers shared-screen work into separate screens without losing routes or t
   });
   expect(drawingOnly.activeId).toBeNull();
   expect(drawingOnly.created).toEqual(created);
+});
+
+describe("5,000-point limit", () => {
+  it("accepts 5,000 GPX points and rejects 5,001", () => {
+    const point = '<trkpt lat="53" lon="-6"/>';
+    const xml = (count: number) =>
+      gpx("<trk><trkseg>" + point.repeat(count) + "</trkseg></trk>");
+    expect(parseGPX(xml(MAX_POINTS), "limit.gpx")[0].points).toHaveLength(5000);
+    expect(() => parseGPX(xml(MAX_POINTS + 1), "large.gpx")).toThrow("5,000");
+  });
+  it("rejects terrain expansion beyond 5,000 without modifying the input", () => {
+    const t = track();
+    t.points = Array.from({ length: MAX_POINTS }, (_, i) => ({
+      lat: 53 + i * 0.00001,
+      lon: -6,
+    }));
+    t.points[1] = { lat: 53.01, lon: -6, gapBefore: true };
+    expect(() => sampleGaps(t)).toThrow("point limit");
+    expect(t.points).toHaveLength(MAX_POINTS);
+  });
 });

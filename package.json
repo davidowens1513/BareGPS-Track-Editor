@@ -1,6 +1,6 @@
 {
   "name": "baregps-track-editor",
-  "version": "0.2.11",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
     "android": "cap open android",
     "format": "prettier --write src tests *.ts *.json index.html",
     "format:check": "prettier --check src tests *.ts *.json index.html",
-    "build:web": "tsc --noEmit && vite build --base=/tools/baregps-route-planner/ --outDir web-dist"
+    "build:web": "tsc --noEmit && vite build --base=/tools/baregps-track-editor/ --outDir web-dist"
   },
   "dependencies": {
     "@capacitor/core": "^8.0.0",

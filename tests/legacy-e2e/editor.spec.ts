@@ -95,7 +95,7 @@ test("import, trim, join, include gaps, undo, export and restore", async ({
   await page.getByRole("tab", { name: "Edit Existing", exact: true }).click();
   await expect(page.locator("#source-count")).toHaveText("2");
   await expect(
-    page.getByRole("button", { name: "Open GPX file(s)", exact: true }),
+    page.getByRole("button", { name: "Open Track", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: /Valley trail/ })
