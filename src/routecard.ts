@@ -6,6 +6,12 @@ import {
   type CoordinateSystem,
 } from "./coordinates";
 
+export const ROUTE_CARD_FOOTER = [
+  "Distances follow the full route between checkpoints; route legs do not automatically follow paths.",
+  "Heights and ascent, where available, are estimates. Check the route is walkable.",
+  "Created with BareGPS Track Editor",
+] as const;
+
 export const SUMMARY_CARD_POINTS = 30;
 
 export function routecardRows(route: Track, terrain?: Track, full = false) {
@@ -122,8 +128,6 @@ export function routecardText(
         .join(" · ");
       return `${label}\n${formatCoordinate(point, system)}\nLeg: ${km(distance)} · Total: ${km(total)} · Height: ${metres(point.ele)}\nAscent: ${metres(ascent)} · Cumulative ascent: ${metres(totalAscent)}\n`;
     }),
-    "Distances follow the full route between checkpoints; route legs do not automatically follow paths.",
-    "Heights and ascent, where available, are estimates. Check the route is walkable.",
-    "Created with BareGPS Track Editor",
+    ...ROUTE_CARD_FOOTER,
   ].join("\n");
 }

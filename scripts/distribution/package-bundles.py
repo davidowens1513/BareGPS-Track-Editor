@@ -39,11 +39,11 @@ metadata=apk.parent/'output-metadata.json'
 if metadata.is_file():
     assert all(item['versionName']==version for item in json.loads(metadata.read_text())['elements']), 'APK version does not match package.json.'
 assert (root/'dist/index.html').is_file(), 'Run npm run native:sync first.'
-excluded = {'node_modules','build','Pods','DerivedData','xcuserdata','.git','outputs'}
+excluded = {'node_modules','build','Pods','DerivedData','xcuserdata','.git','.idea','outputs'}
 secret_suffixes={'.p12','.p8','.mobileprovision','.jks','.keystore','.xcuserstate'}
 
 def allowed(path):
-    return not any(part in excluded for part in path.parts) and path.suffix not in secret_suffixes and path.name!='local.properties' and not path.name.startswith('.env')
+    return not any(part in excluded for part in path.parts) and path.suffix not in secret_suffixes and path.name!='local.properties' and not path.name.startswith('.env') and path.name != 'config 2.xml'
 
 def add_tree(archive,directory):
     for path in sorted(directory.rglob('*')):
@@ -67,7 +67,7 @@ for platform in (['ios','android'] if args.platform=='both' else [args.platform]
         else:
             for name in ['src','public','dist','ios']:
                 add_tree(archive,root/name)
-            for name in ['package.json','package-lock.json','tsconfig.json','vite.config.ts','capacitor.config.ts','index.html','.gitignore','.gitattributes']:
+            for name in ['package.json','package-lock.json','tsconfig.json','vite.config.ts','capacitor.config.ts','index.html','.gitignore','.gitattributes','scripts/distribution/normalize-ios-package.mjs']:
                 archive.write(root/name,name)
     with zipfile.ZipFile(bundle) as archive:
         assert archive.testzip() is None

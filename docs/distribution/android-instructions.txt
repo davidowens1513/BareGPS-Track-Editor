@@ -1,8 +1,13 @@
-BAREGPS TRACK EDITOR - ANDROID
-Version 0.3.0 build 59
+BAREGPS TRACK EDITOR — ANDROID
+Version 0.3.1, build 65
 
-Install the signed APK as an update, or unzip the Android bundle and open its APK. Keep your GPX originals. No account is required.
+Install the release-signed, non-debuggable APK. Keep the same signing identity for future updates. Android phones are targeted; tablets use https://appsbyonzy.dev/tools/baregps-track-editor/.
 
-Maps and terrain require internet. Route lines do not automatically follow paths.
+The ZIP contains the APK, instructions and checksum. It is not an Android Studio source archive; source is on GitHub.
+
+Track inputs open as clean lines. Tap a line to reveal local handles, then drag to reshape a section smoothly. Reset Track restores that input’s saved starting version after confirmation and supports Undo. The initial version of a legacy input is its saved state at upgrade.
+
+Maps and terrain require internet. Lines do not automatically follow paths. Keep your original GPX files and export important work.
+
 Support: appsbyonzy@gmail.com
 Source: https://github.com/davidowens1513/BareGPS-Track-Editor

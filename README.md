@@ -2,7 +2,7 @@
 
 Import, simplify, edit and combine GPX tracks into a confirmed walking-route plan.
 
-**Current version: 0.3.0, build 59.** This is the standalone red Track Editor, split from the former combined BareGPS Route Planner on 10 November 2026. There is no Create screen or mode switch. This repository retains the original Track Editor history.
+**Current release: 0.3.1, build 65.** Standalone red Track Editor for importing, editing, simplifying and combining GPX tracks. Split from the former combined Route Planner on 10 November 2026. There is no route-creation screen or mode switch.
 
 [Browser preview](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and platform instructions](https://appsbyonzy.dev/#tools) · [Source](https://github.com/davidowens1513/BareGPS-Track-Editor)
 
@@ -10,7 +10,8 @@ Import, simplify, edit and combine GPX tracks into a confirmed walking-route pla
 
 - Import GPX tracks, rename/recolour inputs, trim, reverse, insert, move and delete points.
 - Preview simplification at a target of 10 handles/km with at most 10 metres deviation. Accept creates an independent copy and retains the original. Names, endpoints, bends and gap boundaries are protected; extra points may be needed.
-- Each simplified handle controls one underlying point. Original dense inputs retain configurable handle spacing.
+- Inputs open as a clean line with Start and Finish markers. Tap the line for a small group of local handles; Done editing or tapping empty map space hides them.
+- Dragging smoothly reshapes a section, retaining all underlying points. Larger drags widen the transition; moves without sufficient room to blend are rejected. GPX segment boundaries are protected.
 - Assemble input snapshots into Route Plan, reorder/replace/remove entries and Confirm Plan explicitly.
 - Show a green membership tick between an input's colour control and bin when included in the plan.
 - Preview confirmed output, export GPX, and share text/PDF Route Cards.
@@ -90,3 +91,29 @@ Map providers receive viewed map areas; terrain providers receive coordinates. B
 Outstanding release work includes physical-device failure/lifecycle testing, accessibility/readability, measured supported sizes, a user backup/restore path, documented provider capacity, privacy/support/licence publication and actual TestFlight acceptance. Do not infer App Store readiness from a successful local install.
 
 Copyright © AppsbyOnzy. Support: [appsbyonzy@gmail.com](mailto:appsbyonzy@gmail.com). Dependency and map credits are in About. No new source licence is implied by this split; third-party licences remain applicable.
+
+## Shared phone refinements — build 63
+
+Native builds target iPhone and Android handsets; tablets use the web version. iPhone app-scale zoom is fixed while map gestures remain available. Android reserves system bars, display cutouts and keyboard space natively. Input action labels wrap inside 34px buttons.
+
+Reset Track restores only the selected input to its saved starting version, with confirmation and Undo. New imports and accepted simplified copies retain their initial points, name and colour. Older workspaces take their current saved inputs as starting versions at this update. Plan copies, confirmed output, other inputs and GPX files are unaffected. Reset starting versions persist in the workspace separately from plan copies.
+
+Settings and About keep their headings and Done controls visible while content scrolls. Settings includes 14 named track colours in two rows, hex entry, a track selector and Apply; the input-row colour control opens the same picker. Route Cards retain their 30-checkpoint/full-card choice. PDFs use portrait A4, equal metric columns, an optional Name column and the same closing wording as text sharing.
+
+Dependencies are local to this project; both native projects resolve this project's node_modules. Native sync normalises the generated iOS dependency path. No sibling Route Maker or Track Editor installation is required.
+
+Build 64 corrects the Settings colour section: the same named palette/hex form is available inline, Apply stays in Settings, and an input selector chooses which track changes. The editing guide stays in About.
+
+## Release 0.3.1 — build 65
+
+- Clean-line imports with Start/Finish, local handles on tap and smooth section reshaping. Large moves without room to blend are rejected. Original point geometry is retained unless deliberately edited or simplified.
+- Reset Track restores the selected input’s saved starting points, name and colour, with confirmation and Undo/Redo. Other inputs, staged plan copies, confirmed output and files are unaffected. Existing saved inputs take their state at upgrade as their initial reset version.
+- Settings contains the 14-colour palette, hex entry, track selector and Apply; valid changes apply without closing Settings. The picker is also available beside each input. Settings/About retain their title, close and Done controls while content scrolls.
+- iPhone page-zoom correction retains map zoom. Expansion controls recover after save/terrain success, cancellation and failure. Empty-map sizing and restored-workspace activation are fixed; Fit is disabled without tracks.
+- Equal-width map buttons wrap inside the existing 34px height. Fetch Terrain stays on two lines. Done editing has its own row.
+- Portrait A4 Route Card PDFs, optional Name column, equal metric widths and matching text/PDF closing wording. Summary/full-card policy remains; GPX retains all route points. Expand to Share makes sharing discoverable.
+- Native targets iPhone and Android handsets; tablets use the web preview. Android reserves system-bar, cutout and keyboard space. Both projects use their own locked dependencies and local native paths.
+
+Validation: 109 unit/app-flow checks (including the Settings palette and input selection), TypeScript and production builds, native builds and package checks. PDFs were rendered and inspected. Physical device gesture/layout acceptance remains separate from automated and build checks.
+
+Downloads are a signed Android APK/ZIP and an iPhone Xcode source ZIP, not an IPA or TestFlight installation. Older versioned downloads remain available. This update does not change the app’s public name or publish it to either app store.

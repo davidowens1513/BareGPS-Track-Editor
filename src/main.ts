@@ -7,7 +7,7 @@ import { get, set } from "idb-keyval";
 import { Capacitor } from "@capacitor/core";
 import {
   analytics,
-  COLORS,
+  INPUT_COLOUR_PRESETS,
   emptyWorkspace,
   MAX_POINTS,
   MAX_INPUT_POINTS,
@@ -51,8 +51,11 @@ import {
   allInputsInPlan,
   replacePlanSection,
 } from "./route-plan";
-import "vanilla-colorful/hex-color-picker.js";
-import type { HexColorPicker } from "vanilla-colorful/hex-color-picker.js";
+import {
+  rememberInputStarts,
+  inputStart,
+  resetInputTrack,
+} from "./input-reset";
 import { enrichTerrain } from "./terrain";
 import { getDevicePosition, locationError } from "./location";
 let locating = false;
@@ -99,9 +102,7 @@ import { isClosedRoute } from "./track-geometry";
 let cardExpanded = false;
 let inputEditing = false;
 let inputTool: InputPointTool = "move";
-let inputHandleInterval = 20;
 let selectedInputPoint: number | null = null;
-const INPUT_HANDLE_KEY = "baregps-track-editor-input-handle-interval-v1";
 const visibleMap = () => map;
 const STORAGE_KEY = "baregps-track-editor-workspace-v1";
 const CONNECTION_ELEVATION_NOTE =
@@ -114,9 +115,10 @@ document.querySelector("#app")!.innerHTML = `
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
     <div id="edit-map-view" role="region" aria-label="Input track map"><div id="map"></div><button id="exit-preview" class="button secondary preview-mode" aria-label="Close Preview Mode" hidden><span aria-hidden="true">×</span> Preview Mode</button><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
     <div id="input-edit-controls" hidden>
-    <div id="input-point-tools" class="create-tools" role="group" aria-label="Input point editing tools" hidden><div class="drawing-modes" role="group" aria-label="Input drawing mode"><button id="input-move" aria-pressed="true" hidden>Move</button><button id="input-add" aria-pressed="false">Add points</button><button id="input-insert" aria-pressed="false">Insert point</button><button id="input-delete" disabled>Delete point</button><button id="input-close">Close loop</button></div><p id="input-point-status" class="sr-only" role="status"></p></div>
-    <div id="input-extra-tools" class="create-tools input-extra-tools" role="group" aria-label="Input track actions" hidden><div class="drawing-modes"><button id="trim-before" disabled>Trim before</button><button id="trim-after" disabled>Trim after</button><button id="reverse" disabled>Reverse</button><button id="simplify-input">Simplify</button><button id="input-terrain" disabled>Fetch Terrain</button></div></div>
+    <div id="input-point-tools" class="create-tools" role="group" aria-label="Input point editing tools" hidden><div class="drawing-modes" role="group" aria-label="Input drawing mode"><button id="input-move" aria-pressed="true" hidden>Move</button><button id="input-add" aria-pressed="false">Add points</button><button id="input-insert" aria-pressed="false">Insert point</button><button id="input-delete" disabled>Delete point</button><button id="input-close">Close loop</button><button id="input-reset" disabled>Reset Track</button></div><p id="input-point-status" class="sr-only" role="status"></p></div>
+    <div id="input-extra-tools" class="create-tools input-extra-tools" role="group" aria-label="Input track actions" hidden><div class="drawing-modes"><button id="trim-before" disabled>Trim before</button><button id="trim-after" disabled>Trim after</button><button id="reverse" disabled>Reverse</button><button id="simplify-input">Simplify</button><button id="input-terrain" aria-label="Fetch Terrain" disabled>Fetch<br>Terrain</button></div></div>
     <p id="input-selected-point" class="sr-only" role="status">Tap a map point to select it</p>
+    <div id="input-finish-tools" class="input-finish-tools" hidden><span>Drag handles to reshape the section.</span><button id="input-done" class="button secondary compact">Done editing</button></div>
     <div id="input-plan-controls" class="input-plan-controls"></div>
     </div>
     <div id="map-empty" class="map-empty"><section class="edit-workflow" aria-labelledby="edit-workflow-title"><h2 id="edit-workflow-title">Your route in five steps</h2><ol aria-label="Edit workflow">${["Open Track", "Edit", "Add to Route Plan", "Confirm Plan", "Save/Share GPX"].map((step, i) => `<li><span class="workflow-number" aria-hidden="true">${i + 1}</span><span>${step}</span></li>`).join("")}</ol><div class="workflow-repeat" role="img" aria-label="Repeat steps 1 to 3 for more tracks"><svg viewBox="0 0 300 28" preserveAspectRatio="none" aria-hidden="true"><path d="M250 1C250 14 246 20 228 20H72C54 20 50 14 50 2M46 7L50 2L54 7" fill="none" stroke="currentColor" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg><span aria-hidden="true">Repeat?</span></div><button id="empty-import" class="button primary">${icon("plus", 18)}Open Track</button></section></div>
@@ -130,14 +132,13 @@ document.querySelector("#app")!.innerHTML = `
     <div id="route-plan-controls" class="route-plan-controls"></div>
   </div>
   <section id="create-card" class="card create-card" aria-label="Route Card" hidden>
-    <div class="card-heading"><h2>Route Card <span id="waypoint-count" class="badge">0</span></h2><button id="card-detail-toggle" class="button secondary compact" aria-pressed="false" hidden>Full Card</button><button id="expand-card" class="icon-button" aria-label="Expand Route Card" aria-expanded="false" title="Expand Route Card">${icon("expand", 18)}</button></div>
+    <div class="card-heading"><h2>Route Card <span id="waypoint-count" class="badge">0</span></h2><button id="card-detail-toggle" class="button secondary compact" aria-pressed="false" hidden>Full Card</button><span class="card-expand-hint" id="card-expand-hint">Expand to Share</span><button id="expand-card" aria-describedby="card-expand-hint" class="icon-button" aria-label="Expand Route Card" aria-expanded="false" title="Expand Route Card">${icon("expand", 18)}</button></div>
     <p id="card-summary-note" class="card-source-note" hidden></p><p id="card-source-note" class="card-source-note" hidden></p>
     <div class="create-settings"><label><span id="card-name-label">Route name</span><input id="create-name" class="text-input" maxlength="120" value=""></label><button id="preview-route" class="button secondary compact" hidden>${icon("eye", 17)}Preview</button></div>
     <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><colgroup><col class="point-col"><col class="name-col"><col class="grid-col"><col class="height-col"><col class="card-extra distance-col"><col class="card-extra cumulative-distance-col"><col class="card-extra ascent-col"><col class="card-extra cumulative-ascent-col"></colgroup><thead><tr><th scope="col">Point</th><th class="point-name-cell" scope="col">Name</th><th id="coordinate-heading" scope="col">Grid ref.</th><th scope="col">Height<span class="heading-unit">(m)</span></th><th class="card-extra distance-cell" scope="col">Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Cumul<br>Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Ascent<span class="heading-unit">(m)</span></th><th class="card-extra" scope="col">Cumul<br>Ascent<span class="heading-unit">(m)</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="card-share-actions card-extra"><button id="create-share" class="button secondary">${icon("export", 17)}Share Text</button><button id="create-pdf" class="button secondary">${icon("file", 17)}Share PDF</button></div>
     <div class="create-buttons"><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save Route</button></div>
   </section>
-  <footer><span>Your files stay on your device. Map & terrain requests use the internet.</span></footer>
 </main>
 <div id="notice" class="notice" role="status" hidden></div>
 <dialog id="dialog"><div id="dialog-content"></div></dialog>
@@ -168,7 +169,7 @@ const map = new InputMap(
     preview: (track) => renderStats(track),
     status: (visible, total) => {
       $("input-point-status").textContent =
-        `${total.toLocaleString()} handles · ${visible.toLocaleString()} shown · tap the line to reveal a point`;
+        `${total.toLocaleString()} track points · ${visible.toLocaleString()} markers shown · tap the line to edit a section`;
     },
   },
 );
@@ -311,6 +312,7 @@ function boundHistory() {
   for (let i = undo.length - 1; i >= 0; i--) {
     points +=
       undo[i].tracks.reduce((n, t) => n + t.points.length, 0) +
+      (undo[i].inputOriginals ?? []).reduce((n, t) => n + t.points.length, 0) +
       (undo[i].route?.points.length ?? 0) +
       (undo[i].routePlan ?? []).reduce(
         (count, track) => count + track.points.length,
@@ -329,6 +331,7 @@ function checkpoint() {
 }
 function commit(action: () => void, fit = false): boolean {
   if (busy) return false;
+  rememberInputStarts(workspace);
   const before = structuredClone(workspace);
   try {
     action();
@@ -368,6 +371,7 @@ function select(track: Track) {
 }
 function fitMap() {
   if (editWelcome) {
+    map.map.invalidateSize({ pan: false });
     map.home();
     return;
   }
@@ -389,7 +393,6 @@ function renderMap() {
   map.pointEditing = editing;
   map.enabled = !busy;
   map.tool = inputTool;
-  map.interval = inputHandleInterval;
   map.selectedIndex = selectedInputPoint;
   $("map").classList.toggle("input-drawing", editing && inputTool !== "move");
   map.render(
@@ -570,6 +573,7 @@ function renderTracks() {
               workspace.tracks = workspace.tracks.filter(
                 (t) => t.id !== track.id,
               );
+              rememberInputStarts(workspace);
               if (workspace.activeId === track.id) {
                 const next = workspace.tracks[0] ?? workspace.route;
                 workspace.activeId = next?.id ?? null;
@@ -621,6 +625,9 @@ function renderControls() {
 }
 function updateInputSelectionControls() {
   const track = activeInput();
+  $("input-finish-tools").hidden =
+    selectedInputPoint === null && inputTool === "move";
+  $<HTMLButtonElement>("input-done").disabled = busy;
   $<HTMLButtonElement>("simplify-input").disabled = busy || !track;
   if (selectedInputPoint !== null && !track?.points[selectedInputPoint])
     selectedInputPoint = null;
@@ -646,7 +653,7 @@ function updateInputSelectionControls() {
   if (label)
     label.textContent =
       selectedInputPoint === null
-        ? "Tap a map point to select it"
+        ? "Tap the line to edit a section"
         : `Point ${selectedInputPoint + 1} selected`;
 }
 function changeInput(
@@ -689,6 +696,13 @@ for (const tool of ["move", "add", "insert"] as const)
       render();
     }
   };
+$("input-done").onclick = () => {
+  if (busy) return;
+  selectedInputPoint = null;
+  inputTool = "move";
+  map.resetSelection();
+  render();
+};
 $("input-delete").onclick = () => {
   if (selectedInputPoint !== null) {
     const index = selectedInputPoint;
@@ -699,6 +713,19 @@ $("input-delete").onclick = () => {
         changeInput((track) => deleteInputPoint(track, index), index, "move"),
     );
   }
+};
+$("input-reset").onclick = () => {
+  const track = activeInput();
+  if (busy || !track || !inputStart(workspace, track.id)) return;
+  confirmRemoval(
+    "Reset Track?",
+    "Restore this input’s points, name and colour to its saved starting version? Other inputs, Route Plan copies and saved GPX files stay in place. You can undo this reset.",
+    () => {
+      if (changeInput(() => resetInputTrack(workspace, track.id), null, "move"))
+        fitMap();
+    },
+    "Reset Track",
+  );
 };
 $("input-close").onclick = () => {
   if (busy || !activeInput()) return;
@@ -815,6 +842,7 @@ function previewSimplification() {
       commit(() => {
         ensureTrackCapacity(1, candidate.points.length);
         workspace.tracks.push(candidate);
+        rememberInputStarts(workspace);
         workspace.activeId = candidate.id;
         workspace.selection = { start: 0, end: candidate.points.length - 1 };
         editWelcome = false;
@@ -1112,6 +1140,10 @@ function render() {
   renderMap();
   $<HTMLButtonElement>("undo").disabled = !undo.length || busy;
   $<HTMLButtonElement>("redo").disabled = !redo.length || busy;
+  $<HTMLButtonElement>("expand").disabled = busy;
+  $<HTMLButtonElement>("expand-card").disabled = busy;
+  $<HTMLButtonElement>("fit").disabled =
+    busy || !displayMapTracks().some((track) => track.points.length);
   $("view-toggle").innerHTML =
     `${icon("eye", 16)}<span>${showAll ? "All tracks" : "Selected track"}</span>`;
   for (const id of ["import", "empty-import", "view-toggle"])
@@ -1137,6 +1169,8 @@ function render() {
   $("input-point-tools").hidden = false;
   $("input-extra-tools").hidden = false;
   $<HTMLButtonElement>("reverse").disabled = busy || !input;
+  $<HTMLButtonElement>("input-reset").disabled =
+    busy || !input || !inputStart(workspace, input.id);
   for (const tool of ["move", "add", "insert"] as const) {
     $("input-" + tool).setAttribute(
       "aria-pressed",
@@ -1153,6 +1187,15 @@ function render() {
   renderLocationButtons();
 }
 function ensureTrackCapacity(count: number, points: number) {
+  if (
+    count > 0 &&
+    (workspace.inputOriginals ?? []).reduce((n, t) => n + t.points.length, 0) +
+      points >
+      MAX_INPUT_POINTS * 4
+  )
+    throw new Error(
+      "Saved starting versions fill this workspace. Export and remove an input track before importing more.",
+    );
   if (workspace.tracks.length + count > 100)
     throw new Error(
       "The workspace can hold 100 tracks. Remove some tracks before adding more.",
@@ -1203,6 +1246,7 @@ async function importFiles(files?: ImportFile[]) {
     if (tracks.length) {
       checkpoint();
       workspace.tracks.push(...tracks);
+      rememberInputStarts(workspace);
       editWelcome = false;
       workspace.activeId = tracks[0].id;
       showAll = false;
@@ -1244,9 +1288,10 @@ async function exportTrack(track: Track) {
     render();
   }
 }
-function openDialog(content: string, variant?: "about" | "plan") {
+function openDialog(content: string, variant?: "about" | "plan" | "settings") {
   $("dialog").classList.toggle("plan-dialog", variant === "plan");
   $("dialog").classList.toggle("about-dialog", variant === "about");
+  $("dialog").classList.toggle("settings-dialog", variant === "settings");
   $("dialog-content").innerHTML = content;
   $<HTMLDialogElement>("dialog").showModal();
   $("dialog").setAttribute("aria-labelledby", "dialog-title");
@@ -1317,22 +1362,29 @@ function confirmRemoval(
 function dialogHeader(title: string, subtitle = "", branded = false) {
   return `<div class="dialog-heading${branded ? " branded-dialog-heading" : ""}"><div class="dialog-heading-content">${branded ? `<img class="dialog-logo" src="${import.meta.env.BASE_URL}logo.svg" alt="BareGPS" width="36" height="36">` : ""}<div><h2 id="dialog-title">${title}</h2>${subtitle ? `<p>${subtitle}</p>` : ""}</div></div><button class="icon-button" data-close aria-label="Close dialog">${icon("close", 20)}</button></div>`;
 }
-function colourForm(initial: string) {
-  return `<form id="colour-form"><hex-color-picker id="colour-spectrum" color="${initial}"></hex-color-picker><div class="colour-presets" role="group" aria-label="Preset colours">${COLORS.map((color) => `<button type="button" class="colour-preset" data-colour="${color}" style="--line-colour:${color}" aria-label="Use ${color}" aria-pressed="${color === initial}"></button>`).join("")}</div><label class="field-label" for="colour-hex">Hex colour</label><div class="colour-value"><span id="colour-preview" style="--line-colour:${initial}" aria-hidden="true"></span><input id="colour-hex" class="text-input" value="${initial.toUpperCase()}" pattern="#[0-9A-Fa-f]{6}" maxlength="7" spellcheck="false" autocapitalize="characters" required title="Use # followed by six hexadecimal characters"></div><div class="dialog-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button primary">Apply colour</button></div></form>`;
+function colourForm(initial: string, standalone = true) {
+  return `<form id="colour-form"><div class="colour-presets" role="group" aria-label="Preset colours">${INPUT_COLOUR_PRESETS.map(({ name, color }) => `<button type="button" class="colour-preset" data-colour="${color}" style="--line-colour:${color}" aria-label="Use ${name}" title="${name}" aria-pressed="${color === initial}"></button>`).join("")}</div><label class="field-label" for="colour-hex">Hex colour</label><div class="colour-value"><span id="colour-preview" style="--line-colour:${initial}" aria-hidden="true"></span><input id="colour-hex" class="text-input" value="${initial.toUpperCase()}" pattern="#[0-9A-Fa-f]{6}" maxlength="7" spellcheck="false" autocapitalize="characters" required title="Use # followed by six hexadecimal characters"></div><div class="dialog-actions">${standalone ? '<button type="button" class="button secondary" data-close>Cancel</button>' : ""}<button id="apply-colour" class="button primary" disabled>Apply colour</button></div></form>`;
 }
 function openColourPicker(initial: string, apply: (color: string) => void) {
   openDialog(
     `${dialogHeader("Line Colour", "Choose a colour for this input track.")}${colourForm(initial)}`,
   );
-  bindColourPicker(apply);
+  bindColourPicker(initial, apply);
 }
-function bindColourPicker(apply: (color: string) => void) {
-  const spectrum = $<HexColorPicker>("colour-spectrum");
+function bindColourPicker(
+  initial: string,
+  apply: (color: string) => void | boolean,
+  closeAfterApply = true,
+) {
+  let appliedColour = initial;
   const field = $<HTMLInputElement>("colour-hex");
+  const applyButton = $<HTMLButtonElement>("apply-colour");
   function preview(color: string, updateField: boolean) {
-    if (!/^#[0-9a-f]{6}$/i.test(color)) return;
-    spectrum.color = color;
     if (updateField) field.value = color.toUpperCase();
+    applyButton.disabled =
+      !/^#[0-9a-f]{6}$/i.test(field.value) ||
+      field.value.toLowerCase() === appliedColour.toLowerCase();
+    if (!/^#[0-9a-f]{6}$/i.test(color)) return;
     $("colour-preview").style.setProperty("--line-colour", color);
     document
       .querySelectorAll<HTMLButtonElement>("[data-colour]")
@@ -1343,9 +1395,6 @@ function bindColourPicker(apply: (color: string) => void) {
         ),
       );
   }
-  spectrum.addEventListener("color-changed", (event) =>
-    preview(event.detail.value, true),
-  );
   field.oninput = () => preview(field.value, false);
   document
     .querySelectorAll<HTMLButtonElement>("[data-colour]")
@@ -1355,9 +1404,13 @@ function bindColourPicker(apply: (color: string) => void) {
     );
   $("colour-form").onsubmit = (event) => {
     event.preventDefault();
-    if (!field.reportValidity()) return;
-    apply(field.value.toLowerCase());
-    $<HTMLDialogElement>("dialog").close();
+    if (!field.reportValidity() || applyButton.disabled) return;
+    const colour = field.value.toLowerCase();
+    if (apply(colour) === false) return;
+    appliedColour = colour;
+    applyButton.disabled = true;
+    if (closeAfterApply) $<HTMLDialogElement>("dialog").close();
+    else $("colour-status").textContent = "Track colour applied.";
   };
 }
 function rename(track: Track) {
@@ -1762,7 +1815,14 @@ $("create-pdf").onclick = async () => {
     const { routecardPDF } = await import("./routecard-pdf");
     await sharePDF(
       route.name,
-      routecardPDF(route, system, terrain, context.offset, fullRouteCard),
+      routecardPDF(
+        route,
+        system,
+        terrain,
+        context.offset,
+        fullRouteCard,
+        allowPointNaming,
+      ),
     );
   } catch (error) {
     if (!isCancelled(error)) report(error);
@@ -1861,8 +1921,10 @@ function history(back: boolean) {
 $("undo").onclick = () => history(true);
 $("redo").onclick = () => history(false);
 $("settings").onclick = () => {
+  let colourTrack = activeInput() ?? workspace.tracks[0];
+  const colourSection = `<section class="product-colour-settings"><h3 class="settings-colour-heading">Track Colour</h3>${workspace.tracks.length ? `<label class="field-label" for="settings-colour-track">Input track</label><select id="settings-colour-track" class="text-input">${workspace.tracks.map((track) => `<option value="${track.id}" ${track.id === colourTrack?.id ? "selected" : ""}>${esc(track.name)}</option>`).join("")}</select>` : "<p>Open an input track to choose its colour.</p>"}<div id="settings-colour-editor"><fieldset class="settings-colour-fieldset" ${colourTrack ? "" : "disabled"}>${colourForm(colourTrack?.color ?? "#d32f2f", false)}</fieldset></div><p id="colour-status" class="dialog-note" role="status"></p></section>`;
   openDialog(
-    `${dialogHeader("Settings", "", true)}<section class="settings-grid-section"><h3 id="grid-settings-heading">Grid references</h3><p class="system-picker-prompt">Choose a Grid Reference System.</p><label id="available-systems-heading" class="field-label system-picker-label" for="coordinate-system">Available Systems</label><select id="coordinate-system" class="text-input system-picker" aria-labelledby="available-systems-heading">${Object.entries(
+    `${dialogHeader("Settings", "", true)}<div class="settings-dialog-body" role="region" aria-label="Settings options" tabindex="0"><section class="settings-grid-section"><h3 id="grid-settings-heading">Grid references</h3><p class="system-picker-prompt">Choose a Grid Reference System.</p><label id="available-systems-heading" class="field-label system-picker-label" for="coordinate-system">Available Systems</label><select id="coordinate-system" class="text-input system-picker" aria-labelledby="available-systems-heading">${Object.entries(
       coordinateSystems,
     )
       .map(
@@ -1871,34 +1933,36 @@ $("settings").onclick = () => {
       )
       .join(
         "",
-      )}</select></section><section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section><section class="settings-point-naming"><h3>Input Track Editing</h3><p>Set how often editing handles appear. Spacing keeps every input point; simplified copies always use one handle per point. Delete and Trim remove points only from the input. The Edited Route is unchanged.</p><div class="input-handle-options"><label for="settings-handle-interval">Handle every</label><input id="settings-handle-interval" class="text-input" type="number" min="1" max="5000" step="1" inputmode="numeric" value="${inputHandleInterval}"><span>points</span><button id="settings-apply-handles" class="button secondary compact">Apply</button></div><p id="settings-handle-status" class="dialog-note" role="status">Default: 20 points. Endpoints are always included; spacing never removes track points. Fetch Terrain below the Edit map refreshes input heights. Add to Route Plan is below the editing controls; Route Plan is below Input Tracks. Confirm Plan updates the output.</p></section><button class="button primary full" data-close>Done</button>`,
+      )}</select></section>${colourSection}<section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section></div><div class="settings-dialog-actions"><button class="button primary full" data-close>Done</button></div>`,
+    "settings",
   );
-  const handleInterval = $<HTMLInputElement>("settings-handle-interval");
-  handleInterval.oninput = () => {
-    $<HTMLButtonElement>("settings-apply-handles").disabled =
-      !handleInterval.validity.valid || !handleInterval.value;
+  const bindSettingsColour = () => {
+    bindColourPicker(
+      colourTrack?.color ?? "#d32f2f",
+      (colour) => {
+        const track = workspace.tracks.find(
+          (track) => track.id === colourTrack?.id,
+        );
+        if (busy || !track) return false;
+        return commit(() => replace({ ...track, color: colour }));
+      },
+      false,
+    );
   };
-  $("settings-apply-handles").onclick = async () => {
-    if (!handleInterval.reportValidity() || !handleInterval.value) return;
-    inputHandleInterval = Number(handleInterval.value);
-    selectedInputPoint = null;
-    map.resetSelection();
-    render();
-    try {
-      await set(INPUT_HANDLE_KEY, inputHandleInterval);
-      $("settings-handle-status").textContent =
-        "Handle spacing saved on this device.";
-    } catch {
-      $("settings-handle-status").textContent =
-        "Handle spacing changed for this session, but could not be saved on this device.";
-    }
-  };
-  handleInterval.onkeydown = (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      $("settings-apply-handles").click();
-    }
-  };
+  bindSettingsColour();
+  const trackSelector = $<HTMLSelectElement>("settings-colour-track");
+  if (trackSelector)
+    trackSelector.onchange = () => {
+      colourTrack = workspace.tracks.find(
+        (track) => track.id === trackSelector.value,
+      )!;
+      $("settings-colour-editor").innerHTML = colourForm(
+        colourTrack.color,
+        false,
+      );
+      $("colour-status").textContent = "";
+      bindSettingsColour();
+    };
   $("allow-point-naming").onclick = async () => {
     allowPointNaming = !allowPointNaming;
     $("allow-point-naming").setAttribute(
@@ -1930,11 +1994,18 @@ $("settings").onclick = () => {
     }
   };
 };
-$("help").onclick = () =>
+$("help").onclick = () => {
   openDialog(
     `${dialogHeader("BareGPS Track Editor", "", true)}${aboutGuide}`,
     "about",
   );
+  $("about-privacy-link").onclick = (event) => {
+    event.preventDefault();
+    const section = $<HTMLDetailsElement>("about-privacy");
+    section.open = true;
+    section.scrollIntoView({ block: "start" });
+  };
+};
 window.addEventListener("keydown", (e) => {
   if (
     e.key === "Escape" &&
@@ -1980,13 +2051,6 @@ async function pendingFiles() {
 }
 async function init() {
   try {
-    const savedInterval = await get(INPUT_HANDLE_KEY);
-    if (
-      Number.isInteger(savedInterval) &&
-      savedInterval >= 1 &&
-      savedInterval <= MAX_POINTS
-    )
-      inputHandleInterval = savedInterval;
     const savedCoordinates = await get(COORDINATE_KEY);
     allowPointNaming = (await get(POINT_NAMING_KEY)) === true;
     if (isCoordinateSystem(savedCoordinates))
@@ -1997,6 +2061,8 @@ async function init() {
     if (saved) {
       if (validateWorkspace(saved)) {
         workspace = restoreSeparateWorkspace(saved);
+        rememberInputStarts(workspace);
+        editWelcome = !workspace.tracks.length && !workspace.route;
         const t = active();
         if (t)
           workspace.selection = {

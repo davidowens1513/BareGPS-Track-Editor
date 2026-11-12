@@ -3485,3 +3485,162 @@ body:not(.creating) .map-empty {
 body:not(.creating) #map-error {
   top: 40px;
 }
+
+/* Endpoint labels stay readable without a wall of numbered pins. */
+.input-handle.input-endpoint span {
+  font-size: 10px;
+  width: 42px;
+  border-radius: 12px;
+}
+
+/* Keep each action row in its own measured space when editing starts or ends. */
+#input-point-tools {
+  height: auto;
+  min-height: 46px;
+}
+#input-point-tools .drawing-modes {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.input-finish-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  min-height: 46px;
+  border-top: 1px solid var(--border);
+  background: #f7f9f3;
+}
+.input-finish-tools > span {
+  min-width: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.input-finish-tools > button {
+  flex-shrink: 0;
+  min-height: 34px;
+}
+
+/* Fit the terrain label on two lines inside the existing 34px button. */
+#input-terrain {
+  height: 34px;
+  padding-block: 2px;
+  line-height: 12px;
+}
+
+/* Shared phone refinements from Route Maker. */
+* {
+  touch-action: manipulation;
+}
+#input-point-tools .drawing-modes {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+#input-point-tools .drawing-modes button,
+#input-extra-tools .drawing-modes button {
+  min-width: 0;
+  height: 34px;
+  min-height: 34px;
+  padding: 2px 3px;
+  line-height: 1.15;
+  white-space: normal;
+}
+.card-expand-hint {
+  margin: 0 3px 0 8px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.card-expanded .card-expand-hint {
+  display: none;
+}
+.colour-presets {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px 6px;
+  width: 100%;
+  margin: 6px auto 20px;
+}
+.colour-preset {
+  width: 100%;
+  max-width: 36px;
+  aspect-ratio: 1;
+  height: auto;
+  justify-self: center;
+}
+
+:root {
+  --app-safe-area-top: env(safe-area-inset-top, 0px);
+  --app-safe-area-right: env(safe-area-inset-right, 0px);
+  --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-area-left: env(safe-area-inset-left, 0px);
+}
+/* Long dialogs keep their title/close control and actions outside the scrolling body. */
+dialog.about-dialog,
+dialog.settings-dialog {
+  --scrolling-dialog-height: calc(
+    100dvh - 32px - 2 *
+      max(var(--app-safe-area-top), var(--app-safe-area-bottom))
+  );
+  max-height: var(--scrolling-dialog-height);
+  overflow: hidden;
+  padding: 0;
+}
+.about-dialog #dialog-content,
+.settings-dialog #dialog-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(var(--scrolling-dialog-height) - 2px);
+  min-height: 0;
+}
+.about-dialog .dialog-heading,
+.settings-dialog .dialog-heading {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 20px 23px 14px;
+  border-bottom: 1px solid var(--divider);
+  background: white;
+}
+.about-dialog .about-guide,
+.settings-dialog .settings-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 23px 6px;
+}
+.about-dialog-actions,
+.settings-dialog-actions {
+  flex: 0 0 auto;
+  padding: 12px 23px 18px;
+  background: white;
+  border-top: 1px solid var(--divider);
+}
+.about-section-content p > svg {
+  margin-inline: 2px;
+}
+
+.about-notices {
+  margin-bottom: 20px;
+}
+
+.about-notices pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.settings-dialog-actions {
+  border-top: 2px solid var(--divider);
+}
+
+.settings-colour-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+#settings-colour-track {
+  width: 100%;
+  margin-bottom: 12px;
+}

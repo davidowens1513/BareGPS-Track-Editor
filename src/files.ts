@@ -147,7 +147,10 @@ export async function sharePDF(title: string, blob: Blob) {
     return;
   }
   const file = new File([blob], name, { type: "application/pdf" });
-  if (navigator.canShare?.({ files: [file] })) {
+  if (
+    typeof navigator.share === "function" &&
+    navigator.canShare?.({ files: [file] })
+  ) {
     await navigator.share({ title, files: [file] });
     return;
   }

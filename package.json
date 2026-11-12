@@ -1,6 +1,6 @@
 {
   "name": "baregps-track-editor",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "native:sync": "npm run build && cap sync",
+    "native:sync": "npm run build && cap sync && node scripts/distribution/normalize-ios-package.mjs",
     "ios": "cap open ios",
     "android": "cap open android",
     "format": "prettier --write src tests *.ts *.json index.html",
@@ -23,8 +23,7 @@
     "jspdf-autotable": "^5.0.9",
     "leaflet": "^1.9.4",
     "mgrs": "^2.2.0",
-    "proj4": "^2.22.0",
-    "vanilla-colorful": "^0.7.2"
+    "proj4": "^2.22.0"
   },
   "devDependencies": {
     "@capacitor/android": "^8.0.0",

@@ -47,7 +47,7 @@ function checkBound(original: Track, simplified: Track) {
   }
 }
 describe("simplification preview candidate", () => {
-  it("targets ten handles/km, keeps original immutable and makes one handle per point", () => {
+  it("targets ten points/km, keeps the original immutable and reshapes simplified sections smoothly", () => {
     const original = track(),
       before = structuredClone(original);
     const result = simplifyTrack(original);
@@ -70,8 +70,10 @@ describe("simplification preview candidate", () => {
         (p, i) =>
           p.lat !== result.track.points[i].lat ||
           p.lon !== result.track.points[i].lon,
-      ),
-    ).toHaveLength(1);
+      ).length,
+    ).toBeGreaterThan(1);
+    expect(moved.points[3].lon).toBeCloseTo(-5.999);
+    expect(moved.points).toHaveLength(result.track.points.length);
     expect(result.track.terrainNeedsRefresh).toBe(true);
     expect(result.track.points.every((p) => p.time === undefined)).toBe(true);
     checkBound(original, result.track);

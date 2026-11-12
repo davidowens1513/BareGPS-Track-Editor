@@ -1,6 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Native distribution targets handsets; tablets use the web app.
+         compatible-screens controls store filtering, not APK sideloading. -->
+    <supports-screens android:smallScreens="true" android:normalScreens="true"
+        android:largeScreens="false" android:xlargeScreens="false"
+        android:anyDensity="true" />
+    <compatible-screens>
+        <screen android:screenSize="small" android:screenDensity="120" />
+        <screen android:screenSize="small" android:screenDensity="160" />
+        <screen android:screenSize="small" android:screenDensity="213" />
+        <screen android:screenSize="small" android:screenDensity="240" />
+        <screen android:screenSize="small" android:screenDensity="260" />
+        <screen android:screenSize="small" android:screenDensity="280" />
+        <screen android:screenSize="small" android:screenDensity="300" />
+        <screen android:screenSize="small" android:screenDensity="320" />
+        <screen android:screenSize="small" android:screenDensity="340" />
+        <screen android:screenSize="small" android:screenDensity="360" />
+        <screen android:screenSize="small" android:screenDensity="390" />
+        <screen android:screenSize="small" android:screenDensity="400" />
+        <screen android:screenSize="small" android:screenDensity="420" />
+        <screen android:screenSize="small" android:screenDensity="440" />
+        <screen android:screenSize="small" android:screenDensity="450" />
+        <screen android:screenSize="small" android:screenDensity="480" />
+        <screen android:screenSize="small" android:screenDensity="520" />
+        <screen android:screenSize="small" android:screenDensity="560" />
+        <screen android:screenSize="small" android:screenDensity="600" />
+        <screen android:screenSize="small" android:screenDensity="640" />
+        <screen android:screenSize="normal" android:screenDensity="120" />
+        <screen android:screenSize="normal" android:screenDensity="160" />
+        <screen android:screenSize="normal" android:screenDensity="213" />
+        <screen android:screenSize="normal" android:screenDensity="240" />
+        <screen android:screenSize="normal" android:screenDensity="260" />
+        <screen android:screenSize="normal" android:screenDensity="280" />
+        <screen android:screenSize="normal" android:screenDensity="300" />
+        <screen android:screenSize="normal" android:screenDensity="320" />
+        <screen android:screenSize="normal" android:screenDensity="340" />
+        <screen android:screenSize="normal" android:screenDensity="360" />
+        <screen android:screenSize="normal" android:screenDensity="390" />
+        <screen android:screenSize="normal" android:screenDensity="400" />
+        <screen android:screenSize="normal" android:screenDensity="420" />
+        <screen android:screenSize="normal" android:screenDensity="440" />
+        <screen android:screenSize="normal" android:screenDensity="450" />
+        <screen android:screenSize="normal" android:screenDensity="480" />
+        <screen android:screenSize="normal" android:screenDensity="520" />
+        <screen android:screenSize="normal" android:screenDensity="560" />
+        <screen android:screenSize="normal" android:screenDensity="600" />
+        <screen android:screenSize="normal" android:screenDensity="640" />
+    </compatible-screens>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
