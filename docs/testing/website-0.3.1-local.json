@@ -1,0 +1,33 @@
+{
+  "base_url": null,
+  "existing_links_preserved": true,
+  "tools_after_openbaremap": true,
+  "platform_bundles_valid": true,
+  "downloads": [
+    {
+      "path": "tools/baregps-track-editor/0.3.1/android/BareGPS-Track-Editor-0.3.1.apk",
+      "bytes": 4016261,
+      "sha256": "6d29e80c96277933a4b4507a0e603d15ca78fa524b0723db6cc0affbb49ee65a"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.3.1/android/BareGPS-Track-Editor-android-Bundle-0.3.1.zip",
+      "bytes": 3627882,
+      "sha256": "2762ee8e595b44130dbc244f6b04fa1b681a528369b8a218f8712868dbffb9c6"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.3.1/android/instructions.txt",
+      "bytes": 874,
+      "sha256": "caf4aa24ec4e44dcd67510b1b3820bd3c9d77f3cd8de3817682103602e398965"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.3.1/ios/BareGPS-Track-Editor-ios-Bundle-0.3.1.zip",
+      "bytes": 1010758,
+      "sha256": "33a2e861406077da0080aee7a27d33aec05d4800e9af654c053f81eca7a6e188"
+    },
+    {
+      "path": "tools/baregps-track-editor/0.3.1/ios/instructions.txt",
+      "bytes": 1124,
+      "sha256": "0d8f133c31a251cb42f84c96fde89b34cbef97350bfee76bb07bd4958da6c570"
+    }
+  ]
+}

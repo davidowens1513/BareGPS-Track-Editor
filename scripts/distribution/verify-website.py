@@ -28,7 +28,7 @@ if args.previous:
         if href.startswith('tools/baregps-track-editor/'):
             assert (site/href).exists(), 'A previous version download was removed.'
 assert html.index('id="tools"')>html.index('id="openbaremap"')
-assert html.count('Will be available through App Store')==1
+assert 'Xcode source bundle, not an App Store or TestFlight installation.' in html
 assert 'https://github.com/davidowens1513/BareGPS-Track-Editor' in links.hrefs
 prefix=f'tools/baregps-track-editor/{args.version}/'
 manifest=json.loads((site/prefix/'manifest.json').read_text())
