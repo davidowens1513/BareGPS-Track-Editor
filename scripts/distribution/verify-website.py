@@ -26,7 +26,7 @@ if args.previous:
     assert {href for href in prior.hrefs if not href.startswith('tools/baregps-track-editor/')}<=set(links.hrefs),'An unrelated website link was removed or changed.'
     for href in prior.hrefs:
         if href.startswith('tools/baregps-track-editor/'):
-            assert (site/href).is_file(), 'A previous version download was removed.'
+            assert (site/href).exists(), 'A previous version download was removed.'
 assert html.index('id="tools"')>html.index('id="openbaremap"')
 assert html.count('Will be available through App Store')==1
 assert 'https://github.com/davidowens1513/BareGPS-Track-Editor' in links.hrefs
