@@ -1,5 +1,5 @@
 BAREGPS TRACK EDITOR — ANDROID
-Version 0.3.1, build 65
+Version 0.3.2, build 71
 
 Install the release-signed, non-debuggable APK. Keep the same signing identity for future updates. Android phones are targeted; tablets use https://appsbyonzy.dev/tools/baregps-track-editor/.
 
@@ -11,3 +11,5 @@ Maps and terrain require internet. Lines do not automatically follow paths. Keep
 
 Support: appsbyonzy@gmail.com
 Source: https://github.com/davidowens1513/BareGPS-Track-Editor
+
+Inputs remain visible together. The stronger current input has a matching name/colour indicator on the map and in Input Tracks. Tap another line to select it, then tap again for editing handles. Settings can save a default colour before importing.

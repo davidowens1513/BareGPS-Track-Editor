@@ -3644,3 +3644,76 @@ dialog.settings-dialog {
   width: 100%;
   margin-bottom: 12px;
 }
+
+/* Reuse the opening button's exact position without covering the track with a guide. */
+.workflow-open-actions {
+  position: relative;
+  width: max-content;
+  max-width: calc(100% - 76px);
+  margin: 0 auto;
+}
+.workflow-open-actions #empty-import {
+  max-width: 100%;
+}
+#dismiss-another-track {
+  position: absolute;
+  left: calc(100% - 1px);
+  top: 0;
+  width: 38px;
+  height: 100%;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 0 8px 8px 0;
+}
+.another-track-prompt #empty-import {
+  border-radius: 8px 0 0 8px;
+}
+.map-empty.another-track-prompt .edit-workflow {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+.another-track-prompt .edit-workflow > :not(.workflow-open-actions) {
+  visibility: hidden;
+}
+.another-track-prompt .workflow-open-actions button {
+  pointer-events: auto;
+}
+
+/* The same outlined colour dot identifies the current input on map and in its row. */
+.active-dot {
+  width: 9px;
+  height: 9px;
+  background: var(--current-track-colour, var(--green));
+  border: 1px solid #64746a;
+  box-shadow: 0 0 0 2px white;
+}
+.current-input {
+  position: absolute;
+  top: 8px;
+  left: 50px;
+  right: 54px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  max-width: calc(100% - 104px);
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fffffff2;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+  pointer-events: none;
+}
+.current-input .active-dot {
+  margin: 0;
+}
+#current-input-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

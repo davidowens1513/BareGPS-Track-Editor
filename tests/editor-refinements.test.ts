@@ -42,10 +42,15 @@ vi.mock("../src/input-map", () => ({
       setView: vi.fn(),
       getZoom: () => 15,
     };
-    constructor(..._args: unknown[]) {
+    callbacks: any;
+    lastRender: any[] = [];
+    constructor(...args: unknown[]) {
+      this.callbacks = args[2];
       state.maps.push(this);
     }
-    render() {}
+    render(...args: unknown[]) {
+      this.lastRender = args;
+    }
     fit() {
       this.map.invalidateSize();
     }
@@ -319,16 +324,48 @@ it("includes the palette in Settings and applies changes without closing Setting
   field.dispatchEvent(new Event("input"));
   expect(button("apply-colour").disabled).toBe(true);
 });
-it("keeps the Settings palette visible but disabled until an input is opened", async () => {
+it("chooses and saves a default colour before opening an input", async () => {
   await start(false);
   click("settings");
+  const blue = document.querySelector(
+    '[data-colour="#0000ff"]',
+  ) as HTMLButtonElement;
+  expect(blue.matches(":disabled")).toBe(false);
+  blue.click();
   expect(
-    document.querySelectorAll(".settings-dialog-body .colour-preset"),
-  ).toHaveLength(14);
-  expect(
-    (document.querySelector(".settings-colour-fieldset") as HTMLFieldSetElement)
-      .disabled,
-  ).toBe(true);
+    (document.getElementById("colour-hex") as HTMLInputElement).value,
+  ).toBe("#0000FF");
+  expect(button("apply-colour").disabled).toBe(false);
+  click("apply-colour");
+  await vi.waitFor(() =>
+    expect(state.store.get("baregps-track-editor-input-colour-v1")).toBe(
+      "#0000ff",
+    ),
+  );
+  expect(document.getElementById("colour-status")!.textContent).toContain(
+    "new input tracks",
+  );
+  (
+    document.querySelector(
+      ".settings-dialog-actions [data-close]",
+    ) as HTMLButtonElement
+  ).click();
+  state.picks = [
+    {
+      name: "test.gpx",
+      text: '<gpx><trk><trkseg><trkpt lat="53" lon="-6"/><trkpt lat="53.01" lon="-6"/></trkseg></trk></gpx>',
+    },
+  ];
+  click("empty-import");
+  await vi.waitFor(() =>
+    expect(document.getElementById("source-count")!.textContent).toBe("1"),
+  );
+  await vi.waitFor(() =>
+    expect(
+      (state.store.get("baregps-track-editor-workspace-v1") as any).tracks[0]
+        .color,
+    ).toBe("#0000ff"),
+  );
 });
 
 it("applies the Settings colour only to the input chosen in its selector", async () => {
@@ -352,4 +389,133 @@ it("applies the Settings colour only to the input chosen in its selector", async
     expect(saved.tracks[0].color).toBe("#d32f2f");
     expect(saved.tracks[1].color).toBe("#ff69b4");
   });
+});
+
+it("restores the default input colour when Settings is reopened after startup", async () => {
+  state.store.set("baregps-track-editor-input-colour-v1", "#800080");
+  await start(false);
+  click("settings");
+  expect(
+    (document.getElementById("colour-hex") as HTMLInputElement).value,
+  ).toBe("#800080");
+  expect(
+    document
+      .querySelector('[data-colour="#800080"]')!
+      .getAttribute("aria-pressed"),
+  ).toBe("true");
+  expect(button("apply-colour").disabled).toBe(true);
+});
+
+it("offers another import once and hides it even if its file picker is cancelled", async () => {
+  await start(false);
+  expect(document.getElementById("open-track-label")!.textContent).toBe(
+    "Open Track",
+  );
+  expect(button("dismiss-another-track").hidden).toBe(true);
+  const file = {
+    name: "first.gpx",
+    text: '<gpx><trk><trkseg><trkpt lat="53" lon="-6"/><trkpt lat="53.01" lon="-6"/></trkseg></trk></gpx>',
+  };
+  state.picks = [file];
+  click("empty-import");
+  await vi.waitFor(() =>
+    expect(document.getElementById("source-count")!.textContent).toBe("1"),
+  );
+  expect(document.getElementById("map-empty")!.hidden).toBe(false);
+  expect(document.getElementById("open-track-label")!.textContent).toBe(
+    "Open another Track?",
+  );
+  expect(button("dismiss-another-track").hidden).toBe(false);
+  state.picks = [];
+  click("empty-import");
+  expect(document.getElementById("map-empty")!.hidden).toBe(true);
+  await vi.waitFor(() => expect(button("empty-import").disabled).toBe(false));
+  expect(document.getElementById("map-empty")!.hidden).toBe(true);
+  state.picks = [{ ...file, name: "second.gpx" }];
+  click("import");
+  await vi.waitFor(() =>
+    expect(document.getElementById("source-count")!.textContent).toBe("2"),
+  );
+  expect(document.getElementById("map-empty")!.hidden).toBe(true);
+  click("reverse");
+  expect(document.getElementById("map-empty")!.hidden).toBe(true);
+  expect(button("import").disabled).toBe(false);
+});
+
+it("dismisses the second-track prompt with its X without opening the picker", async () => {
+  await start();
+  expect(document.getElementById("map-empty")!.hidden).toBe(false);
+  click("dismiss-another-track");
+  expect(document.getElementById("map-empty")!.hidden).toBe(true);
+  click("reverse");
+  expect(document.getElementById("map-empty")!.hidden).toBe(true);
+  expect(document.getElementById("source-count")!.textContent).toBe("1");
+});
+
+it("keeps inputs together and synchronizes the map label, current row and point editor", async () => {
+  await start(true, false, false, true);
+  const map = state.maps[0];
+  expect(map.lastRender[0].map((t: Track) => t.id)).toEqual([
+    "input-one",
+    "input-two",
+  ]);
+  expect(map.lastRender[3]).toBe(true);
+  expect(document.getElementById("current-input-name")!.textContent).toBe(
+    "Current: Original",
+  );
+  map.callbacks.selectTrack("input-two");
+  expect(map.inputId).toBe("input-two");
+  expect(map.selectedIndex).toBe(null);
+  expect(document.getElementById("current-input-name")!.textContent).toBe(
+    "Current: Second track",
+  );
+  expect(
+    document
+      .querySelector(".track-row.active .track-select")!
+      .getAttribute("data-id"),
+  ).toBe("input-two");
+  expect(
+    document
+      .getElementById("current-input")!
+      .style.getPropertyValue("--current-track-colour"),
+  ).toBe("#16724d");
+  expect(
+    (
+      document.querySelector(".track-row.active .active-dot") as HTMLElement
+    ).style.getPropertyValue("--current-track-colour"),
+  ).toBe("#16724d");
+  expect(map.lastRender[3]).toBe(true);
+  (
+    document.querySelector(
+      '.track-select[data-id="input-one"]',
+    ) as HTMLButtonElement
+  ).click();
+  expect(map.inputId).toBe("input-one");
+  expect(document.getElementById("current-input-name")!.textContent).toBe(
+    "Current: Original",
+  );
+  click("add-route");
+  expect(map.inputId).toBe("input-one");
+  expect(document.getElementById("current-input")!.hidden).toBe(false);
+});
+
+it("makes a newly imported track current while retaining previous inputs on the map", async () => {
+  await start();
+  state.picks = [
+    {
+      name: "new.gpx",
+      text: '<gpx><trk><name>New track</name><trkseg><trkpt lat="53" lon="-6.01"/><trkpt lat="53.01" lon="-6.01"/></trkseg></trk></gpx>',
+    },
+  ];
+  click("import");
+  await vi.waitFor(() =>
+    expect(document.getElementById("source-count")!.textContent).toBe("2"),
+  );
+  const map = state.maps[0];
+  expect(map.lastRender[0]).toHaveLength(2);
+  expect(map.lastRender[3]).toBe(true);
+  expect(map.inputId).not.toBe("input-one");
+  expect(document.getElementById("current-input-name")!.textContent).toContain(
+    "New track",
+  );
 });

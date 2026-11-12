@@ -6,6 +6,7 @@ import type { Track } from "../src/model";
 
 let editor: InputMap;
 const select = vi.fn();
+const selectTrack = vi.fn();
 beforeEach(() => {
   document.body.innerHTML = '<div id="map"></div>';
   const container = document.getElementById("map")!;
@@ -28,6 +29,7 @@ beforeEach(() => {
     "line",
   ).mockImplementation(() => {});
   select.mockClear();
+  selectTrack.mockReset();
   editor = new InputMap(
     () => {},
     () => {},
@@ -35,6 +37,7 @@ beforeEach(() => {
       insert: vi.fn(),
       move: vi.fn(),
       select,
+      selectTrack,
       preview: vi.fn(),
       status: vi.fn(),
     },
@@ -88,4 +91,53 @@ it("keeps a sparse input clean until selected, without discarding geometry", () 
   editor.map.fire("click", { latlng: L.latLng(53.005, -6) });
   expect(document.querySelectorAll(".input-handle")).toHaveLength(3);
   expect(track.points).toHaveLength(3);
+});
+
+it("draws the other inputs faded and selects a tapped line before revealing its handles", () => {
+  const current = render(3);
+  const other: Track = {
+    ...current,
+    id: "other",
+    name: "Other",
+    color: "#0000ff",
+    points: current.points.map((p) => ({ ...p, lon: -5.997 })),
+  };
+  editor.render([current, other], current, { start: 0, end: 2 }, true);
+  expect(TrackMap.prototype["line"]).toHaveBeenCalledWith(
+    other.points,
+    other.color,
+    3,
+    0.65,
+  );
+  selectTrack.mockImplementation((id) => {
+    editor.inputId = id;
+    editor.render([current, other], other, { start: 0, end: 2 }, true);
+  });
+  editor.map.fire("click", { latlng: L.latLng(53.005, -5.997) });
+  expect(selectTrack).toHaveBeenCalledWith("other");
+  expect(select).not.toHaveBeenCalled();
+  expect(
+    [...document.querySelectorAll(".input-handle")].map((m) => m.textContent),
+  ).toEqual(["Start", "Finish"]);
+  editor.map.fire("click", { latlng: L.latLng(53.005, -5.997) });
+  expect(select).toHaveBeenCalledWith(1);
+  expect(document.querySelectorAll(".input-handle")).toHaveLength(3);
+});
+
+it("keeps the current input at an overlap and cannot select hidden tracks", () => {
+  const current = render(3);
+  const coincident = { ...current, id: "coincident", name: "Coincident" };
+  editor.render([current, coincident], current, { start: 0, end: 2 }, true);
+  editor.map.fire("click", { latlng: L.latLng(53.005, -6) });
+  expect(selectTrack).not.toHaveBeenCalled();
+  expect(select).toHaveBeenCalledWith(1);
+  const other = {
+    ...current,
+    id: "other",
+    points: current.points.map((p) => ({ ...p, lon: -5.997 })),
+  };
+  editor.resetSelection();
+  editor.render([current, other], current, { start: 0, end: 2 }, false);
+  editor.map.fire("click", { latlng: L.latLng(53.005, -5.997) });
+  expect(selectTrack).not.toHaveBeenCalled();
 });

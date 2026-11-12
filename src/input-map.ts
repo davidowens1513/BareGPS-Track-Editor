@@ -12,6 +12,7 @@ type InputCallbacks = {
   insert: (index: number, point: Point) => void;
   move: (index: number, point: Point, handles: number[]) => void;
   select: (index: number | null) => void;
+  selectTrack: (id: string) => void;
   preview: (track: Track) => void;
   status: (visible: number, total: number) => void;
 };
@@ -23,6 +24,7 @@ export class InputMap extends TrackMap {
   tool: InputPointTool = "move";
   selectedIndex: number | null = null;
   private current: Track | null = null;
+  private visibleInputs: Track[] = [];
   private inputLines = L.layerGroup();
   private dragging = false;
   private previewFrame = 0;
@@ -45,12 +47,29 @@ export class InputMap extends TrackMap {
         Date.now() < this.ignoreClickUntil
       )
         return;
+      // Choose the closest visible line before doing any point editing.
+      // Prefer the current input at crossings and on coincident sections.
+      const segment = this.closestSegment(event.latlng);
+      let nearest = segment?.distance ?? 24;
+      let otherInput: Track | undefined;
+      for (const track of this.visibleInputs) {
+        if (track.id === this.current.id) continue;
+        const candidate = this.closestSegment(event.latlng, track);
+        if (candidate && candidate.distance < nearest - 0.5) {
+          nearest = candidate.distance;
+          otherInput = track;
+        }
+      }
+      if (otherInput) {
+        this.resetSelection();
+        this.callbacks.selectTrack(otherInput.id);
+        return;
+      }
       const point = { lat: event.latlng.lat, lon: event.latlng.wrap().lng };
       if (this.tool === "add") {
         this.callbacks.insert(this.current.points.length, point);
         return;
       }
-      const segment = this.closestSegment(event.latlng);
       if (!segment) {
         if (this.tool === "move") {
           this.resetSelection();
@@ -83,6 +102,7 @@ export class InputMap extends TrackMap {
     showAll: boolean,
   ) {
     this.lastRender = [tracks, active, selection, showAll];
+    this.visibleInputs = showAll ? tracks : active ? [active] : [];
     if (!this.pointEditing || !active || active.id !== this.inputId) {
       this.current = null;
       super.render(tracks, active, selection, showAll);
@@ -97,7 +117,7 @@ export class InputMap extends TrackMap {
     if (showAll)
       for (const track of tracks)
         if (track.id !== active.id)
-          this.line(track.points, track.color, 3, 0.35);
+          this.line(track.points, track.color, 3, 0.65);
     this.line(active.points, active.color, 4, 1, this.inputLines);
     // 72 CSS pixels gives fingers room, independent of recording density.
     const centre = this.map.latLngToContainerPoint(this.map.getCenter());
@@ -241,8 +261,9 @@ export class InputMap extends TrackMap {
   }
   private closestSegment(
     position: L.LatLng,
-  ): { end: number; closestPoint: number } | null {
-    if (!this.current) return null;
+    track = this.current,
+  ): { end: number; closestPoint: number; distance: number } | null {
+    if (!track) return null;
     const click = this.map.latLngToLayerPoint(position),
       radius = 24;
     const southWest = this.map.layerPointToLatLng(
@@ -250,10 +271,11 @@ export class InputMap extends TrackMap {
     );
     const northEast = this.map.layerPointToLatLng(click.add([radius, -radius]));
     let best = radius,
-      result: { end: number; closestPoint: number } | null = null;
-    for (let i = 1; i < this.current.points.length; i++) {
-      const a = this.current.points[i - 1],
-        b = this.current.points[i];
+      result: { end: number; closestPoint: number; distance: number } | null =
+        null;
+    for (let i = 1; i < track.points.length; i++) {
+      const a = track.points[i - 1],
+        b = track.points[i];
       if (
         Math.max(a.lat, b.lat) < southWest.lat ||
         Math.min(a.lat, b.lat) > northEast.lat ||
@@ -267,6 +289,7 @@ export class InputMap extends TrackMap {
       if (distance <= best) {
         best = distance;
         result = {
+          distance,
           end: i,
           closestPoint:
             click.distanceTo(from) < click.distanceTo(to) ? i - 1 : i,
