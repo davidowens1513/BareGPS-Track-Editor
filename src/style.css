@@ -3717,3 +3717,20 @@ dialog.settings-dialog {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.about-section-content ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.about-section-content li + li {
+  margin-top: 8px;
+}
+
+.about-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
+}

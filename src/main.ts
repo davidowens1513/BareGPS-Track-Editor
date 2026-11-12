@@ -2058,12 +2058,6 @@ $("help").onclick = () => {
     `${dialogHeader("BareGPS Track Editor", "", true)}${aboutGuide}`,
     "about",
   );
-  $("about-privacy-link").onclick = (event) => {
-    event.preventDefault();
-    const section = $<HTMLDetailsElement>("about-privacy");
-    section.open = true;
-    section.scrollIntoView({ block: "start" });
-  };
 };
 window.addEventListener("keydown", (e) => {
   if (

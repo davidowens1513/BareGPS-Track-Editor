@@ -188,10 +188,25 @@ it("pins Settings and About actions outside their scrolling content", async () =
   expect(
     document.querySelector(".about-dialog-actions [data-close]")!.textContent,
   ).toBe("Done");
-  click("about-privacy-link");
+  expect(document.getElementById("about-privacy-link")).toBeNull();
+  expect(document.querySelectorAll(".about-control svg")).toHaveLength(6);
+  const headings = [
+    ...document.querySelectorAll(".about-section summary h3"),
+  ].map((h) => h.textContent);
+  expect(headings).toContain("Heights");
+  expect(headings).toContain("Route Cards");
+  expect(headings).toContain("Support");
+  expect(headings).toContain("Credits");
   expect(
-    (document.getElementById("about-privacy") as HTMLDetailsElement).open,
-  ).toBe(true);
+    document.querySelector(
+      'a[href="https://mixolydian-flyingfish-56d.notion.site/BareGPS-Track-Editor-Support-4160e3f94c358006859fdefe0d71a662"]',
+    ),
+  ).not.toBeNull();
+  expect(
+    document.querySelector(
+      'a[href="https://mixolydian-flyingfish-56d.notion.site/BareGPS-Track-Editor-Privacy-Policy-4160e3f94c35801d8ddbc7deb522cf22"]',
+    ),
+  ).not.toBeNull();
   expect(document.querySelector(".about-notices pre")!.textContent).toContain(
     "MIT License",
   );

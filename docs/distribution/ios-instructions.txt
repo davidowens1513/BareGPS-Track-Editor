@@ -1,5 +1,5 @@
 BAREGPS TRACK EDITOR — IPHONE
-Version 0.3.2, build 71
+Version 0.3.2, build 74
 
 This download is an Xcode source bundle with prebuilt web assets. It is not an installable IPA, App Store or TestFlight release.
 

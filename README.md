@@ -2,7 +2,7 @@
 
 Import, edit, simplify and combine GPX tracks into a walking route.
 
-**Version 0.3.2 · build 71.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
+**Version 0.3.2 · build 74.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
 
 [Open in browser](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and instructions](https://appsbyonzy.dev/#baregps-track-editor) · [Development and validation notes](docs/development.md)
 
@@ -63,4 +63,4 @@ npm run android
 
 Provided **as is**, without warranty. Review routes and exported files before relying on them outdoors.
 
-Copyright © AppsbyOnzy. [Support](mailto:appsbyonzy@gmail.com). No source licence is granted by this README; third-party licences remain applicable.
+Copyright © AppsbyOnzy. [Support Page](https://mixolydian-flyingfish-56d.notion.site/BareGPS-Track-Editor-Support-4160e3f94c358006859fdefe0d71a662) · [Privacy Policy](https://mixolydian-flyingfish-56d.notion.site/BareGPS-Track-Editor-Privacy-Policy-4160e3f94c35801d8ddbc7deb522cf22) · [Email](mailto:appsbyonzy@gmail.com). No source licence is granted by this README; third-party licences remain applicable.

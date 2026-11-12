@@ -2,6 +2,15 @@
 
 These notes describe development history and validation, separately from the as-is product description in the [README](../README.md).
 
+## About and support update — build 74
+
+- About uses a concise bullet guide, separate Heights and Route Cards sections, and matching icons for About, Settings, Fit, Expand, forward and back.
+- Heights explains when and how to fetch terrain and how changes relate to plan copies.
+- Support Page and Privacy Policy open the published Track Editor pages, each with the red app logo. Support contains help and contact details.
+- Redundant shortcut links were removed; Credits retains attribution and licences.
+
+Validation: 18 targeted app-flow checks, TypeScript and production/native builds passed. Build 74 installed and launched on iPhone and Samsung Android. Publication validation is recorded separately in docs/testing.
+
 ## Release 0.3.2, build 71
 
 - Settings can save a default input colour before any track is loaded. New imports use that choice; an open input can still be recoloured individually.
