@@ -26,6 +26,7 @@ export interface Selection {
 export interface Workspace {
   version: 1;
   tracks: Track[];
+  inputOriginals?: Track[];
   routePlan?: Track[];
   confirmedPlan?: string[];
   route: Track | null;
@@ -45,6 +46,22 @@ export const COLORS = [
   "#c35d68",
   "#278aa2",
   "#8b674a",
+];
+export const INPUT_COLOUR_PRESETS = [
+  { name: "Red", color: "#ff0000" },
+  { name: "Green", color: "#16724d" },
+  { name: "Yellow", color: "#ffff00" },
+  { name: "Blue", color: "#0000ff" },
+  { name: "White", color: "#ffffff" },
+  { name: "Black", color: "#000000" },
+  { name: "Grey", color: "#808080" },
+  { name: "Orange", color: "#ff8000" },
+  { name: "Lime", color: "#80c000" },
+  { name: "Turquoise", color: "#00a6a6" },
+  { name: "Sky blue", color: "#00bfff" },
+  { name: "Pink", color: "#ff69b4" },
+  { name: "Purple", color: "#800080" },
+  { name: "Brown", color: "#8b4513" },
 ];
 export const uid = () => crypto.randomUUID();
 export const emptyWorkspace = (): Workspace => ({
@@ -343,6 +360,18 @@ export function validateWorkspace(value: unknown): value is Workspace {
     !Number.isInteger(w.selection.end)
   )
     return false;
+  if (w.inputOriginals !== undefined) {
+    if (!Array.isArray(w.inputOriginals) || w.inputOriginals.length > 100)
+      return false;
+    const ids = new Set(w.tracks.map((track) => track?.id));
+    if (
+      new Set(w.inputOriginals.map((track) => track?.id)).size !==
+        w.inputOriginals.length ||
+      !w.inputOriginals.every((track) => track && ids.has(track.id)) ||
+      !validateWorkspace({ ...emptyWorkspace(), tracks: w.inputOriginals })
+    )
+      return false;
+  }
   let total = 0;
   const all = [
     ...w.tracks,

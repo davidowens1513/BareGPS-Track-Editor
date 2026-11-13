@@ -2,8 +2,7 @@ import L from "leaflet";
 import { TrackMap } from "./map";
 import { isClosedRoute } from "./track-geometry";
 import {
-  inputHandleIndices,
-  MAX_VISIBLE_INPUT_HANDLES,
+  localInputHandleIndices,
   reshapeInputHandle,
   type InputPointTool,
 } from "./input-edit";
@@ -12,7 +11,8 @@ import type { Point, Selection, Track } from "./model";
 type InputCallbacks = {
   insert: (index: number, point: Point) => void;
   move: (index: number, point: Point, handles: number[]) => void;
-  select: (index: number) => void;
+  select: (index: number | null) => void;
+  selectTrack: (id: string) => void;
   preview: (track: Track) => void;
   status: (visible: number, total: number) => void;
 };
@@ -22,10 +22,9 @@ export class InputMap extends TrackMap {
   pointEditing = false;
   enabled = true;
   tool: InputPointTool = "move";
-  interval = 20;
   selectedIndex: number | null = null;
-  readonly extraHandles = new Set<number>();
   private current: Track | null = null;
+  private visibleInputs: Track[] = [];
   private inputLines = L.layerGroup();
   private dragging = false;
   private previewFrame = 0;
@@ -48,17 +47,40 @@ export class InputMap extends TrackMap {
         Date.now() < this.ignoreClickUntil
       )
         return;
+      // Choose the closest visible line before doing any point editing.
+      // Prefer the current input at crossings and on coincident sections.
+      const segment = this.closestSegment(event.latlng);
+      let nearest = segment?.distance ?? 24;
+      let otherInput: Track | undefined;
+      for (const track of this.visibleInputs) {
+        if (track.id === this.current.id) continue;
+        const candidate = this.closestSegment(event.latlng, track);
+        if (candidate && candidate.distance < nearest - 0.5) {
+          nearest = candidate.distance;
+          otherInput = track;
+        }
+      }
+      if (otherInput) {
+        this.resetSelection();
+        this.callbacks.selectTrack(otherInput.id);
+        return;
+      }
       const point = { lat: event.latlng.lat, lon: event.latlng.wrap().lng };
       if (this.tool === "add") {
         this.callbacks.insert(this.current.points.length, point);
         return;
       }
-      const segment = this.closestSegment(event.latlng);
-      if (!segment) return;
+      if (!segment) {
+        if (this.tool === "move") {
+          this.resetSelection();
+          this.callbacks.select(null);
+          this.redraw();
+        }
+        return;
+      }
       if (this.tool === "insert") this.callbacks.insert(segment.end, point);
       else {
         this.selectedIndex = segment.closestPoint;
-        this.extraHandles.add(segment.closestPoint);
         this.callbacks.select(segment.closestPoint);
         this.redraw();
       }
@@ -69,7 +91,6 @@ export class InputMap extends TrackMap {
   }
   resetSelection() {
     this.selectedIndex = null;
-    this.extraHandles.clear();
   }
   private redraw() {
     if (this.lastRender) this.render(...this.lastRender);
@@ -81,6 +102,7 @@ export class InputMap extends TrackMap {
     showAll: boolean,
   ) {
     this.lastRender = [tracks, active, selection, showAll];
+    this.visibleInputs = showAll ? tracks : active ? [active] : [];
     if (!this.pointEditing || !active || active.id !== this.inputId) {
       this.current = null;
       super.render(tracks, active, selection, showAll);
@@ -95,27 +117,51 @@ export class InputMap extends TrackMap {
     if (showAll)
       for (const track of tracks)
         if (track.id !== active.id)
-          this.line(track.points, track.color, 3, 0.35);
+          this.line(track.points, track.color, 3, 0.65);
     this.line(active.points, active.color, 4, 1, this.inputLines);
-    const extras = [
-      ...this.extraHandles,
-      ...(this.selectedIndex === null ? [] : [this.selectedIndex]),
-    ];
-    const handles = inputHandleIndices(active, this.interval, extras);
-    const bounds = this.map.getBounds().pad(0.1);
-    const nearby = handles.filter((i) =>
-      bounds.contains([active.points[i].lat, active.points[i].lon]),
+    // 72 CSS pixels gives fingers room, independent of recording density.
+    const centre = this.map.latLngToContainerPoint(this.map.getCenter());
+    const spacing = Math.max(
+      10,
+      this.map.distance(
+        this.map.containerPointToLatLng(centre),
+        this.map.containerPointToLatLng(centre.add([72, 0])),
+      ),
     );
-    const stride = Math.max(
-      1,
-      Math.ceil(nearby.length / (MAX_VISIBLE_INPUT_HANDLES - 3)),
-    );
-    const visible = new Set(nearby.filter((_, i) => i % stride === 0));
+    const local =
+      this.selectedIndex === null
+        ? []
+        : localInputHandleIndices(active, this.selectedIndex, spacing);
+    const visible = new Set<number>();
+    // Give the selected handle priority where a route doubles back on itself.
+    const candidates =
+      this.selectedIndex === null
+        ? []
+        : [
+            this.selectedIndex,
+            ...local.filter((i) => i !== this.selectedIndex),
+          ];
+    for (const index of candidates) {
+      const point = this.map.latLngToContainerPoint([
+        active.points[index].lat,
+        active.points[index].lon,
+      ]);
+      if (
+        [...visible].every(
+          (i) =>
+            point.distanceTo(
+              this.map.latLngToContainerPoint([
+                active.points[i].lat,
+                active.points[i].lon,
+              ]),
+            ) >= 52,
+        )
+      )
+        visible.add(index);
+    }
     visible.add(0);
     visible.add(active.points.length - 1);
-    if (this.selectedIndex !== null && active.points[this.selectedIndex])
-      visible.add(this.selectedIndex);
-    this.callbacks.status(visible.size, handles.length);
+    this.callbacks.status(visible.size, active.points.length);
     const closed = isClosedRoute(active);
     const markers = new Map<number, L.Marker>();
     for (const index of visible) {
@@ -127,17 +173,26 @@ export class InputMap extends TrackMap {
             ? 19
             : 0
         : 0;
+      let dragHandles = localInputHandleIndices(active, index, spacing);
+      const endpoint =
+        index === 0
+          ? "Start"
+          : index === active.points.length - 1
+            ? "Finish"
+            : null;
       const marker = L.marker([point.lat, point.lon], {
         draggable: this.enabled,
         autoPan: true,
         bubblingMouseEvents: false,
         keyboard: true,
-        title: `Input point ${index + 1} · drag to reshape`,
+        title: endpoint
+          ? `${endpoint} · drag to reshape`
+          : `Input point ${index + 1} · drag to reshape`,
         icon: L.divIcon({
-          className: `track-handle input-handle${this.selectedIndex === index ? " selected" : ""}`,
-          html: `<span style="--input-colour:${active.color}">${index + 1}</span>`,
-          iconSize: [32, 40],
-          iconAnchor: [16 - offset, 36],
+          className: `track-handle input-handle${endpoint ? " input-endpoint" : ""}${this.selectedIndex === index ? " selected" : ""}`,
+          html: `<span style="--input-colour:${active.color}">${endpoint ?? index + 1}</span>`,
+          iconSize: [endpoint ? 42 : 32, 40],
+          iconAnchor: [(endpoint ? 21 : 16) - offset, 36],
         }),
       }).addTo(this.layers);
       markers.set(index, marker);
@@ -148,6 +203,7 @@ export class InputMap extends TrackMap {
       });
       marker.on("dragstart", () => {
         this.dragging = true;
+        dragHandles = localInputHandleIndices(active, index, spacing);
         this.selectedIndex = index;
         this.callbacks.select(index);
       });
@@ -158,7 +214,7 @@ export class InputMap extends TrackMap {
             active,
             index,
             { lat: position.lat, lon: position.wrap().lng },
-            handles,
+            dragHandles,
           );
           this.inputLines.clearLayers();
           // Keep live dragging responsive; the complete geometry is restored on drop.
@@ -166,16 +222,20 @@ export class InputMap extends TrackMap {
           const display = changed.points.filter(
             (p, i) =>
               i % step === 0 ||
+              changed.points[i] !== active.points[i] ||
               i === index ||
               i === changed.points.length - 1 ||
               !!p.gapBefore !== !!changed.points[i + 1]?.gapBefore ||
               !!p.gapBefore !== !!changed.points[i - 1]?.gapBefore,
           );
           this.line(display, active.color, 4, 1, this.inputLines);
-          if (closed && (index === 0 || index === active.points.length - 1))
-            markers
-              .get(index === 0 ? active.points.length - 1 : 0)
-              ?.setLatLng(position);
+          for (const [other, otherMarker] of markers) {
+            if (other !== index)
+              otherMarker.setLatLng([
+                changed.points[other].lat,
+                changed.points[other].lon,
+              ]);
+          }
           this.callbacks.preview(changed);
         } catch {
           /* Invalid previews are rejected with a message on drop. */
@@ -193,7 +253,7 @@ export class InputMap extends TrackMap {
         this.callbacks.move(
           index,
           { lat: point.lat, lon: point.wrap().lng },
-          handles,
+          dragHandles,
         );
         this.redraw();
       });
@@ -201,8 +261,9 @@ export class InputMap extends TrackMap {
   }
   private closestSegment(
     position: L.LatLng,
-  ): { end: number; closestPoint: number } | null {
-    if (!this.current) return null;
+    track = this.current,
+  ): { end: number; closestPoint: number; distance: number } | null {
+    if (!track) return null;
     const click = this.map.latLngToLayerPoint(position),
       radius = 24;
     const southWest = this.map.layerPointToLatLng(
@@ -210,10 +271,11 @@ export class InputMap extends TrackMap {
     );
     const northEast = this.map.layerPointToLatLng(click.add([radius, -radius]));
     let best = radius,
-      result: { end: number; closestPoint: number } | null = null;
-    for (let i = 1; i < this.current.points.length; i++) {
-      const a = this.current.points[i - 1],
-        b = this.current.points[i];
+      result: { end: number; closestPoint: number; distance: number } | null =
+        null;
+    for (let i = 1; i < track.points.length; i++) {
+      const a = track.points[i - 1],
+        b = track.points[i];
       if (
         Math.max(a.lat, b.lat) < southWest.lat ||
         Math.min(a.lat, b.lat) > northEast.lat ||
@@ -227,6 +289,7 @@ export class InputMap extends TrackMap {
       if (distance <= best) {
         best = distance;
         result = {
+          distance,
           end: i,
           closestPoint:
             click.distanceTo(from) < click.distanceTo(to) ? i - 1 : i,

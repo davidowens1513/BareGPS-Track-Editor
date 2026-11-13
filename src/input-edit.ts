@@ -2,7 +2,35 @@ import { distance, MAX_POINTS, type Point, type Track } from "./model";
 import { isClosedRoute } from "./track-geometry";
 
 export type InputPointTool = "move" | "add" | "insert";
-export const MAX_VISIBLE_INPUT_HANDLES = 200;
+/** A small local editing group, spaced by ground distance at the current zoom. */
+export function localInputHandleIndices(
+  track: Track,
+  selected: number,
+  spacingMetres: number,
+): number[] {
+  validIndex(track, selected);
+  const spacing = Math.max(1, spacingMetres);
+  const indices = new Set([selected]);
+  for (const direction of [-1, 1]) {
+    let travelled = 0,
+      count = 0;
+    for (
+      let i = selected + direction;
+      i >= 0 && i < track.points.length;
+      i += direction
+    ) {
+      const edge = direction > 0 ? i : i + 1;
+      if (track.points[edge].gapBefore) break;
+      travelled += distance(track.points[i - direction], track.points[i]);
+      if (travelled >= spacing) {
+        indices.add(i);
+        travelled = 0;
+        if (++count === 3) break;
+      }
+    }
+  }
+  return [...indices].sort((a, b) => a - b);
+}
 
 function validCoordinate(point: Point) {
   if (
@@ -97,7 +125,9 @@ export function deleteInputPoint(track: Track, index: number): Track {
   return { ...track, points };
 }
 
-/** Taper displacement to zero at the adjacent handles, retaining every dense point. */
+/** Smoothly displace a section, widening the transition for larger drags.
+ * Every original point is retained. Segment boundaries never move as a side effect.
+ */
 export function reshapeInputHandle(
   track: Track,
   index: number,
@@ -106,6 +136,7 @@ export function reshapeInputHandle(
 ): Track {
   validIndex(track, index);
   validCoordinate(target);
+  const displacement = distance(track.points[index], target);
   const anchors = [
     ...new Set([...handles, 0, track.points.length - 1, index]),
   ].sort((a, b) => a - b);
@@ -114,9 +145,31 @@ export function reshapeInputHandle(
   const moving = closed ? [0, track.points.length - 1] : [index];
   const weights = new Map<number, number>();
   for (const handle of moving) {
-    const position = anchors.indexOf(handle),
-      left = anchors[Math.max(0, position - 1)],
-      right = anchors[Math.min(anchors.length - 1, position + 1)];
+    const position = anchors.indexOf(handle);
+    // Ignore point density: allow at least twice the drag distance for the taper.
+    // Stop at GPX segment boundaries so a nearby disconnected section stays intact.
+    const boundary = (direction: number, anchor: number) => {
+      let i = handle,
+        length = 0;
+      while (i + direction >= 0 && i + direction < track.points.length) {
+        const next = i + direction;
+        if (track.points[direction > 0 ? next : i].gapBefore) break;
+        length += distance(track.points[i], track.points[next]);
+        i = next;
+        if (
+          (direction < 0 ? i <= anchor : i >= anchor) &&
+          length >= displacement * 2
+        )
+          break;
+      }
+      if (i !== handle && length < displacement * 1.5)
+        throw new Error(
+          "That move is too large to reshape smoothly here. Try a smaller move, or move the section’s endpoint.",
+        );
+      return i;
+    };
+    const left = boundary(-1, anchors[Math.max(0, position - 1)]),
+      right = boundary(1, anchors[Math.min(anchors.length - 1, position + 1)]);
     for (const neighbour of [left, right])
       if (
         neighbour !== handle &&
@@ -138,10 +191,10 @@ export function reshapeInputHandle(
         const fraction = length
           ? cumulative[i - from] / length
           : (i - from) / (to - from);
-        weights.set(
-          i,
-          Math.max(weights.get(i) ?? 0, rising ? fraction : 1 - fraction),
-        );
+        const progress = rising ? fraction : 1 - fraction;
+        // Zero slope at both ends and at the dragged point avoids a pointed tent.
+        const smooth = progress * progress * (3 - 2 * progress);
+        weights.set(i, Math.max(weights.get(i) ?? 0, smooth));
       }
     };
     ramp(left, handle, true);

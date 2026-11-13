@@ -1,0 +1,12 @@
+{
+  "version": "0.3.2",
+  "build": 71,
+  "website": "https://appsbyonzy.dev/#baregps-track-editor",
+  "cloudflare_deployment": "Success",
+  "live_page_version_verified": true,
+  "downloaded_apk_sha256": "bc485406f2326f51203e41e4476e39c18d9dfe27bd9203ec4db2e98875eb2d02",
+  "matches_release_manifest": true,
+  "source_commit": "02c0afe1ecb71e0ac623c34f7df369187ba8e74b",
+  "unit_checks_passed": 116,
+  "readme": "Current product description; development and validation in docs/development.md"
+}

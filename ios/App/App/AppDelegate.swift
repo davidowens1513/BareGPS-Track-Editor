@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 import UniformTypeIdentifiers
 
 @UIApplicationMain
@@ -14,6 +15,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 final class BareBridgeViewController: CAPBridgeViewController {
+    override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {
+        // WKWebView can ignore CSS touch-action and Capacitor's zoomEnabled=false
+        // for double taps. Keep only the native app viewport fixed; Leaflet owns
+        // map pinch/double-tap zoom, and the public web viewport stays scalable.
+        configuration.ignoresViewportScaleLimits = false
+        let viewportScript = WKUserScript(source: """
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                viewport.content = 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+            }
+            """, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        configuration.userContentController.addUserScript(viewportScript)
+        return super.webView(with: frame, configuration: configuration)
+    }
+
     override func capacitorDidLoad() { bridge?.registerPluginInstance(BareFilesPlugin()) }
 }
 

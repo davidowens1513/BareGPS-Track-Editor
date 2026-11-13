@@ -251,6 +251,7 @@ export class TrackMap {
     b.setIcon(this.handleIcon("B", overlap ? 19 : 0));
   }
   fit(tracks: Track[], selection?: Selection) {
+    this.map.invalidateSize({ pan: false });
     const coords = tracks.flatMap((t) =>
       (selection ? selectedPoints(t, selection) : t.points).map(
         (p) => [p.lat, p.lon] as L.LatLngTuple,

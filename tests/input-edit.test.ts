@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   inputHandleIndices,
+  localInputHandleIndices,
   insertInputPoint,
   deleteInputPoint,
   reshapeInputHandle,
@@ -210,4 +211,79 @@ it("identifies missing heights and marks only missing or changed legs while pres
   expect(needsTerrain(completed)).toBe(false);
   t.points[3].gapBefore = true;
   expect(needsTerrain(t)).toBe(true);
+});
+
+describe("clean-line section editing", () => {
+  it("keeps handles local and spaced by distance on dense and sparse recordings", () => {
+    const dense = input(1001);
+    const local = localInputHandleIndices(dense, 500, 100);
+    expect(local).toHaveLength(7);
+    expect(local).toContain(500);
+    expect(local[0]).toBeGreaterThan(470);
+    expect(local.at(-1)).toBeLessThan(530);
+    const fine = localInputHandleIndices(dense, 500, 20);
+    expect(fine[0]).toBeGreaterThan(local[0]);
+    const sparse = input(3);
+    expect(localInputHandleIndices(sparse, 1, 10)).toEqual([0, 1, 2]);
+    dense.points[501].gapBefore = true;
+    expect(
+      localInputHandleIndices(dense, 500, 100).every((i) => i <= 500),
+    ).toBe(true);
+  });
+  it("widens a large drag even when every recorded point is an editing handle", () => {
+    const track = input(1001);
+    const changed = reshapeInputHandle(
+      track,
+      500,
+      { lat: track.points[500].lat, lon: -5.999 },
+      [499, 500, 501],
+    );
+    const shift = changed.points[500].lon - track.points[500].lon;
+    // Adjacent dense points follow almost the whole movement, avoiding a single-point spike.
+    expect((changed.points[499].lon + 6) / shift).toBeGreaterThan(0.98);
+    expect((changed.points[501].lon + 6) / shift).toBeGreaterThan(0.98);
+    expect(changed.points[500].lon).toBeCloseTo(-5.999, 8);
+    expect(changed.points[480]).toBe(track.points[480]);
+    expect(changed.points[520]).toBe(track.points[520]);
+    expect(changed.points).toHaveLength(track.points.length);
+    expect(track.points[500].lon).toBe(-6);
+  });
+  it("blends gently at fixed anchors and at the moved point", () => {
+    const track = input(101);
+    const changed = reshapeInputHandle(
+      track,
+      50,
+      { lat: track.points[50].lat, lon: -5.999 },
+      [0, 50, 100],
+    );
+    const shift = changed.points[50].lon + 6;
+    expect((changed.points[1].lon + 6) / shift).toBeLessThan(0.002);
+    expect((changed.points[49].lon + 6) / shift).toBeGreaterThan(0.998);
+    expect(changed.points[0]).toBe(track.points[0]);
+    expect(changed.points[100].lon).toBe(track.points[100].lon);
+  });
+  it("does not reshape a disconnected segment across a gap", () => {
+    const track = input(101);
+    track.points[55].gapBefore = true;
+    const changed = reshapeInputHandle(
+      track,
+      50,
+      { lat: track.points[50].lat, lon: -5.9999 },
+      [0, 50, 100],
+    );
+    expect(changed.points.slice(55)).toEqual(track.points.slice(55));
+    expect(changed.points[54].lon).toBe(track.points[54].lon);
+  });
+  it("rejects moves with insufficient room to blend, preserving the original", () => {
+    const track = input(3);
+    expect(() =>
+      reshapeInputHandle(
+        track,
+        1,
+        { lat: track.points[1].lat, lon: -5.99 },
+        [0, 1, 2],
+      ),
+    ).toThrow(/too large/);
+    expect(track.points.every((p) => p.lon === -6)).toBe(true);
+  });
 });

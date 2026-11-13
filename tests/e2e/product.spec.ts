@@ -45,7 +45,7 @@ test("standalone Editor imports, confirms and saves without a Create mode", asyn
     page.getByRole("heading", { name: "Route Colour", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Input Track Editing", exact: true }),
+    page.getByRole("heading", { name: "Track Colour", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.locator("#help").click();

@@ -30,3 +30,7 @@ node_modules
 android/app/build
 android/build
 .vite
+
+# Host IDE state and duplicate local sync metadata
+.idea/
+ios/App/App/config 2.xml
