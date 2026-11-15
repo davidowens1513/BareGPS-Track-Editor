@@ -3825,3 +3825,31 @@ dialog.settings-dialog {
   padding: 5px 8px;
   white-space: normal;
 }
+
+.map-layer-picker {
+  position: absolute;
+  top: 52px;
+  right: 8px;
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #cbd7bf;
+  border-radius: 8px;
+  background: #fffffff5;
+  box-shadow: 0 1px 5px #17321f20;
+}
+.map-layer-picker button {
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: #3f6747;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.map-layer-picker button[aria-pressed="true"] {
+  background: #3f6747;
+  color: white;
+}

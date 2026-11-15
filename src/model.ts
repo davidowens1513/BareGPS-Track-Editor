@@ -17,6 +17,7 @@ export interface Track {
   kind: "track" | "route";
   inputTrackId?: string;
   inputSignature?: string;
+  planReversed?: boolean;
   terrainNeedsRefresh?: boolean;
   simplified?: boolean;
 }
@@ -395,6 +396,7 @@ export function validateWorkspace(value: unknown): value is Workspace {
             /^[a-z0-9-]{1,64}$/i.test(t.inputTrackId))) &&
         (t.inputSignature === undefined ||
           typeof t.inputSignature === "string") &&
+        (t.planReversed === undefined || typeof t.planReversed === "boolean") &&
         ["track", "route"].includes(t.kind) &&
         /^#[0-9a-f]{6}$/i.test(t.color) &&
         Array.isArray(t.points) &&

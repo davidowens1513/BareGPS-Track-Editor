@@ -141,3 +141,34 @@ it("keeps the current input at an overlap and cannot select hidden tracks", () =
   editor.map.fire("click", { latlng: L.latLng(53.005, -5.997) });
   expect(selectTrack).not.toHaveBeenCalled();
 });
+
+it("changes imagery and attribution without moving or zooming the map", () => {
+  const centre = editor.map.getCenter();
+  const zoom = editor.map.getZoom();
+  const tileLayers = () => {
+    const layers: L.TileLayer[] = [];
+    editor.map.eachLayer((layer) => {
+      if (layer instanceof L.TileLayer) layers.push(layer);
+    });
+    return layers;
+  };
+  const old = tileLayers()[0];
+  editor.setBaseLayer("satellite");
+  expect(editor.map.getCenter()).toEqual(centre);
+  expect(editor.map.getZoom()).toBe(zoom);
+  expect(tileLayers()).toHaveLength(1);
+  expect(tileLayers()[0].getAttribution()).toContain("Esri");
+  expect(
+    document.querySelector(".leaflet-control-attribution")!.textContent,
+  ).not.toContain("OpenTopoMap");
+  const tile = document.createElement("img");
+  document.body.append(tile);
+  old.fire("tileerror", { tile });
+  expect(editor.hasTileError()).toBe(false);
+  tileLayers()[0].fire("tileerror", { tile });
+  expect(editor.hasTileError()).toBe(true);
+  editor.setBaseLayer("opentopo");
+  expect(editor.hasTileError()).toBe(false);
+  expect(tileLayers()[0].getAttribution()).toContain("OpenTopoMap");
+  tile.remove();
+});

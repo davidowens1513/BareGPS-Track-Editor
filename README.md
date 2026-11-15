@@ -2,23 +2,27 @@
 
 Import, edit, simplify and combine GPX tracks into a walking route.
 
-**Version 0.3.3 · build 75.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
+**Version 0.3.4 · build 76.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
 
 [Open in browser](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and instructions](https://appsbyonzy.dev/#baregps-track-editor) · [Development and validation notes](docs/development.md)
 
 ## Working with tracks
 
 1. Open one or more GPX files. After the first import, “Open another Track?” provides another file picker in the same map position; tapping it or its white X dismisses the prompt. Open files under Input Tracks remains available.
-2. Inputs stay visible together. The current input has the stronger line, a “Current: [name]” map label and a matching coloured dot in Input Tracks. Other inputs remain visible with lighter lines. Tap another line or its Input Tracks row to make it current. At overlapping sections, use the list to choose explicitly.
+2. Inputs stay visible together, including after confirming a route. The current input has the stronger line, a “Current: [name]” map label and a matching coloured dot in Input Tracks. Other inputs remain visible with lighter lines. Tap another line or its Input Tracks row to make it current. At overlapping sections, use the list to choose explicitly.
 3. Tap the current line to reveal a small group of local editing handles. Drag to reshape a section; Done editing or tapping empty map space hides the local handles. Start and Finish remain labelled. Only the current input is editable.
 4. Trim, reverse, insert, move or delete points as needed. Reset Track restores the current input’s saved starting points, name and colour, with confirmation and Undo/Redo. Other inputs, plan copies, confirmed output and exported files are unaffected.
 5. Export the selected edited track directly with **Export Edited GPX**, or add inputs to Route Plan, reorder or replace its entries, then Confirm Plan. Export the confirmed GPX or share its text/PDF Route Card.
 
 Simplify previews a separate copy, targeting 10 handles/km with at most 10 metres deviation. Accept retains the original. Names, endpoints, bends and segment boundaries are protected, so some tracks need more points.
 
+The map picker below the current-position button switches between OpenTopo and Satellite, remembers your choice and updates the credits in About.
+
 Settings provides 14 named colours, hex entry and Apply. With no input open, it saves a default colour for new imports. With inputs open, its selector chooses the input to recolour. Settings also selects the coordinate system and enables point naming.
 
 Input rows keep the track name and metrics separate from the evenly spaced controls, with plan status underneath. The four point-editing actions are Add points, Insert point, Delete point and Reset Track.
+
+Clearing the route keeps the current map position. Confirm Plan checks unusually long joins and offers to reverse plan sections when that would improve the join; original inputs stay unchanged.
 
 Plan copies show when the input has changed. If you change the plan after confirming, the Route Card warns that it is an older confirmed route; exporting it requires an explicit choice. Renamed tracks and routes use their names in exported filenames.
 

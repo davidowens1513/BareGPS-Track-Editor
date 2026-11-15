@@ -2,6 +2,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { simplifyTrack } from "./simplify";
 import "./style.css";
+import { mapLayers, isMapLayer, type MapLayer } from "./map-layers";
 import { aboutGuide } from "./about";
 import { get, set } from "idb-keyval";
 import { WorkspaceStorage } from "./workspace-storage";
@@ -65,8 +66,15 @@ import {
   resetInputTrack,
 } from "./input-reset";
 import { enrichTerrain } from "./terrain";
+import {
+  findJoinReview,
+  reversePlanCopies,
+  type JoinReview,
+} from "./join-review";
 import { getDevicePosition, locationError } from "./location";
 let locating = false;
+let selectedMapLayer: MapLayer = "opentopo";
+const MAP_LAYER_KEY = "baregps-track-editor-map-layer-v1";
 import {
   coordinateSystems,
   formatCoordinate,
@@ -122,8 +130,8 @@ document.querySelector("#app")!.innerHTML = `
 <main>
   <span id="track-count" class="sr-only">Your workspace</span>
   <section id="map-panel" class="map-panel" aria-label="Track map">
-    <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
-    <div id="edit-map-view" role="region" aria-label="Input track map"><div id="map"></div><div id="current-input" class="current-input" role="status" hidden><span class="active-dot" aria-hidden="true"></span><span id="current-input-name"></span></div><button id="exit-preview" class="button secondary preview-mode" aria-label="Close Preview Mode" hidden><span aria-hidden="true">×</span> Preview Mode</button><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
+    <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong id="map-layer-name">OpenTopoMap</strong><span id="map-layer-badge" class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
+    <div id="edit-map-view" role="region" aria-label="Input track map"><div id="map"></div><div id="current-input" class="current-input" role="status" hidden><span class="active-dot" aria-hidden="true"></span><span id="current-input-name"></span></div><button id="exit-preview" class="button secondary preview-mode" aria-label="Close Preview Mode" hidden><span aria-hidden="true">×</span> Preview Mode</button><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><div class="map-layer-picker" role="group" aria-label="Map layer"><button id="layer-opentopo" aria-pressed="true">OpenTopo</button><button id="layer-satellite" aria-pressed="false">Satellite</button></div><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
     <div id="input-edit-controls" hidden>
     <div id="input-point-tools" class="create-tools" role="group" aria-label="Input point editing tools" hidden><div class="drawing-modes" role="group" aria-label="Input drawing mode"><button id="input-move" aria-pressed="true" hidden>Move</button><button id="input-add" aria-pressed="false">Add points</button><button id="input-insert" aria-pressed="false">Insert point</button><button id="input-delete" disabled>Delete point</button><button id="input-reset" disabled>Reset Track</button></div><p id="input-point-status" class="sr-only" role="status"></p></div>
     <div id="input-extra-tools" class="create-tools input-extra-tools" role="group" aria-label="Input track actions" hidden><div class="drawing-modes"><button id="trim-before" disabled>Trim before</button><button id="trim-after" disabled>Trim after</button><button id="reverse" disabled>Reverse</button><button id="simplify-input">Simplify</button><button id="input-terrain" aria-label="Fetch Terrain" disabled>Fetch<br>Terrain</button></div></div>
@@ -658,6 +666,7 @@ function renderControls() {
     if (
       commit(() => {
         workspace.routePlan = addPlanSection(workspace.routePlan ?? [], t);
+        showAll = true;
         ensureTrackCapacity(0, 0);
       })
     ) {
@@ -803,6 +812,19 @@ for (const direction of ["before", "after"] as const)
     );
   };
 bindInputActions();
+function changeMapLayer(layer: MapLayer) {
+  selectedMapLayer = layer;
+  map.setBaseLayer(layer);
+  for (const value of ["opentopo", "satellite"] as const)
+    $("layer-" + value).setAttribute("aria-pressed", String(value === layer));
+  $("map-layer-name").textContent = mapLayers[layer].name;
+  $("map-layer-badge").textContent = mapLayers[layer].badge;
+}
+for (const layer of ["opentopo", "satellite"] as const)
+  $("layer-" + layer).onclick = () => {
+    changeMapLayer(layer);
+    void set(MAP_LAYER_KEY, layer).catch(report);
+  };
 function previewSimplification() {
   const original = activeInput();
   if (busy || !original) return;
@@ -822,10 +844,8 @@ function previewSimplification() {
     preferCanvas: true,
     zoomControl: true,
   });
-  L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-    maxZoom: 17,
-    attribution: "Map © OpenStreetMap contributors · OpenTopoMap (CC-BY-SA)",
-  }).addTo(preview);
+  const previewLayer = mapLayers[selectedMapLayer];
+  L.tileLayer(previewLayer.url, previewLayer.options).addTo(preview);
   const lines = (track: Track, color: string, weight: number) => {
     const group = L.layerGroup();
     let segment: L.LatLngTuple[] = [];
@@ -948,7 +968,7 @@ function routePlanDialog() {
   openDialog(
     `${dialogHeader("Route Plan", "Select a track, then move it up or down to set the walking order.", true)}
     <p class="dialog-note">${pending ? "Confirm Plan fetches missing heights and connections from Open Topo Data, then builds the route in this order. The Route Card stays unchanged until completion." : "This order is confirmed. Changes take effect when you confirm again."}</p>
-    <div class="plan-scroll" role="region" aria-label="Route Plan tracks" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Track</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button><small class="plan-copy-status">${esc(planCopyStatus(track, workspace.tracks))}</small></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No tracks yet. Edit an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
+    <div class="plan-scroll" role="region" aria-label="Route Plan tracks" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Track</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button><small class="plan-copy-status">${esc(planCopyStatus(track, workspace.tracks))}${track.planReversed ? " · Reversed in plan" : ""}</small></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No tracks yet. Edit an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
     <div class="plan-row-actions"><button id="plan-up" class="button secondary compact" ${index <= 0 ? "disabled" : ""}>Move up</button><button id="plan-down" class="button secondary compact" ${index < 0 || index === plan.length - 1 ? "disabled" : ""}>Move down</button><button id="plan-remove" class="button secondary compact" ${index < 0 ? "disabled" : ""}>Remove</button></div>
     <button id="plan-replace" class="button secondary compact" ${!replacementInput ? "hidden" : ""} ${index < 0 ? "disabled" : ""}>Replace selected track with current input</button>
     <div class="dialog-actions"><button class="button secondary" data-close>Keep adding</button><button id="confirm-route-plan" class="button primary" ${!plan.length ? "disabled" : ""}>Confirm Plan</button></div>`,
@@ -1085,15 +1105,75 @@ function applyConfirmedPlan(route: Track, ids: string[]) {
       workspace.activeId = route.id;
       workspace.selection = { start: 0, end: route.points.length - 1 };
       editWelcome = false;
-      showAll = false;
+      showAll = true;
     }, true)
   )
     $<HTMLDialogElement>("dialog").close();
+}
+let joinReviewSignature = "";
+const reviewedJoins = new Set<number>();
+function reviewJoinDialog(review: JoinReview, signature: string) {
+  const plan = workspace.routePlan!,
+    first = plan[review.index],
+    next = plan[review.index + 1];
+  const suggestion = review.suggestion;
+  const action =
+    suggestion?.reverseIndexes.length === 2
+      ? "Reverse both sections"
+      : suggestion?.reverseIndexes[0] === review.index
+        ? "Reverse first section"
+        : "Reverse next section";
+  const direction =
+    suggestion?.reverseIndexes.length === 2
+      ? "Reversing both sections"
+      : suggestion?.reverseIndexes[0] === review.index
+        ? `Reversing “${first.name}”`
+        : `Reversing “${next.name}”`;
+  openDialog(
+    `${dialogHeader("Check track directions")}<p>“${esc(first.name)}” finishes <strong>${km(review.gap)} km</strong> from the start of “${esc(next.name)}”.</p><p>${suggestion ? `${esc(direction)} reduces this join to <strong>${km(suggestion.gap)} km</strong> and shortens the plan’s total connections. Was a section meant to be reversed?` : "This is a long straight connection. Check the track order and directions before continuing."}</p><p class="dialog-note">Connections are straight lines, so check they are walkable. Reversal applies to the saved plan copy.</p><div class="dialog-actions"><button id="join-back" class="button secondary">Back to plan</button><button id="join-keep" class="button secondary">Keep this join</button>${suggestion ? `<button id="join-reverse" class="button primary">${action}</button>` : ""}</div>`,
+  );
+  const stillCurrent = () => {
+    if (busy) return false;
+    if (signature === planSignature(workspace.routePlan ?? [])) return true;
+    routePlanDialog();
+    return false;
+  };
+  $("join-back").onclick = routePlanDialog;
+  $("join-keep").onclick = () => {
+    if (!stillCurrent()) return;
+    reviewedJoins.add(review.index);
+    void confirmRoutePlan();
+  };
+  if (suggestion)
+    $("join-reverse").onclick = () => {
+      if (!stillCurrent()) return;
+      if (
+        commit(() => {
+          workspace.routePlan = reversePlanCopies(
+            workspace.routePlan!,
+            suggestion.reverseIndexes,
+          );
+        })
+      )
+        void confirmRoutePlan();
+    };
 }
 async function confirmRoutePlan() {
   if (busy || !workspace.routePlan?.length) return;
   const ids = workspace.routePlan.map((track) => track.id);
   const unchanged = workspace.route && !confirmedRouteChanged(workspace);
+  if (!unchanged) {
+    const signature = planSignature(workspace.routePlan);
+    if (signature !== joinReviewSignature) {
+      joinReviewSignature = signature;
+      reviewedJoins.clear();
+    }
+    const review = findJoinReview(workspace.routePlan, reviewedJoins);
+    if (review) {
+      reviewJoinDialog(review, signature);
+      return;
+    }
+  }
   let candidate: Track;
   try {
     candidate = unchanged
@@ -1857,10 +1937,21 @@ $("create-clear").onclick = () => {
       workspace.route = null;
       workspace.routePlan = [];
       workspace.confirmedPlan = [];
-      workspace.activeId = null;
-      workspace.selection = { start: 0, end: 0 };
-      editWelcome = true;
-    }, true);
+      workspace.confirmedSignature = undefined;
+      const input =
+        workspace.tracks.find((track) => track.id === workspace.activeId) ??
+        workspace.tracks[0];
+      workspace.activeId = input?.id ?? null;
+      workspace.selection = {
+        start: 0,
+        end: input ? input.points.length - 1 : 0,
+      };
+      editWelcome = !input;
+      showAll = true;
+      selectedInputPoint = null;
+      inputTool = "move";
+      map.resetSelection();
+    });
     $<HTMLDialogElement>("dialog").close();
   };
   return;
@@ -2081,7 +2172,7 @@ $("settings").onclick = () => {
 };
 $("help").onclick = () => {
   openDialog(
-    `${dialogHeader("BareGPS Track Editor", "", true)}${aboutGuide}`,
+    `${dialogHeader("BareGPS Track Editor", "", true)}${aboutGuide.replace("<!-- selected-map-credits -->", mapLayers[selectedMapLayer].credits)}`,
     "about",
   );
 };
@@ -2133,6 +2224,8 @@ async function init() {
     const savedColour = await get(INPUT_COLOUR_KEY);
     if (typeof savedColour === "string" && /^#[0-9a-f]{6}$/i.test(savedColour))
       defaultInputColour = savedColour.toLowerCase();
+    const savedLayer = await get(MAP_LAYER_KEY);
+    if (isMapLayer(savedLayer)) changeMapLayer(savedLayer);
     const savedCoordinates = await get(COORDINATE_KEY);
     allowPointNaming = (await get(POINT_NAMING_KEY)) === true;
     if (isCoordinateSystem(savedCoordinates))

@@ -59,7 +59,8 @@ vi.mock("../src/input-map", () => ({
     fit() {
       this.map.invalidateSize();
     }
-    home() {}
+    home = vi.fn();
+    setBaseLayer = vi.fn();
     resetSelection() {}
     hasTileError() {
       return false;
@@ -616,4 +617,143 @@ it("warns beside export when the plan differs and requires an explicit previous-
     "Export previous confirmed route",
   );
   expect(document.getElementById("export-previous")).not.toBeNull();
+});
+
+it("keeps the current map view and the remaining inputs when clearing a route", async () => {
+  await start(true, true, false, true);
+  const map = state.maps[0];
+  const homeCalls = map.home.mock.calls.length;
+  const fitCalls = map.map.invalidateSize.mock.calls.length;
+  click("create-clear");
+  click("confirm-clear-edit");
+  expect(map.home).toHaveBeenCalledTimes(homeCalls);
+  expect(map.map.invalidateSize).toHaveBeenCalledTimes(fitCalls);
+  expect(map.lastRender[0].map((t: Track) => t.id)).toEqual([
+    "input-one",
+    "input-two",
+  ]);
+  expect(map.lastRender[3]).toBe(true);
+  click("undo");
+  await vi.waitFor(() =>
+    expect(
+      (state.store.get("baregps-track-editor-workspace-v1") as any).route.id,
+    ).toBe("output-one"),
+  );
+});
+
+it("keeps all inputs visible after staging and confirming just one section", async () => {
+  await start(true, false, false, true);
+  const map = state.maps[0];
+  click("view-toggle"); // Even if the user had temporarily selected just one track.
+  click("add-route");
+  expect(map.lastRender[3]).toBe(true);
+  click("confirm-route-plan");
+  expect(map.lastRender[0].some((t: Track) => t.id === "input-two")).toBe(true);
+  expect(map.lastRender[3]).toBe(true);
+  expect(document.getElementById("waypoint-count")!.textContent).toBe("3");
+});
+
+it("reviews suspicious joins and reverses the saved plan copy only after agreement", async () => {
+  await start(true, false, false, true);
+  const map = state.maps[0];
+  const second = (map.lastRender[0] as Track[]).find(
+    (t) => t.id === "input-two",
+  )!;
+  // Make the second track meet the first at its finish, rather than its start.
+  second.points = [
+    { lat: 53.02, lon: -6, ele: 120 },
+    { lat: 53.002, lon: -6, ele: 120 },
+  ];
+  click("add-route");
+  (document.querySelector("#dialog [data-close]") as HTMLButtonElement).click();
+  (
+    document.querySelector(
+      '.track-select[data-id="input-two"]',
+    ) as HTMLButtonElement
+  ).click();
+  click("add-route");
+  click("confirm-route-plan");
+  expect(document.getElementById("dialog-title")!.textContent).toBe(
+    "Check track directions",
+  );
+  expect(document.getElementById("join-reverse")!.textContent).toBe(
+    "Reverse next section",
+  );
+  expect(document.getElementById("waypoint-count")!.textContent).toBe("0");
+  click("join-reverse");
+  await vi.waitFor(() => {
+    const saved: any = state.store.get("baregps-track-editor-workspace-v1");
+    expect(saved.routePlan[1].planReversed).toBe(true);
+    expect(saved.tracks[1].points[0].lat).toBe(53.02);
+    expect(saved.route.points.at(-1).lat).toBe(53.02);
+  });
+});
+
+it("can clear a route with no inputs without jumping to the default map position", async () => {
+  await start(false, true);
+  const map = state.maps[0];
+  const homeCalls = map.home.mock.calls.length;
+  const fitCalls = map.map.invalidateSize.mock.calls.length;
+  click("create-clear");
+  click("confirm-clear-edit");
+  expect(map.home).toHaveBeenCalledTimes(homeCalls);
+  expect(map.map.invalidateSize).toHaveBeenCalledTimes(fitCalls);
+  expect(map.lastRender[0]).toEqual([]);
+});
+
+it("lets the user return to the plan or keep an intentional join without reversing it", async () => {
+  await start(true, false, false, true);
+  const map = state.maps[0];
+  const second = (map.lastRender[0] as Track[]).find(
+    (t) => t.id === "input-two",
+  )!;
+  second.points = [
+    { lat: 53.02, lon: -6, ele: 120 },
+    { lat: 53.002, lon: -6, ele: 120 },
+  ];
+  click("add-route");
+  (document.querySelector("#dialog [data-close]") as HTMLButtonElement).click();
+  (
+    document.querySelector(
+      '.track-select[data-id="input-two"]',
+    ) as HTMLButtonElement
+  ).click();
+  click("add-route");
+  click("confirm-route-plan");
+  click("join-back");
+  expect(document.getElementById("dialog-title")!.textContent).toBe(
+    "Route Plan",
+  );
+  expect(document.getElementById("waypoint-count")!.textContent).toBe("0");
+  click("confirm-route-plan");
+  state.terrainJob = async () => {
+    throw new Error("Offline fixture");
+  };
+  click("join-keep");
+  await vi.waitFor(() =>
+    expect(document.getElementById("confirm-without-terrain")).not.toBeNull(),
+  );
+  click("confirm-without-terrain");
+  await vi.waitFor(() => {
+    const saved: any = state.store.get("baregps-track-editor-workspace-v1");
+    expect(saved.routePlan[1].planReversed).toBeUndefined();
+    expect(saved.routePlan[1].points[0].lat).toBe(53.02);
+    expect(saved.route.points.at(-1).lat).toBe(53.002);
+  });
+});
+
+it("switches map layers, persists the choice and updates About credits", async () => {
+  await import("../src/main");
+  await vi.waitFor(() => expect(state.maps).toHaveLength(1));
+  click("layer-satellite");
+  expect(state.maps[0].setBaseLayer).toHaveBeenLastCalledWith("satellite");
+  expect(button("layer-satellite").getAttribute("aria-pressed")).toBe("true");
+  expect(state.store.get("baregps-track-editor-map-layer-v1")).toBe(
+    "satellite",
+  );
+  click("help");
+  expect(document.querySelector("dialog")!.textContent).toContain("Vantor");
+  expect(document.querySelector("dialog")!.textContent).not.toContain(
+    "Map rendering ©",
+  );
 });

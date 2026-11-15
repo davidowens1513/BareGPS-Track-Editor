@@ -1,4 +1,5 @@
 import L from "leaflet";
+import { mapLayers, type MapLayer } from "./map-layers";
 import {
   type Point,
   type Track,
@@ -12,7 +13,8 @@ export const HOME_ZOOM = 13;
 export class TrackMap {
   map: L.Map;
   protected layers = L.layerGroup();
-  private tileLayer: L.TileLayer;
+  private tileLayer!: L.TileLayer;
+  private baseLayer: MapLayer | null = null;
   private tileFailed = false;
   private failedTiles = new Set<HTMLElement>();
   private initialViewPending = true;
@@ -31,39 +33,12 @@ export class TrackMap {
       preferCanvas: true,
       attributionControl: true,
     }).setView(HOME_CENTER, HOME_ZOOM);
-    this.tileLayer = L.tileLayer(
-      "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 17,
-        subdomains: "abc",
-        attribution:
-          'Map © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · SRTM | <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
-      },
-    ).addTo(this.map);
-    const refreshTileWarning = () => {
-      for (const tile of this.failedTiles)
-        if (!tile.isConnected) this.failedTiles.delete(tile);
-      const failed = this.failedTiles.size > 0;
-      if (failed !== this.tileFailed) {
-        this.tileFailed = failed;
-        this.onTileError(failed);
-      }
-    };
-    this.tileLayer.on("tileerror", (event: L.TileErrorEvent) => {
-      if (event.tile.isConnected) this.failedTiles.add(event.tile);
-      refreshTileWarning();
-    });
-    const removeFailedTile = (event: L.TileEvent) => {
-      this.failedTiles.delete(event.tile);
-      refreshTileWarning();
-    };
-    this.tileLayer.on("tileload", removeFailedTile);
-    this.tileLayer.on("tileunload", removeFailedTile);
+    this.map.attributionControl.setPosition("bottomright");
+    this.setBaseLayer("opentopo");
     window.addEventListener("online", () => {
       if (this.tileFailed) this.retryTiles();
     });
     this.layers.addTo(this.map);
-    this.map.attributionControl.setPosition("bottomright");
     this.map.on("zoomend", () => this.positionHandles());
     L.control
       .scale({ position: "bottomleft", imperial: false })
@@ -76,6 +51,40 @@ export class TrackMap {
         if (this.initialViewPending) this.home();
       }
     }).observe(container);
+  }
+  setBaseLayer(selected: MapLayer) {
+    if (selected === this.baseLayer) return;
+    if (this.tileLayer) {
+      this.tileLayer.remove();
+      this.tileLayer.off();
+    }
+    this.baseLayer = selected;
+    this.failedTiles.clear();
+    this.tileFailed = false;
+    if (this.baseLayer !== null && this.tileLayer) this.onTileError(false);
+    const config = mapLayers[selected];
+    const layer = L.tileLayer(config.url, config.options);
+    this.tileLayer = layer;
+    const refreshTileWarning = () => {
+      for (const tile of this.failedTiles)
+        if (!tile.isConnected) this.failedTiles.delete(tile);
+      const failed = this.failedTiles.size > 0;
+      if (failed !== this.tileFailed) {
+        this.tileFailed = failed;
+        this.onTileError(failed);
+      }
+    };
+    layer.on("tileerror", (event: L.TileErrorEvent) => {
+      if (event.tile.isConnected) this.failedTiles.add(event.tile);
+      refreshTileWarning();
+    });
+    const removeFailedTile = (event: L.TileEvent) => {
+      this.failedTiles.delete(event.tile);
+      refreshTileWarning();
+    };
+    layer.on("tileload", removeFailedTile);
+    layer.on("tileunload", removeFailedTile);
+    layer.addTo(this.map);
   }
   showPosition(point: Point & { accuracy: number }, centre: boolean) {
     this.positionLayers.clearLayers();

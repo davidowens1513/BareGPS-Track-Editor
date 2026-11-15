@@ -24,15 +24,15 @@ Clearing app or browser data or uninstalling may remove local work, subject to o
 
 ## Maps and terrain services
 
-Online maps are requested from OpenTopoMap when the map loads or you move or zoom it. Requests reveal the map tiles and area being viewed. These can indicate an approximate or precise location, including the area around your current position if you use the location button. The provider also receives ordinary internet request information, such as your IP address, request time and technical details sent by your device or browser. Map data attribution includes OpenStreetMap contributors and SRTM.
+Online maps are requested from OpenTopoMap or Esri World Imagery, according to your selected layer, when the map loads or you move or zoom it. Requests reveal the map tiles and area being viewed. These can indicate an approximate or precise location, including the area around your current position if you use the location button. The provider also receives ordinary internet request information, such as your IP address, request time and technical details sent by your device or browser. Map data attribution includes OpenStreetMap contributors and SRTM.
 
 Fetch Terrain sends route and sampled coordinates to Open Topo Data to obtain estimated ground heights. Confirm Plan can also fetch missing heights for the assembled route. Track and point names are not included in terrain requests. On iPhone and Android, these requests go directly to Open Topo Data; in the browser version they pass through a Cloudflare-hosted relay. Cloudflare also hosts the website and browser app.
 
-Map, terrain and hosting providers may retain request details in access, error, security or backup logs, including IP addresses and requested map areas or coordinates. We do not assume these requests are anonymous or deleted immediately. We have not verified a fixed retention or backup-deletion period for OpenTopoMap or the public Open Topo Data service, and cannot promise when those providers delete records. Requests may be associated with network identifiers such as an IP address. Each provider handles information under its applicable practices and may use hosting or delivery services.
+Map, terrain and hosting providers may retain request details in access, error, security or backup logs, including IP addresses and requested map areas or coordinates. We do not assume these requests are anonymous or deleted immediately. We have not verified a fixed retention or backup-deletion period for OpenTopoMap, Esri World Imagery or the public Open Topo Data service, and cannot promise when those providers delete records. Requests may be associated with network identifiers such as an IP address. Each provider handles information under its applicable practices and may use hosting or delivery services.
 
 The developer does not operate a route account or cloud route database. Do not fetch terrain or confirm a plan that needs terrain for coordinates you do not want sent to these services. Local work can still be edited without a connection, but online maps and height requests may be unavailable.
 
-Provider information: https://opentopomap.org · https://www.opentopodata.org · https://www.cloudflare.com/privacypolicy/
+Provider information: https://opentopomap.org · https://www.esri.com/en-us/privacy/overview · https://www.opentopodata.org · https://www.cloudflare.com/privacypolicy/
 
 ## Saving, sharing and external links
 
