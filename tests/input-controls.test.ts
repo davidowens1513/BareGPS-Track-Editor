@@ -9,13 +9,7 @@ it("keeps the finish action outside both fixed-width action rows", () => {
   const row = document.querySelector("#input-point-tools .drawing-modes")!;
   expect(
     [...row.querySelectorAll("button:not([hidden])")].map((b) => b.id),
-  ).toEqual([
-    "input-add",
-    "input-insert",
-    "input-delete",
-    "input-close",
-    "input-reset",
-  ]);
+  ).toEqual(["input-add", "input-insert", "input-delete", "input-reset"]);
   expect(
     document.querySelectorAll("#input-extra-tools .drawing-modes > button"),
   ).toHaveLength(5);
@@ -26,6 +20,6 @@ it("keeps the finish action outside both fixed-width action rows", () => {
   expect(finish.parentElement!.id).toBe("input-edit-controls");
   expect(finish.hidden).toBe(true);
   finish.hidden = false;
-  expect(row.querySelectorAll("button:not([hidden])")).toHaveLength(5);
+  expect(row.querySelectorAll("button:not([hidden])")).toHaveLength(4);
   expect(finish.querySelector("#input-done")).not.toBeNull();
 });

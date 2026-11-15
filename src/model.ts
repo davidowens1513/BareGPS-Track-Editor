@@ -16,6 +16,7 @@ export interface Track {
   source: string;
   kind: "track" | "route";
   inputTrackId?: string;
+  inputSignature?: string;
   terrainNeedsRefresh?: boolean;
   simplified?: boolean;
 }
@@ -29,6 +30,7 @@ export interface Workspace {
   inputOriginals?: Track[];
   routePlan?: Track[];
   confirmedPlan?: string[];
+  confirmedSignature?: string;
   route: Track | null;
   activeId: string | null;
   selection: Selection;
@@ -355,6 +357,8 @@ export function validateWorkspace(value: unknown): value is Workspace {
         !w.confirmedPlan.every(
           (id) => typeof id === "string" && /^[a-z0-9-]{1,64}$/i.test(id),
         ))) ||
+    (w.confirmedSignature !== undefined &&
+      typeof w.confirmedSignature !== "string") ||
     !w.selection ||
     !Number.isInteger(w.selection.start) ||
     !Number.isInteger(w.selection.end)
@@ -389,6 +393,8 @@ export function validateWorkspace(value: unknown): value is Workspace {
         (t.inputTrackId === undefined ||
           (typeof t.inputTrackId === "string" &&
             /^[a-z0-9-]{1,64}$/i.test(t.inputTrackId))) &&
+        (t.inputSignature === undefined ||
+          typeof t.inputSignature === "string") &&
         ["track", "route"].includes(t.kind) &&
         /^#[0-9a-f]{6}$/i.test(t.color) &&
         Array.isArray(t.points) &&

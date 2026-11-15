@@ -10,13 +10,18 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock("idb-keyval", () => ({
   get: async (key: string) => structuredClone(state.store.get(key)),
+  setMany: async (entries: [string, unknown][]) => {
+    for (const [key, value] of entries)
+      state.store.set(key, structuredClone(value));
+  },
   set: async (key: string, value: unknown) => {
     state.store.set(key, structuredClone(value));
   },
 }));
 vi.mock("../src/files", () => ({
   pickFiles: async () => state.picks,
-  saveTrack: () => state.saveResult,
+  saveTrack: vi.fn(() => state.saveResult),
+  saveData: vi.fn(async () => true),
   shareRoutecard: vi.fn(async () => false),
   sharePDF: vi.fn(),
   decode: (s: string) => s,
@@ -533,4 +538,82 @@ it("makes a newly imported track current while retaining previous inputs on the 
   expect(document.getElementById("current-input-name")!.textContent).toContain(
     "New track",
   );
+});
+
+it("exports the renamed confirmed route and edited input with their actual names", async () => {
+  const { saveTrack } = await import("../src/files");
+  await start(true, true);
+  const field = document.getElementById("create-name") as HTMLInputElement;
+  field.value = "Wicklow loop";
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  click("create-save");
+  await vi.waitFor(() =>
+    expect(saveTrack).toHaveBeenLastCalledWith(
+      expect.objectContaining({ name: "Wicklow loop" }),
+    ),
+  );
+  await vi.waitFor(() => expect(button("create-save").disabled).toBe(false));
+  click("reverse");
+  click("export-input");
+  await vi.waitFor(() =>
+    expect(saveTrack).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        name: "Original",
+        points: expect.arrayContaining([
+          expect.objectContaining({ lat: 53.002 }),
+        ]),
+      }),
+    ),
+  );
+});
+
+it("restores a previous workspace through Recovery and allows Undo", async () => {
+  await start();
+  click("reverse");
+  await vi.waitFor(() =>
+    expect(
+      (state.store.get("baregps-track-editor-workspace-v1") as any).tracks[0]
+        .points[0].lat,
+    ).toBe(53.002),
+  );
+  click("settings");
+  click("workspace-recovery");
+  await vi.waitFor(() =>
+    expect(button("restore-workspace").disabled).toBe(false),
+  );
+  click("restore-workspace");
+  await vi.waitFor(() =>
+    expect(
+      (state.store.get("baregps-track-editor-workspace-v1") as any).tracks[0]
+        .points[0].lat,
+    ).toBe(53),
+  );
+  click("undo");
+  await vi.waitFor(() =>
+    expect(
+      (state.store.get("baregps-track-editor-workspace-v1") as any).tracks[0]
+        .points[0].lat,
+    ).toBe(53.002),
+  );
+});
+
+it("warns beside export when the plan differs and requires an explicit previous-route choice", async () => {
+  await start();
+  click("add-route");
+  click("confirm-route-plan");
+  (document.querySelector(".track-select") as HTMLButtonElement).click();
+  click("reverse");
+  expect(document.querySelector(".input-plan-status")!.textContent).toBe(
+    "Input changed",
+  );
+  click("add-route");
+  (document.querySelector("#dialog [data-close]") as HTMLButtonElement).click();
+  expect(document.getElementById("route-export-status")!.textContent).toContain(
+    "Plan changed",
+  );
+  click("create-save");
+  expect(document.getElementById("dialog-title")!.textContent).toContain(
+    "Export previous confirmed route",
+  );
+  expect(document.getElementById("export-previous")).not.toBeNull();
 });

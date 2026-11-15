@@ -10,7 +10,11 @@ export interface NativeFile {
 }
 export const NativeFiles = registerPlugin<{
   pick(): Promise<{ files: NativeFile[] }>;
-  save(options: { name: string; data: string }): Promise<{ saved: boolean }>;
+  save(options: {
+    name: string;
+    data: string;
+    mimeType?: string;
+  }): Promise<{ saved: boolean }>;
   shareFile(options: { name: string; data: string }): Promise<void>;
   shareText(options: { title: string; text: string }): Promise<void>;
   pending(): Promise<{ files: NativeFile[]; errors?: string[] }>;
@@ -160,4 +164,27 @@ export async function sharePDF(title: string, blob: Blob) {
   link.download = name;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+export async function saveData(
+  name: string,
+  text: string,
+  type: string,
+): Promise<boolean> {
+  if (Capacitor.isNativePlatform()) {
+    const bytes = new TextEncoder().encode(text);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192)
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    return (
+      await NativeFiles.save({ name, data: btoa(binary), mimeType: type })
+    ).saved;
+  }
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  return true;
 }

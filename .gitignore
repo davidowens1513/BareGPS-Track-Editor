@@ -34,3 +34,6 @@ android/build
 # Host IDE state and duplicate local sync metadata
 .idea/
 ios/App/App/config 2.xml
+
+# Local reversible quarantine for identical native/generated copies.
+.native-file-backups/

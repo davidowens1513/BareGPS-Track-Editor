@@ -5,7 +5,6 @@ import {
   insertInputPoint,
   deleteInputPoint,
   reshapeInputHandle,
-  closeInputLoop,
   prepareInputTerrain,
   finishInputTerrain,
 } from "../src/input-edit";
@@ -84,7 +83,11 @@ describe("input geometry editing", () => {
     expect(() => insertInputPoint(t, 1, t.points[0])).toThrow(/half/);
   });
   it("keeps both endpoints together when moving a closed loop", () => {
-    const t = closeInputLoop(input());
+    const source = input();
+    const t = {
+      ...source,
+      points: [...source.points, { ...source.points[0] }],
+    };
     expect(t.points).toHaveLength(62);
     expect(t.points.at(-1)?.lat).toBe(t.points[0].lat);
     const moved = reshapeInputHandle(
@@ -95,7 +98,6 @@ describe("input geometry editing", () => {
     );
     expect(moved.points.at(-1)?.lat).toBeCloseTo(moved.points[0].lat);
     expect(moved.points.at(-1)?.lon).toBeCloseTo(moved.points[0].lon);
-    expect(closeInputLoop(t)).toBe(t);
   });
   it("restores solid versus gap styling after terrain sampling, retaining known heights", () => {
     const t = input(4);

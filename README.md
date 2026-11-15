@@ -2,7 +2,7 @@
 
 Import, edit, simplify and combine GPX tracks into a walking route.
 
-**Version 0.3.2 · build 74.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
+**Version 0.3.3 · build 75.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
 
 [Open in browser](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and instructions](https://appsbyonzy.dev/#baregps-track-editor) · [Development and validation notes](docs/development.md)
 
@@ -12,11 +12,15 @@ Import, edit, simplify and combine GPX tracks into a walking route.
 2. Inputs stay visible together. The current input has the stronger line, a “Current: [name]” map label and a matching coloured dot in Input Tracks. Other inputs remain visible with lighter lines. Tap another line or its Input Tracks row to make it current. At overlapping sections, use the list to choose explicitly.
 3. Tap the current line to reveal a small group of local editing handles. Drag to reshape a section; Done editing or tapping empty map space hides the local handles. Start and Finish remain labelled. Only the current input is editable.
 4. Trim, reverse, insert, move or delete points as needed. Reset Track restores the current input’s saved starting points, name and colour, with confirmation and Undo/Redo. Other inputs, plan copies, confirmed output and exported files are unaffected.
-5. Add inputs to Route Plan, reorder or replace its entries, then Confirm Plan. Export the confirmed GPX or share its text/PDF Route Card.
+5. Export the selected edited track directly with **Export Edited GPX**, or add inputs to Route Plan, reorder or replace its entries, then Confirm Plan. Export the confirmed GPX or share its text/PDF Route Card.
 
 Simplify previews a separate copy, targeting 10 handles/km with at most 10 metres deviation. Accept retains the original. Names, endpoints, bends and segment boundaries are protected, so some tracks need more points.
 
 Settings provides 14 named colours, hex entry and Apply. With no input open, it saves a default colour for new imports. With inputs open, its selector chooses the input to recolour. Settings also selects the coordinate system and enables point naming.
+
+Input rows keep the track name and metrics separate from the evenly spaced controls, with plan status underneath. The four point-editing actions are Add points, Insert point, Delete point and Reset Track.
+
+Plan copies show when the input has changed. If you change the plan after confirming, the Route Card warns that it is an older confirmed route; exporting it requires an explicit choice. Renamed tracks and routes use their names in exported filenames.
 
 ## Terrain and Route Cards
 
@@ -34,7 +38,7 @@ Terrain sampling is roughly 90 metres. Incomplete, missing or invalidated elevat
 
 ## Saving and privacy
 
-The workspace is saved on the current device or browser. Autosave is recovery, not a complete backup: retain original GPX files and export important routes. Reset Track uses the starting version retained for each input; inputs saved before that feature use their saved state at upgrade as the baseline.
+The workspace is saved on the current device or browser. Settings → Workspace recovery and backup can export and restore complete workspace backups, restore the previous successful save, and export preserved unreadable recovery data. Keep original GPX files and export important routes. Reset Track uses the starting version retained for each input; inputs saved before that feature use their saved state at upgrade as the baseline.
 
 Map providers receive viewed map areas. Terrain providers receive requested coordinates; browser terrain requests use the website’s Cloudflare relay. Sharing sends files to the destination you choose. Dependency and map credits are available in About.
 
@@ -64,3 +68,11 @@ npm run android
 Provided **as is**, without warranty. Review routes and exported files before relying on them outdoors.
 
 Copyright © AppsbyOnzy. [Support Page](https://mixolydian-flyingfish-56d.notion.site/BareGPS-Track-Editor-Support-4160e3f94c358006859fdefe0d71a662) · [Privacy Policy](https://mixolydian-flyingfish-56d.notion.site/BareGPS-Track-Editor-Privacy-Policy-4160e3f94c35801d8ddbc7deb522cf22) · [Email](mailto:appsbyonzy@gmail.com). No source licence is granted by this README; third-party licences remain applicable.
+
+## Native build file checks
+
+Use `npm run native:sync` to build and refresh native projects, or `npm run native:copy` when web assets have already been built. Both check native filenames before and after Capacitor copies files. Capacitor copy hooks provide the same protection if copy or sync is invoked directly; the native commands also handle build preparation and iOS path normalisation.
+
+`npm run native:check` is read-only. `npm run native:repair` moves identical numbered source copies and rebuildable generated copies into a local `.native-file-backups/` quarantine, with a recovery manifest. Source files that differ from their counterpart, or lack one, stop preparation and stay untouched. The quarantine is excluded from Git and release bundles.
+
+Android Studio builds also check for duplicate-looking filenames before compilation and packaging. After repair, clean and rebuild if Gradle still holds stale output. This detects and contains the recurring numbered-file problem; it does not establish or disable its external cause. The optional `BAREGPS_ANDROID_BUILD_DIR` setting keeps generated output in a separate location when configured in Android Studio.

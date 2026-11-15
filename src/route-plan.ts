@@ -1,4 +1,11 @@
-import { join, MAX_POINTS, section, type Selection, type Track } from "./model";
+import {
+  join,
+  MAX_POINTS,
+  section,
+  type Selection,
+  type Track,
+  type Workspace,
+} from "./model";
 
 export const MAX_PLAN_SECTIONS = 500;
 
@@ -27,7 +34,14 @@ export function addPlanSection(
     throw new Error(
       "The Route Plan is too large. Keep it at or below 5,000 points.",
     );
-  return [...plan, { ...snapshot, inputTrackId: input.id }];
+  return [
+    ...plan,
+    {
+      ...snapshot,
+      inputTrackId: input.id,
+      inputSignature: trackSignature(input),
+    },
+  ];
 }
 
 export function movePlanSection(
@@ -58,6 +72,10 @@ export function buildPlannedRoute(
   let route: Track | null = null;
   for (const track of plan)
     route = join(route, track, { start: 0, end: track.points.length - 1 });
+  route = {
+    ...route!,
+    terrainNeedsRefresh: plan.some((t) => t.terrainNeedsRefresh),
+  };
   return previous
     ? { ...route!, id: previous.id, name: previous.name, color: previous.color }
     : route!;
@@ -111,4 +129,39 @@ export function replacePlanSection(
       "The Route Plan is too large. Keep it at or below 5,000 points.",
     );
   return result;
+}
+
+// Content identity survives save/reload and becomes current again after Undo.
+export function trackSignature(track: Track): string {
+  const text = JSON.stringify([
+    track.name,
+    track.points,
+    !!track.terrainNeedsRefresh,
+  ]);
+  let a = 2166136261,
+    b = 5381;
+  for (let i = 0; i < text.length; i++) {
+    a = Math.imul(a ^ text.charCodeAt(i), 16777619);
+    b = Math.imul(b, 33) ^ text.charCodeAt(i);
+  }
+  return `${text.length}-${a >>> 0}-${b >>> 0}`;
+}
+export function planSignature(plan: Track[]): string {
+  return plan.map((t) => `${t.id}:${trackSignature(t)}`).join("|");
+}
+export function planCopyStatus(entry: Track, inputs: Track[]): string {
+  const input = inputs.find((t) => t.id === entry.inputTrackId);
+  if (!input)
+    return entry.inputTrackId ? "Input removed" : "Older copy — check input";
+  if (!entry.inputSignature) return "Older copy — check input";
+  return entry.inputSignature === trackSignature(input)
+    ? "Current copy"
+    : "Input changed";
+}
+export function confirmedRouteChanged(workspace: Workspace): boolean {
+  if (!workspace.route) return false;
+  return workspace.confirmedSignature !== undefined
+    ? workspace.confirmedSignature !== planSignature(workspace.routePlan ?? [])
+    : JSON.stringify(workspace.confirmedPlan ?? []) !==
+        JSON.stringify((workspace.routePlan ?? []).map((t) => t.id));
 }

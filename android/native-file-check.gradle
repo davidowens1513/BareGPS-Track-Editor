@@ -1,0 +1,33 @@
+// Read-only checks also run when building directly in Android Studio, without Node.
+def verifyNativeFiles = {
+    def problems = new LinkedHashSet<String>()
+    rootProject.allprojects.each { nativeProject ->
+        [nativeProject.file('src'), nativeProject.layout.buildDirectory.get().asFile].each { directory ->
+            if (directory.isDirectory()) {
+                nativeProject.fileTree(directory).visit { item ->
+                    if (!item.directory) {
+                        def relative = item.relativePath.segments
+                        def numbered = relative.any { segment ->
+                            def match = (segment =~ /^(.*) ([1-9][0-9]*)(\.[^.]*)?$/)
+                            match.matches() && match.group(2).toBigInteger() >= 2
+                        }
+                        def invalidResource = relative.any { it == 'res' } && relative.any { it.contains(' ') }
+                        if (numbered || invalidResource) problems.add(item.file.absolutePath)
+                    }
+                }
+            }
+        }
+    }
+    if (!problems.empty) {
+        throw new GradleException('Native file check found duplicate-looking or invalid files:\n' +
+            problems.collect { '  ' + it }.join('\n') +
+            '\nRun npm run native:repair from the app directory to quarantine identical source copies and preserve generated copies, then clean and rebuild. Different or unmatched files are never moved automatically.')
+    }
+}
+allprojects {
+    tasks.configureEach { nativeTask ->
+        if (nativeTask.name == 'preBuild' || nativeTask.name ==~ /check.*DuplicateClasses/ || nativeTask.name ==~ /package(Debug|Release)/) {
+            nativeTask.doFirst { verifyNativeFiles() }
+        }
+    }
+}

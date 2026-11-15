@@ -1,4 +1,5 @@
 import { needsTerrain } from "./terrain-state";
+import { assessElevation } from "./elevation";
 import { analytics, type Track } from "./model";
 import {
   coordinateSystems,
@@ -32,7 +33,7 @@ export function routecardRows(route: Track, terrain?: Track, full = false) {
     }
     const stats = analytics(segment);
     total += stats.length;
-    const ascent = stats.missingEdges ? undefined : stats.ascent;
+    const ascent = assessElevation(terrain ?? route, segment).ascent;
     totalAscent =
       totalAscent === undefined || ascent === undefined
         ? undefined

@@ -4,6 +4,15 @@ import { simplifyTrack } from "./simplify";
 import "./style.css";
 import { aboutGuide } from "./about";
 import { get, set } from "idb-keyval";
+import { WorkspaceStorage } from "./workspace-storage";
+import { assessElevation } from "./elevation";
+import {
+  planCopyStatus,
+  planSignature,
+  confirmedRouteChanged,
+} from "./route-plan";
+import { saveData } from "./files";
+const workspaceStorage = new WorkspaceStorage();
 import { Capacitor } from "@capacitor/core";
 import {
   analytics,
@@ -37,7 +46,6 @@ import {
   insertInputPoint,
   deleteInputPoint,
   reshapeInputHandle,
-  closeInputLoop,
   prepareInputTerrain,
   finishInputTerrain,
   type InputPointTool,
@@ -101,13 +109,12 @@ let showAll = true,
   saveQueue = Promise.resolve();
 let terrainController: AbortController | null = null;
 const dismissedTileWarning = { create: false, edit: false };
-import { isClosedRoute } from "./track-geometry";
 let cardExpanded = false;
 let inputEditing = false;
 let inputTool: InputPointTool = "move";
 let selectedInputPoint: number | null = null;
 const visibleMap = () => map;
-const STORAGE_KEY = "baregps-track-editor-workspace-v1";
+
 const CONNECTION_ELEVATION_NOTE =
   "Connection distance is included. Connection ascent uses endpoint heights until you fetch terrain; intermediate hills may be missed.";
 document.querySelector("#app")!.innerHTML = `
@@ -118,11 +125,11 @@ document.querySelector("#app")!.innerHTML = `
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong>OpenTopoMap</strong><span class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
     <div id="edit-map-view" role="region" aria-label="Input track map"><div id="map"></div><div id="current-input" class="current-input" role="status" hidden><span class="active-dot" aria-hidden="true"></span><span id="current-input-name"></span></div><button id="exit-preview" class="button secondary preview-mode" aria-label="Close Preview Mode" hidden><span aria-hidden="true">×</span> Preview Mode</button><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
     <div id="input-edit-controls" hidden>
-    <div id="input-point-tools" class="create-tools" role="group" aria-label="Input point editing tools" hidden><div class="drawing-modes" role="group" aria-label="Input drawing mode"><button id="input-move" aria-pressed="true" hidden>Move</button><button id="input-add" aria-pressed="false">Add points</button><button id="input-insert" aria-pressed="false">Insert point</button><button id="input-delete" disabled>Delete point</button><button id="input-close">Close loop</button><button id="input-reset" disabled>Reset Track</button></div><p id="input-point-status" class="sr-only" role="status"></p></div>
+    <div id="input-point-tools" class="create-tools" role="group" aria-label="Input point editing tools" hidden><div class="drawing-modes" role="group" aria-label="Input drawing mode"><button id="input-move" aria-pressed="true" hidden>Move</button><button id="input-add" aria-pressed="false">Add points</button><button id="input-insert" aria-pressed="false">Insert point</button><button id="input-delete" disabled>Delete point</button><button id="input-reset" disabled>Reset Track</button></div><p id="input-point-status" class="sr-only" role="status"></p></div>
     <div id="input-extra-tools" class="create-tools input-extra-tools" role="group" aria-label="Input track actions" hidden><div class="drawing-modes"><button id="trim-before" disabled>Trim before</button><button id="trim-after" disabled>Trim after</button><button id="reverse" disabled>Reverse</button><button id="simplify-input">Simplify</button><button id="input-terrain" aria-label="Fetch Terrain" disabled>Fetch<br>Terrain</button></div></div>
     <p id="input-selected-point" class="sr-only" role="status">Tap a map point to select it</p>
     <div id="input-finish-tools" class="input-finish-tools" hidden><span>Drag handles to reshape the section.</span><button id="input-done" class="button secondary compact">Done editing</button></div>
-    <div id="input-plan-controls" class="input-plan-controls"></div>
+    <div class="input-output-controls"><button id="export-input" class="button secondary">Export Edited GPX</button><div id="input-plan-controls" class="input-plan-controls"></div></div>
     </div>
     <div id="map-empty" class="map-empty"><section class="edit-workflow" aria-labelledby="edit-workflow-title"><h2 id="edit-workflow-title">Your route in five steps</h2><ol aria-label="Edit workflow">${["Open Track", "Edit", "Add to Route Plan", "Confirm Plan", "Save/Share GPX"].map((step, i) => `<li><span class="workflow-number" aria-hidden="true">${i + 1}</span><span>${step}</span></li>`).join("")}</ol><div class="workflow-repeat" role="img" aria-label="Repeat steps 1 to 3 for more tracks"><svg viewBox="0 0 300 28" preserveAspectRatio="none" aria-hidden="true"><path d="M250 1C250 14 246 20 228 20H72C54 20 50 14 50 2M46 7L50 2L54 7" fill="none" stroke="currentColor" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg><span aria-hidden="true">Repeat?</span></div><div class="workflow-open-actions"><button id="empty-import" class="button primary">${icon("plus", 18)}<span id="open-track-label">Open Track</span></button><button id="dismiss-another-track" class="icon-button" aria-label="Dismiss open another track prompt" title="Dismiss" hidden>${icon("close", 18)}</button></div></section></div>
     <div id="map-error" class="map-error" hidden><span>Some map tiles couldn’t load. Editing still works.</span><div class="map-warning-actions"><button id="retry-map" class="text-button">Retry</button><button id="dismiss-map" class="icon-button" aria-label="Dismiss map warning">${icon("close", 16)}</button></div></div>
@@ -140,7 +147,7 @@ document.querySelector("#app")!.innerHTML = `
     <div class="create-settings"><label><span id="card-name-label">Route name</span><input id="create-name" class="text-input" maxlength="120" value=""></label><button id="preview-route" class="button secondary compact" hidden>${icon("eye", 17)}Preview</button></div>
     <div class="waypoint-scroll" role="region" aria-label="Route points" tabindex="0"><table class="waypoint-table"><caption class="sr-only">Route points in walking order</caption><colgroup><col class="point-col"><col class="name-col"><col class="grid-col"><col class="height-col"><col class="card-extra distance-col"><col class="card-extra cumulative-distance-col"><col class="card-extra ascent-col"><col class="card-extra cumulative-ascent-col"></colgroup><thead><tr><th scope="col">Point</th><th class="point-name-cell" scope="col">Name</th><th id="coordinate-heading" scope="col">Grid ref.</th><th scope="col">Height<span class="heading-unit">(m)</span></th><th class="card-extra distance-cell" scope="col">Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Cumul<br>Distance<span class="heading-unit">(km)</span></th><th class="card-extra" scope="col">Ascent<span class="heading-unit">(m)</span></th><th class="card-extra" scope="col">Cumul<br>Ascent<span class="heading-unit">(m)</span></th></tr></thead><tbody id="waypoint-rows"></tbody></table></div>
     <div class="card-share-actions card-extra"><button id="create-share" class="button secondary">${icon("export", 17)}Share Text</button><button id="create-pdf" class="button secondary">${icon("file", 17)}Share PDF</button></div>
-    <div class="create-buttons"><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save Route</button></div>
+    <p id="route-export-status" class="card-source-note" role="status" hidden></p><div class="create-buttons"><button id="create-clear" class="button secondary">${icon("trash", 17)}Clear route</button><button id="create-save" class="button primary">${icon("export", 17)}Save Route</button></div>
   </section>
 </main>
 <div id="notice" class="notice" role="status" hidden></div>
@@ -273,7 +280,7 @@ function report(error: unknown) {
       ? error.message
       : typeof error === "object" && error && "message" in error
         ? String(error.message)
-        : "Something went wrong. Your tracks are safe. Please try again.",
+        : "Something went wrong. Please try again; export your tracks if saving is unavailable.",
     true,
   );
 }
@@ -291,7 +298,7 @@ function flushWorkspace() {
     revision = storageRevision;
   saveQueue = saveQueue
     .catch(() => {})
-    .then(() => set(STORAGE_KEY, snapshot))
+    .then(() => workspaceStorage.save(snapshot))
     .then(() => {
       if (revision === storageRevision)
         setSaveState("Saved on device", "Saved");
@@ -442,12 +449,7 @@ function renderStats(preview?: Track) {
     a = analytics(points);
   $("distance").innerHTML = `${km(a.length)}`;
   const hasElevation = points.some((p) => p.ele !== undefined);
-  const totalsAvailable =
-    hasElevation &&
-    !a.missingEdges &&
-    !a.estimatedGap &&
-    !t?.terrainNeedsRefresh &&
-    !points.some((p) => p.terrainPending);
+  const totalsAvailable = !!t && assessElevation(t, points).available;
   $("ascent").innerHTML = `${totalsAvailable ? metres(a.ascent) : "u/a"}${""}`;
   $("descent").innerHTML = `${totalsAvailable ? metres(a.descent) : "u/a"}`;
   $("point-count").textContent = t
@@ -551,17 +553,32 @@ function renderTracks() {
   list.innerHTML = tracks.length
     ? tracks
         .map((t) => {
-          const a = analytics(t.points);
-          return `<div class="track-row ${!editWelcome && t.id === workspace.activeId ? "active" : ""}"><button class="track-select" data-id="${t.id}" aria-pressed="${!editWelcome && t.id === workspace.activeId}"><span class="track-symbol" style="--track-color:${t.color}">${icon("route", 20)}</span><span class="track-text"><strong>${esc(t.name)}</strong><small>${km(a.length)} km <span>·</span> ${t.points.some((p) => p.ele !== undefined) ? `${metres(a.ascent)} m ↗` : "No elevation"} <span>·</span> ${t.points.length.toLocaleString()} pts</small></span>${!editWelcome && t.id === workspace.activeId ? `<span class="active-dot" style="--current-track-colour:${t.color}" role="img" aria-label="Current track"></span>` : icon("chevron", 15)}</button><button class="icon-button rename-track" data-rename-id="${t.id}" aria-label="Rename ${esc(t.name)}" title="Rename track">${icon("edit", 17)}</button><button class="color-trigger input-track-colour" data-colour-id="${t.id}" style="--line-colour:${t.color}" aria-label="Choose line colour for ${esc(t.name)}" title="Choose track line colour"></button><span class="input-plan-status"${allInputsInPlan([t], workspace.routePlan ?? []) ? ` role="img" aria-label="In Route Plan" title="All or part of this input is in the Route Plan">${icon("check", 18)}` : ' aria-hidden="true">'}</span><button class="icon-button delete-track" data-id="${t.id}" aria-label="Remove ${esc(t.name)}" title="Remove track">${icon("trash", 16)}</button></div>`;
+          const elevation = assessElevation(t),
+            a = elevation.stats;
+          const copies = (workspace.routePlan ?? []).filter(
+            (entry) => entry.inputTrackId === t.id,
+          );
+          const copyStatus = copies.length
+            ? copies.some(
+                (entry) =>
+                  planCopyStatus(entry, workspace.tracks) !== "Current copy",
+              )
+              ? "Input changed"
+              : "In plan"
+            : "Check plan copy";
+          return `<div class="track-row ${!editWelcome && t.id === workspace.activeId ? "active" : ""}"><button class="track-select" data-id="${t.id}" aria-pressed="${!editWelcome && t.id === workspace.activeId}"><span class="track-symbol" style="--track-color:${t.color}">${icon("route", 20)}</span><span class="track-text"><strong>${esc(t.name)}</strong><small>${km(a.length)} km${elevation.available ? ` <span>·</span> ${metres(a.ascent)} m ↗` : ""} <span>·</span> ${t.points.length.toLocaleString()} pts</small></span></button><div class="input-track-actions"><button class="icon-button track-focus" data-id="${t.id}" aria-label="Select ${esc(t.name)}" title="Select track">${!editWelcome && t.id === workspace.activeId ? `<span class="active-dot" style="--current-track-colour:${t.color}" role="img" aria-label="Current track"></span>` : icon("chevron", 15)}</button><button class="icon-button rename-track" data-rename-id="${t.id}" aria-label="Rename ${esc(t.name)}" title="Rename track">${icon("edit", 17)}</button><button class="color-trigger input-track-colour" data-colour-id="${t.id}" style="--line-colour:${t.color}" aria-label="Choose line colour for ${esc(t.name)}" title="Choose track line colour"></button><button class="icon-button delete-track" data-id="${t.id}" aria-label="Remove ${esc(t.name)}" title="Remove track">${icon("trash", 16)}</button><span class="input-plan-status"${allInputsInPlan([t], workspace.routePlan ?? []) ? ` role="img" aria-label="${copyStatus === "In plan" ? "In Route Plan" : copyStatus}" title="Saved copies in Route Plan"><span class="input-plan-label">${copyStatus}</span>` : ' aria-hidden="true">'}</span></div></div>`;
         })
         .join("")
     : '<div class="tracks-empty"><p>Open one or more GPX files.</p></div>';
-  list.querySelectorAll<HTMLButtonElement>(".track-select").forEach(
-    (b) =>
-      (b.onclick = () => {
-        if (!busy) select(workspace.tracks.find((t) => t.id === b.dataset.id)!);
-      }),
-  );
+  list
+    .querySelectorAll<HTMLButtonElement>(".track-select, .track-focus")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          if (!busy)
+            select(workspace.tracks.find((t) => t.id === b.dataset.id)!);
+        }),
+    );
   list
     .querySelectorAll<HTMLButtonElement>("[data-rename-id]")
     .forEach((button) => {
@@ -754,16 +771,6 @@ $("input-reset").onclick = () => {
     "Reset Track",
   );
 };
-$("input-close").onclick = () => {
-  if (busy || !activeInput()) return;
-  if (!inputEditing) {
-    inputEditing = true;
-    workspace.selection = { start: 0, end: activeInput()!.points.length - 1 };
-    selectedInputPoint = null;
-    map.resetSelection();
-  }
-  changeInput(closeInputLoop, null, "move");
-};
 $("reverse").onclick = () => {
   const track = activeInput();
   if (!track || busy) return;
@@ -937,14 +944,11 @@ function routePlanDialog() {
   if (!plan.some((track) => track.id === selectedPlanId))
     selectedPlanId = plan[0]?.id ?? null;
   const index = plan.findIndex((track) => track.id === selectedPlanId);
-  const pending =
-    !workspace.route ||
-    JSON.stringify(workspace.confirmedPlan ?? []) !==
-      JSON.stringify(plan.map((track) => track.id));
+  const pending = !workspace.route || confirmedRouteChanged(workspace);
   openDialog(
     `${dialogHeader("Route Plan", "Select a track, then move it up or down to set the walking order.", true)}
     <p class="dialog-note">${pending ? "Confirm Plan fetches missing heights and connections from Open Topo Data, then builds the route in this order. The Route Card stays unchanged until completion." : "This order is confirmed. Changes take effect when you confirm again."}</p>
-    <div class="plan-scroll" role="region" aria-label="Route Plan tracks" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Track</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No tracks yet. Edit an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
+    <div class="plan-scroll" role="region" aria-label="Route Plan tracks" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Track</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button><small class="plan-copy-status">${esc(planCopyStatus(track, workspace.tracks))}</small></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No tracks yet. Edit an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
     <div class="plan-row-actions"><button id="plan-up" class="button secondary compact" ${index <= 0 ? "disabled" : ""}>Move up</button><button id="plan-down" class="button secondary compact" ${index < 0 || index === plan.length - 1 ? "disabled" : ""}>Move down</button><button id="plan-remove" class="button secondary compact" ${index < 0 ? "disabled" : ""}>Remove</button></div>
     <button id="plan-replace" class="button secondary compact" ${!replacementInput ? "hidden" : ""} ${index < 0 ? "disabled" : ""}>Replace selected track with current input</button>
     <div class="dialog-actions"><button class="button secondary" data-close>Keep adding</button><button id="confirm-route-plan" class="button primary" ${!plan.length ? "disabled" : ""}>Confirm Plan</button></div>`,
@@ -1077,6 +1081,7 @@ function applyConfirmedPlan(route: Track, ids: string[]) {
       );
       workspace.route = route;
       workspace.confirmedPlan = ids;
+      workspace.confirmedSignature = planSignature(workspace.routePlan ?? []);
       workspace.activeId = route.id;
       workspace.selection = { start: 0, end: route.points.length - 1 };
       editWelcome = false;
@@ -1088,9 +1093,7 @@ function applyConfirmedPlan(route: Track, ids: string[]) {
 async function confirmRoutePlan() {
   if (busy || !workspace.routePlan?.length) return;
   const ids = workspace.routePlan.map((track) => track.id);
-  const unchanged =
-    workspace.route &&
-    JSON.stringify(ids) === JSON.stringify(workspace.confirmedPlan ?? []);
+  const unchanged = workspace.route && !confirmedRouteChanged(workspace);
   let candidate: Track;
   try {
     candidate = unchanged
@@ -1201,6 +1204,7 @@ function render() {
   $("input-point-tools").hidden = false;
   $("input-extra-tools").hidden = false;
   $<HTMLButtonElement>("reverse").disabled = busy || !input;
+  $<HTMLButtonElement>("export-input").disabled = busy || !input;
   $<HTMLButtonElement>("input-reset").disabled =
     busy || !input || !inputStart(workspace, input.id);
   for (const tool of ["move", "add", "insert"] as const) {
@@ -1210,8 +1214,6 @@ function render() {
     );
     $<HTMLButtonElement>("input-" + tool).disabled = busy || !input;
   }
-  $<HTMLButtonElement>("input-close").disabled =
-    busy || !input || input.points.length < 3 || isClosedRoute(input);
   const inputTerrain = $<HTMLButtonElement>("input-terrain");
   if (inputTerrain)
     inputTerrain.disabled = busy || !input || !needsTerrain(input);
@@ -1311,11 +1313,13 @@ async function exportTrack(track: Track) {
   busy = true;
   render();
   try {
-    if (await saveTrack(track, "Edited Route"))
+    if (await saveTrack(track))
       notification(
         Capacitor.isNativePlatform()
           ? "GPX saved to your chosen location."
           : "GPX saved. Your workspace is still here.",
+        false,
+        true,
       );
   } catch (e) {
     report(e);
@@ -1494,7 +1498,7 @@ function routeCardContext() {
     terrain: undefined,
     source,
     offset: 0,
-    description: `Whole joined route · ${source.points.length} points${needsTerrain(source) ? " · Terrain incomplete — ascent is partial" : ""}`,
+    description: `${confirmedRouteChanged(workspace) ? "Plan changed — confirm again. This is the previous confirmed route. · " : "Confirmed route · "}Whole joined route · ${source.points.length} points${needsTerrain(source) ? " · Terrain incomplete — ascent is partial" : ""}`,
   };
 }
 function fitCardCoordinates() {
@@ -1601,7 +1605,15 @@ function renderPointCard() {
     context?.source === workspace.route ? "Route name" : "Input track";
   $("card-source-note").hidden = !context;
   $("card-source-note").textContent = context?.description ?? "";
-  $("create-save").setAttribute("aria-label", "Save Route");
+  const changedPlan = !!context && confirmedRouteChanged(workspace);
+  $("route-export-status").hidden = !changedPlan;
+  $("route-export-status").textContent = changedPlan
+    ? "Plan changed — confirm again to update this route. Export currently uses the previous confirmed route."
+    : "";
+  $("create-save").setAttribute(
+    "aria-label",
+    changedPlan ? "Export previous confirmed route" : "Save Route",
+  );
   $("create-save").innerHTML = `${icon("export", 17)}Save Route`;
   $("coordinate-heading").textContent = {
     latlon: "Lat/Lon",
@@ -1816,10 +1828,23 @@ $<HTMLInputElement>("create-name").onblur = () => {
   $<HTMLInputElement>("create-name").value =
     routeCardContext()?.route.name ?? "";
 };
+$("export-input").onclick = () => {
+  const input = activeInput();
+  if (input) void exportTrack(input);
+};
 $("create-save").onclick = () => {
   const context = routeCardContext();
-  if (context && context.route.points.length >= 2)
-    void exportTrack(context.terrain ?? context.route);
+  if (context && context.route.points.length >= 2) {
+    if (confirmedRouteChanged(workspace)) {
+      openDialog(
+        `${dialogHeader("Export previous confirmed route?")}<p>The Route Plan has changed. Confirm it again to export the new plan, or export the previous confirmed route.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="export-previous" class="button primary">Export previous route</button></div>`,
+      );
+      $("export-previous").onclick = () => {
+        $<HTMLDialogElement>("dialog").close();
+        void exportTrack(context.terrain ?? context.route);
+      };
+    } else void exportTrack(context.terrain ?? context.route);
+  }
 };
 $("create-clear").onclick = () => {
   if (busy) return;
@@ -1981,9 +2006,10 @@ $("settings").onclick = () => {
       )
       .join(
         "",
-      )}</select></section>${colourSection}<section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section></div><div class="settings-dialog-actions"><button class="button primary full" data-close>Done</button></div>`,
+      )}</select></section>${colourSection}<section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section><section><h3>Saved work</h3><button id="workspace-recovery" class="button secondary">Workspace recovery and backup</button></section></div><div class="settings-dialog-actions"><button class="button primary full" data-close>Done</button></div>`,
     "settings",
   );
+  $("workspace-recovery").onclick = openWorkspaceRecovery;
   const bindSettingsColour = () => {
     bindColourPicker(
       colourTrack?.color ?? defaultInputColour ?? "#d32f2f",
@@ -2113,7 +2139,7 @@ async function init() {
       coordinateSystem = savedCoordinates;
   } catch {}
   try {
-    const saved = await get(STORAGE_KEY);
+    const saved = await workspaceStorage.load();
     if (saved) {
       if (validateWorkspace(saved)) {
         workspace = restoreSeparateWorkspace(saved);
@@ -2145,6 +2171,11 @@ async function init() {
       true,
     );
   }
+  if (await workspaceStorage.recovery().catch(() => undefined))
+    notification(
+      "A saved workspace needed recovery. Its original data is preserved. Open Settings → Workspace recovery and backup for options.",
+      true,
+    );
   render();
   fitMap();
   if (Capacitor.isNativePlatform()) {
@@ -2153,3 +2184,66 @@ async function init() {
   }
 }
 void init();
+
+async function openWorkspaceRecovery() {
+  if (busy) return;
+  try {
+    await saveQueue;
+    const previous = await workspaceStorage.previous();
+    const recovery = await workspaceStorage.recovery();
+    openDialog(
+      `${dialogHeader("Workspace recovery")}<p>Restore the previous saved workspace, or export a complete backup. Unreadable saved data is kept separately even when you start new work. Restoring can be undone.</p><div class="dialog-actions"><button id="backup-workspace" class="button secondary">Export backup</button><button id="export-recovery" class="button secondary" ${recovery ? "" : "disabled"}>Export recovery data</button><button id="restore-workspace" class="button primary" ${previous ? "" : "disabled"}>Restore previous copy</button><button class="button secondary" data-close>Close</button></div><p><label>Restore a backup <input id="import-backup" type="file" accept=".json,application/json"></label></p>`,
+    );
+    $("backup-workspace").onclick = () => {
+      void saveData(
+        "BareGPS-workspace-backup.json",
+        JSON.stringify({
+          format: "BareGPS workspace backup",
+          version: 1,
+          workspace,
+        }),
+        "application/json",
+      ).catch(report);
+    };
+    $("export-recovery").onclick = () => {
+      void saveData(
+        "BareGPS-workspace-recovery.json",
+        JSON.stringify(recovery),
+        "application/json",
+      ).catch(report);
+    };
+    const restore = (saved: Workspace) => {
+      if (busy) return;
+      commit(() => {
+        workspace = restoreSeparateWorkspace(structuredClone(saved));
+        rememberInputStarts(workspace);
+        editWelcome = !workspace.tracks.length && !workspace.route;
+      });
+      $<HTMLDialogElement>("dialog").close();
+      fitMap();
+    };
+    $("restore-workspace").onclick = () => {
+      if (previous) restore(previous);
+    };
+    $<HTMLInputElement>("import-backup").onchange = async (event) => {
+      try {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        if (file.size > 100 * 1024 * 1024)
+          throw new Error("Choose a backup smaller than 100 MB.");
+        const backup = JSON.parse(await file.text());
+        if (
+          backup.format !== "BareGPS workspace backup" ||
+          backup.version !== 1 ||
+          !validateWorkspace(backup.workspace)
+        )
+          throw new Error("This is not a valid BareGPS workspace backup.");
+        restore(backup.workspace);
+      } catch (error) {
+        report(error);
+      }
+    };
+  } catch (error) {
+    report(error);
+  }
+}

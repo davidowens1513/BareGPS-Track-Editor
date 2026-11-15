@@ -3304,7 +3304,7 @@ body.web-route-card #create-card.card .waypoint-scroll .waypoint-table td {
   color: #3f6747;
 }
 
-/* Keep plan membership between the input colour and remove controls. */
+/* Reserve the original plan indicator slot so the right-hand buttons stay put. */
 .input-plan-status {
   display: inline-flex;
   align-items: center;
@@ -3533,7 +3533,7 @@ body:not(.creating) #map-error {
   touch-action: manipulation;
 }
 #input-point-tools .drawing-modes {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 #input-point-tools .drawing-modes button,
 #input-extra-tools .drawing-modes button {
@@ -3733,4 +3733,95 @@ dialog.settings-dialog {
   align-items: center;
   gap: 5px;
   vertical-align: middle;
+}
+
+/* Keep copy freshness visible without relying on colour. */
+.plan-copy-status {
+  display: block;
+  margin-top: 4px;
+}
+/* Add permanent depth below the original 32px controls, without widening them. */
+.track-row {
+  position: relative;
+  min-height: 44px;
+  align-items: flex-start;
+}
+.track-row .track-select {
+  min-height: 42px;
+}
+.track-row .track-text {
+  position: relative;
+  align-self: stretch;
+  padding-top: 3px;
+  gap: 0;
+}
+.track-row .track-text strong {
+  line-height: 14px;
+}
+.track-row .track-text small {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  line-height: 11px;
+}
+.input-track-actions {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  flex: 0 0 116px;
+  height: 32px;
+}
+.track-row .input-track-actions .track-focus,
+.track-row .input-track-actions .rename-track,
+.track-row .input-track-actions .delete-track {
+  width: 100%;
+  margin: 0;
+}
+.track-row .input-track-actions .input-track-colour {
+  margin: 0;
+}
+.input-track-actions .track-focus .active-dot {
+  margin: 0;
+}
+.input-track-actions .input-plan-status {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  min-width: 0;
+  width: 100%;
+  height: 10px;
+}
+.input-plan-label {
+  width: 100%;
+  text-align: center;
+  font-size: 9px;
+  line-height: 10px;
+  white-space: nowrap;
+}
+#card-source-note {
+  font-weight: 600;
+}
+
+.input-output-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border);
+}
+.input-output-controls > button,
+.input-output-controls > .input-plan-controls {
+  flex: 1;
+  min-width: 0;
+}
+.input-output-controls > .input-plan-controls {
+  padding: 0;
+  border: 0;
+}
+.input-output-controls .button {
+  min-height: 44px;
+  padding: 5px 8px;
+  white-space: normal;
 }

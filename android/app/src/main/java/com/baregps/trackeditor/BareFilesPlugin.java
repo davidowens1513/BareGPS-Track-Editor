@@ -141,7 +141,7 @@ public class BareFilesPlugin extends Plugin {
             if (encoded == null) throw new IOException("The GPX file was not prepared.");
             exportData = Base64.decode(encoded, Base64.DEFAULT);
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE); intent.setType("application/gpx+xml"); intent.putExtra(Intent.EXTRA_TITLE, name);
+            intent.addCategory(Intent.CATEGORY_OPENABLE); intent.setType(call.getString("mimeType", "application/gpx+xml")); intent.putExtra(Intent.EXTRA_TITLE, name);
             actionOpen = true; startActivityForResult(call, intent, "saved");
         } catch (Exception e) { actionOpen = false; exportData = null; call.reject("Could not prepare GPX export: " + e.getMessage(), e); }
     }

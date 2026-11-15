@@ -7,4 +7,4 @@ const result = source.replace(
 );
 if (!result.includes('path: "../../../node_modules/@capacitor/geolocation"'))
   throw new Error("Could not normalise the iOS dependency path.");
-await writeFile(url, result);
+if (result !== source) await writeFile(url, result);

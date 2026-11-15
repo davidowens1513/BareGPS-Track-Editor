@@ -226,28 +226,6 @@ export function reshapeInputHandle(
   return { ...track, points };
 }
 
-export function closeInputLoop(track: Track): Track {
-  if (track.points.length < 3)
-    throw new Error("An input needs at least three points to close a loop.");
-  if (isClosedRoute(track)) return track;
-  const first = track.points[0],
-    last = track.points.at(-1)!;
-  if (distance(first, last) < 0.5) {
-    const points = [...track.points];
-    points[points.length - 1] = {
-      ...last,
-      lat: first.lat,
-      lon: first.lon,
-      ele: first.ele,
-      time: undefined,
-      terrain: undefined,
-      terrainPending: true,
-    };
-    return { ...track, points };
-  }
-  return insertInputPoint(track, track.points.length, first);
-}
-
 export { needsTerrain } from "./terrain-state";
 
 // The temporary marker survives terrain sampling, but is never persisted or exported.
