@@ -1,0 +1,36 @@
+{
+  "version": "0.3.4",
+  "build": 77,
+  "site": "https://appsbyonzy.dev/",
+  "downloads": [
+    {
+      "file": "android/BareGPS-Track-Editor-0.3.4.apk",
+      "sha256": "8995088d27dac5099985c81a3289c595a9240d5c7706d0b8ac5381952750a92c",
+      "matches": true
+    },
+    {
+      "file": "android/BareGPS-Track-Editor-android-Bundle-0.3.4.zip",
+      "safari_auto_expanded": true,
+      "matching_files": 4,
+      "matches": true
+    },
+    {
+      "file": "ios/BareGPS-Track-Editor-ios-Bundle-0.3.4.zip",
+      "safari_auto_expanded": true,
+      "matching_files": 88,
+      "matches": true
+    }
+  ],
+  "map_toggle": "Single layers icon below location toggles directly; satellite imagery loaded; centre unchanged; live About credits show Esri/Vantor for selected imagery.",
+  "phones": {
+    "ios": "Xcode running App on TestBed iOS, build 77",
+    "android": "Android Studio installed build 77 on SM-A075F; development signed to preserve existing workspace; website APK is release signed."
+  },
+  "tests": {
+    "vitest": 142,
+    "native_file_guard": 9,
+    "typescript": "passed",
+    "web_build": "passed",
+    "native_sync": "passed"
+  }
+}
