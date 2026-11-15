@@ -745,15 +745,31 @@ it("lets the user return to the plan or keep an intentional join without reversi
 it("switches map layers, persists the choice and updates About credits", async () => {
   await import("../src/main");
   await vi.waitFor(() => expect(state.maps).toHaveLength(1));
-  click("layer-satellite");
+  click("map-layer-toggle");
   expect(state.maps[0].setBaseLayer).toHaveBeenLastCalledWith("satellite");
-  expect(button("layer-satellite").getAttribute("aria-pressed")).toBe("true");
+  expect(button("map-layer-toggle").getAttribute("aria-label")).toBe(
+    "Switch to OpenTopo",
+  );
   expect(state.store.get("baregps-track-editor-map-layer-v1")).toBe(
     "satellite",
   );
+  expect(document.querySelector(".map-layer-picker")).toBeNull();
   click("help");
   expect(document.querySelector("dialog")!.textContent).toContain("Vantor");
   expect(document.querySelector("dialog")!.textContent).not.toContain(
     "Map rendering ©",
   );
+});
+
+it("toggles directly between both map layers with a single icon", async () => {
+  await import("../src/main");
+  await vi.waitFor(() => expect(state.maps).toHaveLength(1));
+  click("map-layer-toggle");
+  expect(state.maps[0].setBaseLayer).toHaveBeenLastCalledWith("satellite");
+  click("map-layer-toggle");
+  expect(state.maps[0].setBaseLayer).toHaveBeenLastCalledWith("opentopo");
+  expect(button("map-layer-toggle").getAttribute("aria-label")).toBe(
+    "Switch to Satellite",
+  );
+  expect(state.store.get("baregps-track-editor-map-layer-v1")).toBe("opentopo");
 });

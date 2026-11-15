@@ -2,7 +2,7 @@
 
 Import, edit, simplify and combine GPX tracks into a walking route.
 
-**Version 0.3.4 · build 76.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
+**Version 0.3.4 · build 77.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
 
 [Open in browser](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and instructions](https://appsbyonzy.dev/#baregps-track-editor) · [Development and validation notes](docs/development.md)
 
@@ -16,7 +16,7 @@ Import, edit, simplify and combine GPX tracks into a walking route.
 
 Simplify previews a separate copy, targeting 10 handles/km with at most 10 metres deviation. Accept retains the original. Names, endpoints, bends and segment boundaries are protected, so some tracks need more points.
 
-The map picker below the current-position button switches between OpenTopo and Satellite, remembers your choice and updates the credits in About.
+Tap the layers icon below the current-position button to switch directly between OpenTopo and Satellite, remembers your choice and updates the credits in About.
 
 Settings provides 14 named colours, hex entry and Apply. With no input open, it saves a default colour for new imports. With inputs open, its selector chooses the input to recolour. Settings also selects the coordinate system and enables point naming.
 

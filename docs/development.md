@@ -2,13 +2,13 @@
 
 These notes describe development history and validation, separately from the as-is product description in the [README](../README.md).
 
-## Map and join refinements — 0.3.4, build 76
+## Map and join refinements — 0.3.4, build 77
 
 - Clearing the confirmed route preserves the map view and input visibility.
 - Adding or confirming one input keeps the other inputs visible.
 - Confirmation reviews joins over 500 m when reversing sections cuts the gap to a third or less and saves at least 250 m without worsening neighboring connections overall. Joins over 5 km also prompt without a clear reversal. Users can reverse plan copies, keep the join or return to the plan. Input files remain unchanged; changes support Undo.
-- OpenTopo/Satellite picker below the current-position button remembers the selected layer. Switching preserves the view; map and About credits follow the selected layer. Simplification previews use the same layer.
-- Version and both native build numbers advanced to 0.3.4 (76). All 141 unit/UI tests and 9 native file-check tests passed; TypeScript, web build and native asset sync passed. Xcode installed and launched on TestBed iOS. Android release assembled; the phone has a development-signed install, so its compatible development update is separate from the public release-signed download. Publication evidence follows in linked validation files.
+- A single layers icon toggles directly between OpenTopo/Satellite below the current-position button remembers the selected layer. Switching preserves the view; map and About credits follow the selected layer. Simplification previews use the same layer.
+- Version and both native build numbers advanced to 0.3.4 (77). All 142 unit/UI tests and 9 native file-check tests passed; TypeScript, web build and native asset sync passed. Xcode installed and launched on TestBed iOS. Android release assembled; the phone has a development-signed install, so its compatible development update is separate from the public release-signed download. Publication evidence follows in linked validation files.
 
 
 ## About and support update — build 74

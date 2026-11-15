@@ -131,7 +131,7 @@ document.querySelector("#app")!.innerHTML = `
   <span id="track-count" class="sr-only">Your workspace</span>
   <section id="map-panel" class="map-panel" aria-label="Track map">
     <div class="map-toolbar"><span class="map-label">${icon("mountain", 18)}<strong id="map-layer-name">OpenTopoMap</strong><span id="map-layer-badge" class="terrain-label">TERRAIN</span></span><div class="map-actions"><button id="view-toggle" class="small-button">${icon("eye", 16)}<span>All tracks</span></button><span class="toolbar-divider"></span><button id="fit" class="icon-button" aria-label="Fit tracks to map" title="Fit tracks">${icon("fit", 18)}</button><button id="expand" class="icon-button" aria-label="Expand map" title="Expand map">${icon("expand", 18)}</button></div></div>
-    <div id="edit-map-view" role="region" aria-label="Input track map"><div id="map"></div><div id="current-input" class="current-input" role="status" hidden><span class="active-dot" aria-hidden="true"></span><span id="current-input-name"></span></div><button id="exit-preview" class="button secondary preview-mode" aria-label="Close Preview Mode" hidden><span aria-hidden="true">×</span> Preview Mode</button><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><div class="map-layer-picker" role="group" aria-label="Map layer"><button id="layer-opentopo" aria-pressed="true">OpenTopo</button><button id="layer-satellite" aria-pressed="false">Satellite</button></div><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
+    <div id="edit-map-view" role="region" aria-label="Input track map"><div id="map"></div><div id="current-input" class="current-input" role="status" hidden><span class="active-dot" aria-hidden="true"></span><span id="current-input-name"></span></div><button id="exit-preview" class="button secondary preview-mode" aria-label="Close Preview Mode" hidden><span aria-hidden="true">×</span> Preview Mode</button><button id="edit-locate" class="icon-button map-locate" aria-label="Go to current position" title="Go to current position">${icon("locate", 21)}</button><button id="map-layer-toggle" class="icon-button map-locate map-layer-toggle" aria-label="Switch to Satellite" title="Switch to Satellite">${icon("layers", 22)}</button><span id="edit-coordinates" class="map-coordinates" aria-label="Map centre coordinates"></span></div>
     <div id="input-edit-controls" hidden>
     <div id="input-point-tools" class="create-tools" role="group" aria-label="Input point editing tools" hidden><div class="drawing-modes" role="group" aria-label="Input drawing mode"><button id="input-move" aria-pressed="true" hidden>Move</button><button id="input-add" aria-pressed="false">Add points</button><button id="input-insert" aria-pressed="false">Insert point</button><button id="input-delete" disabled>Delete point</button><button id="input-reset" disabled>Reset Track</button></div><p id="input-point-status" class="sr-only" role="status"></p></div>
     <div id="input-extra-tools" class="create-tools input-extra-tools" role="group" aria-label="Input track actions" hidden><div class="drawing-modes"><button id="trim-before" disabled>Trim before</button><button id="trim-after" disabled>Trim after</button><button id="reverse" disabled>Reverse</button><button id="simplify-input">Simplify</button><button id="input-terrain" aria-label="Fetch Terrain" disabled>Fetch<br>Terrain</button></div></div>
@@ -815,16 +815,18 @@ bindInputActions();
 function changeMapLayer(layer: MapLayer) {
   selectedMapLayer = layer;
   map.setBaseLayer(layer);
-  for (const value of ["opentopo", "satellite"] as const)
-    $("layer-" + value).setAttribute("aria-pressed", String(value === layer));
+  const label =
+    layer === "opentopo" ? "Switch to Satellite" : "Switch to OpenTopo";
+  $("map-layer-toggle").setAttribute("aria-label", label);
+  $("map-layer-toggle").title = label;
   $("map-layer-name").textContent = mapLayers[layer].name;
   $("map-layer-badge").textContent = mapLayers[layer].badge;
 }
-for (const layer of ["opentopo", "satellite"] as const)
-  $("layer-" + layer).onclick = () => {
-    changeMapLayer(layer);
-    void set(MAP_LAYER_KEY, layer).catch(report);
-  };
+$("map-layer-toggle").onclick = () => {
+  const layer = selectedMapLayer === "opentopo" ? "satellite" : "opentopo";
+  changeMapLayer(layer);
+  void set(MAP_LAYER_KEY, layer).catch(report);
+};
 function previewSimplification() {
   const original = activeInput();
   if (busy || !original) return;
