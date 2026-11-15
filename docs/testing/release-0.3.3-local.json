@@ -1,0 +1,18 @@
+{
+  "version": "0.3.3",
+  "build": 75,
+  "source_commit": "391da1952783cdacdb9faef81acbe4690d6d7da8",
+  "unit_app_tests": 128,
+  "native_file_tests": 9,
+  "android_release_build": "Android Studio: BUILD SUCCESSFUL in 7s",
+  "android": {
+    "build": 75,
+    "release_signed": true,
+    "debuggable": false,
+    "signing_certificate_sha256": "8176a4bb5fb5fb0b672346343558c4bb58433e71dda5ebd5dd9aad1bd2c283d9"
+  },
+  "apk_web_assets_match_dist": 9,
+  "ios_source_matches": true,
+  "quarantine_and_signing_secrets_excluded": true,
+  "apk_sha256": "b454b8bef13906ed112f14c76956563f388bf1819acfd170891a48f29edf9c42"
+}
