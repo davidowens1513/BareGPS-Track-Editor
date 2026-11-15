@@ -32,5 +32,6 @@
     "typescript": "passed",
     "web_build": "passed",
     "native_sync": "passed"
-  }
+  },
+  "cloudflare_deployment": "e432554a-1371-4a63-8e9c-85655c0912fe"
 }
