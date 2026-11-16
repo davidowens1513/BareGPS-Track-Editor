@@ -185,3 +185,5 @@ Downloads are a signed Android APK/ZIP and an iPhone Xcode source ZIP, not an IP
 ## Release 0.3.6 — build 80
 
 Publication authorised on 16 November 2026. This release includes the phone-sized direction-review actions and the opening-guide stacking correction installed on both phones. The README describes the current app; this file retains progress. Public Android downloads use the permanent release key, separately from the compatible development-signed phone installation. Website and download verification is recorded in docs/testing/release-0.3.6.json.
+
+Production deployment `e8b03317-4297-41a5-8c9b-24f481e0122a` is live. The homepage shows Track Editor 0.3.6 build 80 and Route Maker iOS 1.0.1 build 103 / Android 0.1.6 build 13. Both previews loaded; current About guidance and selected-layer credits were checked. Downloaded APK SHA-256 values and every file in both products’ expanded iOS/Android bundles match the packaged releases. All previous site files are retained. All three repositories were pushed; this verification record is committed separately. App Store Connect was observed showing Route Maker build 103 Waiting for Review.
