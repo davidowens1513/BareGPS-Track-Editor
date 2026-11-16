@@ -363,7 +363,8 @@ h3 {
 }
 .map-empty {
   position: absolute;
-  z-index: 500;
+  /* Keep the opening guide above Leaflet and the location/layer controls. */
+  z-index: 1100;
   top: 49px;
   bottom: 0;
   left: 0;
@@ -1070,6 +1071,19 @@ dialog p {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 25px;
+}
+.join-review-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.join-review-actions .button {
+  min-width: 0;
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.join-review-actions .primary {
+  grid-column: 1 / -1;
 }
 .field-label {
   display: block;

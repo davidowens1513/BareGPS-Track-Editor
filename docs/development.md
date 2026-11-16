@@ -2,6 +2,14 @@
 
 These notes describe development history and validation, separately from the as-is product description in the [README](../README.md).
 
+## Opening-prompt stacking — local 0.3.6, build 80
+
+The Open Track/Your route in five steps overlay now sits above both custom map controls (location and layers), as well as Leaflet controls. Transparent overlay space retains its existing click-through behaviour, so map controls remain usable outside the guide card. Build 80 was installed and launched on TestBed iOS through Xcode and SM-A075F Android 16 through Android Studio. The device reports Android versionCode 80/versionName 0.3.6; both native builds match the current web assets. TypeScript, production build and native preparation passed. Publication was subsequently authorised; see the release record below.
+
+## Direction-review dialog layout — local 0.3.6, build 79
+
+The suggested reversal occupies its own full-width row. Back to plan and Keep this join share an equal-width row underneath; labels wrap and columns can shrink on narrow screens. Keyboard order follows the visual order. Built and installed locally on TestBed iOS through Xcode and SM-A075F Android 16 through Android Studio; both apps launched as 0.3.6, build 79. All 157 tests, TypeScript checks, production build and native asset preparation passed. Installed native build assets match dist. Publication was subsequently authorised; see the release record below. The reversal algorithm remains unchanged: it compares reversing the first section, the next section, or both, including neighbouring connections. Equally good alternatives can exist; reversing a closed loop does not move its connection endpoints.
+
 ## Plan replacement direction and reversed-track timing — 0.3.5, build 78
 
 Replacing a Route Plan entry preserves its `planReversed` choice, applies it to the refreshed input copy and keeps the source input signature so copy status stays accurate. The confirmed route changes only on reconfirmation. Ordinary and twice-reversed entries use the input's normal order.
@@ -173,3 +181,7 @@ Build 64 corrects the Settings colour section: the same named palette/hex form i
 Validation: 109 unit/app-flow checks (including the Settings palette and input selection), TypeScript and production builds, native builds and package checks. PDFs were rendered and inspected. Physical device gesture/layout acceptance remains separate from automated and build checks.
 
 Downloads are a signed Android APK/ZIP and an iPhone Xcode source ZIP, not an IPA or TestFlight installation. Older versioned downloads remain available. This update does not change the app’s public name or publish it to either app store.
+
+## Release 0.3.6 — build 80
+
+Publication authorised on 16 November 2026. This release includes the phone-sized direction-review actions and the opening-guide stacking correction installed on both phones. The README describes the current app; this file retains progress. Public Android downloads use the permanent release key, separately from the compatible development-signed phone installation. Website and download verification is recorded in docs/testing/release-0.3.6.json.

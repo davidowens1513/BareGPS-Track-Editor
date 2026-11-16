@@ -697,6 +697,11 @@ it("reviews suspicious joins and reverses the saved plan copy only after agreeme
   expect(document.getElementById("join-reverse")!.textContent).toBe(
     "Reverse next section",
   );
+  expect(
+    [...document.querySelectorAll(".join-review-actions button")].map(
+      (button) => button.id,
+    ),
+  ).toEqual(["join-reverse", "join-back", "join-keep"]);
   expect(document.getElementById("waypoint-count")!.textContent).toBe("0");
   click("join-reverse");
   await vi.waitFor(() => {

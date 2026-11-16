@@ -2,7 +2,7 @@
 
 Import, edit, simplify and combine GPX tracks into a walking route.
 
-**Version 0.3.5 · build 78.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
+**Version 0.3.6 · build 80.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
 
 [Open in browser](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and instructions](https://appsbyonzy.dev/#baregps-track-editor) · [Development and validation notes](docs/development.md)
 
@@ -22,7 +22,7 @@ Settings provides 14 named colours, hex entry and Apply. With no input open, it 
 
 Input rows keep the track name and metrics separate from the evenly spaced controls, with plan status underneath. The four point-editing actions are Add points, Insert point, Delete point and Reset Track.
 
-Clearing the route keeps the current map position. Confirm Plan checks unusually long joins and offers to reverse plan sections when that would improve the join; original inputs stay unchanged.
+Clearing the route keeps the current map position. Confirm Plan checks unusually long joins and offers a suggested reversal when that would improve the join. It compares reversing either section or both, including neighbouring connections. Nothing is reversed until you choose it; original inputs stay unchanged.
 
 Plan copies show when the input has changed. If you change the plan after confirming, the Route Card warns that it is an older confirmed route; exporting it requires an explicit choice. Renamed tracks and routes use their names in exported filenames.
 

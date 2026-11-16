@@ -31,6 +31,26 @@ it("can identify the first section, or both sections, as reversed", () => {
       ?.suggestion?.reverseIndexes,
   ).toEqual([0, 1]);
 });
+it("can have equally short single-track reversals when both tracks share endpoints", () => {
+  const plan = [track("first", 53, 53.02), track("next", 53, 53.02)];
+  const firstReversed = reversePlanCopies(plan, [0]);
+  const nextReversed = reversePlanCopies(plan, [1]);
+  expect(firstReversed[0].points.at(-1)!.lat).toBe(
+    firstReversed[1].points[0].lat,
+  );
+  expect(nextReversed[0].points.at(-1)!.lat).toBe(
+    nextReversed[1].points[0].lat,
+  );
+  expect(findJoinReview(plan)?.suggestion?.gap).toBe(0);
+});
+it("reverses the approach rather than a closed loop whose endpoints cannot fix the gap", () => {
+  const loop = track("loop", 53.02, 53.02);
+  loop.points.splice(1, 0, { lat: 53.03, lon: -6, ele: 100 });
+  const plan = [track("approach", 53.02, 53.1), loop];
+  expect(findJoinReview(plan)?.suggestion?.reverseIndexes).toEqual([0]);
+  const reversedLoop = reversePlanCopies(plan, [1]);
+  expect(findJoinReview(reversedLoop)?.gap).toBe(findJoinReview(plan)?.gap);
+});
 it("leaves short and sensible joins alone", () => {
   expect(
     findJoinReview([track("first", 53, 53.02), track("next", 53.02, 53.04)]),
