@@ -1,5 +1,10 @@
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
-import { emptyWorkspace, type Track } from "../src/model";
+import {
+  emptyWorkspace,
+  MAX_INPUT_POINTS,
+  type Track,
+  type Workspace,
+} from "../src/model";
 const state = vi.hoisted(() => ({
   store: new Map<string, unknown>(),
   picks: [] as { name: string; text: string }[],
@@ -117,6 +122,7 @@ async function start(
   withOutput = false,
   missingTerrain = false,
   secondInput = false,
+  configure?: (workspace: Workspace) => void,
 ) {
   const w = emptyWorkspace();
   if (withInput) {
@@ -133,6 +139,7 @@ async function start(
     w.selection = { start: 0, end: 2 };
   }
   if (withOutput) w.route = { ...fixture(), id: "output-one" };
+  configure?.(w);
   state.store.set("baregps-track-editor-workspace-v1", w);
   await import("../src/main");
   await vi.waitFor(() =>
@@ -247,7 +254,7 @@ it("refreshes an empty map and disables Fit and Reset Track until inputs exist",
   expect(state.maps[0].map.invalidateSize).toHaveBeenCalled();
 });
 it.each(["success", "cancel", "failure"])(
-  "restores expansion controls after GPX save %s",
+  "restores expansion and map-layer controls after GPX save %s",
   async (outcome) => {
     await start(true, true);
     let finish!: (value: boolean) => void, reject!: (error: Error) => void;
@@ -258,12 +265,16 @@ it.each(["success", "cancel", "failure"])(
     click("create-save");
     expect(button("expand").disabled).toBe(true);
     expect(button("expand-card").disabled).toBe(true);
+    expect(button("map-layer-toggle").disabled).toBe(true);
     if (outcome === "success") finish(true);
     else if (outcome === "cancel")
       reject(new DOMException("Cancelled", "AbortError"));
     else reject(new Error("Test save failed"));
     await vi.waitFor(() => expect(button("expand").disabled).toBe(false));
     expect(button("expand-card").disabled).toBe(false);
+    expect(button("map-layer-toggle").disabled).toBe(false);
+    click("map-layer-toggle");
+    expect(state.maps[0].setBaseLayer).toHaveBeenLastCalledWith("satellite");
     expect(button("fit").disabled).toBe(false);
     expect(document.getElementById("card-expand-hint")!.textContent).toBe(
       "Expand to Share",
@@ -272,7 +283,7 @@ it.each(["success", "cancel", "failure"])(
 );
 
 it.each(["success", "cancel", "failure"])(
-  "restores expansion controls after terrain %s",
+  "restores expansion and map-layer controls after terrain %s",
   async (outcome) => {
     await start(true, false, true);
     let finish!: (value: any) => void,
@@ -292,6 +303,7 @@ it.each(["success", "cancel", "failure"])(
     click("confirm-input-terrain");
     expect(button("expand").disabled).toBe(true);
     expect(button("expand-card").disabled).toBe(true);
+    expect(button("map-layer-toggle").disabled).toBe(true);
     if (outcome === "success")
       finish({
         ...prepared,
@@ -301,6 +313,9 @@ it.each(["success", "cancel", "failure"])(
     else reject(new Error("Test terrain failed"));
     await vi.waitFor(() => expect(button("expand").disabled).toBe(false));
     expect(button("expand-card").disabled).toBe(false);
+    expect(button("map-layer-toggle").disabled).toBe(false);
+    click("map-layer-toggle");
+    expect(state.maps[0].setBaseLayer).toHaveBeenLastCalledWith("satellite");
     expect(button("input-reset").disabled).toBe(false);
   },
 );
@@ -461,6 +476,9 @@ it("offers another import once and hides it even if its file picker is cancelled
   click("reverse");
   expect(document.getElementById("map-empty")!.hidden).toBe(true);
   expect(button("import").disabled).toBe(false);
+  expect(button("map-layer-toggle").disabled).toBe(false);
+  click("map-layer-toggle");
+  expect(state.maps[0].setBaseLayer).toHaveBeenLastCalledWith("satellite");
 });
 
 it("dismisses the second-track prompt with its X without opening the picker", async () => {
@@ -772,4 +790,236 @@ it("toggles directly between both map layers with a single icon", async () => {
     "Switch to Satellite",
   );
   expect(state.store.get("baregps-track-editor-map-layer-v1")).toBe("opentopo");
+});
+
+const pointsForLimit = (count: number) =>
+  Array.from({ length: count }, (_, i) => ({
+    lat: 53 + i * 0.000001,
+    lon: -6,
+  }));
+
+it("shows the plan allowance, updates it after adding and Undo, and offers Simplify when the input will not fit", async () => {
+  await start(true, false, false, false, (w) => {
+    w.tracks[0].points = pointsForLimit(2501);
+  });
+  expect(document.getElementById("route-plan-allowance")!.textContent).toBe(
+    "0 of 5,000 points used",
+  );
+  click("add-route");
+  expect(
+    document.getElementById("plan-point-allowance")!.textContent,
+  ).toContain("2,501 of 5,000 points used");
+  expect(document.getElementById("route-plan-allowance")!.textContent).toBe(
+    "2,501 of 5,000 points used",
+  );
+  document.querySelector<HTMLDialogElement>("#dialog")!.close();
+  click("add-route");
+  expect(document.querySelector("#dialog")!.textContent).toContain(
+    "room for 2,499",
+  );
+  expect(button("simplify-for-limit").textContent).toBe("Simplify");
+  document.querySelector<HTMLDialogElement>("#dialog")!.close();
+  click("undo");
+  expect(document.getElementById("route-plan-allowance")!.textContent).toBe(
+    "0 of 5,000 points used",
+  );
+});
+
+it("counts the space released by replacing a plan entry", async () => {
+  await start(true, false, false, false, (w) => {
+    w.tracks[0].points = pointsForLimit(2500);
+    w.routePlan = [
+      { ...fixture(), id: "plan-one", points: pointsForLimit(3000) },
+      { ...fixture(), id: "plan-two", points: pointsForLimit(2000) },
+    ];
+  });
+  click("open-route-plan");
+  document
+    .querySelector<HTMLButtonElement>('[data-select-plan="plan-two"]')!
+    .click();
+  click("plan-replace");
+  expect(document.querySelector("#dialog")!.textContent).toContain(
+    "room for 2,000 after replacing",
+  );
+  expect(button("simplify-for-limit")).not.toBeNull();
+  document.querySelector<HTMLDialogElement>("#dialog")!.close();
+  click("open-route-plan");
+  document
+    .querySelector<HTMLButtonElement>('[data-select-plan="plan-one"]')!
+    .click();
+  click("plan-replace");
+  expect(
+    document.getElementById("plan-point-allowance")!.textContent,
+  ).toContain("4,500 of 5,000 points used");
+});
+
+it("explains the terrain limit before starting a request and leaves large inputs untouched", async () => {
+  await start(true, false, true, false, (w) => {
+    w.tracks[0].points = pointsForLimit(5001);
+  });
+  const job = vi.fn(async (track) => track);
+  state.terrainJob = job;
+  click("input-terrain");
+  expect(document.querySelector("#dialog")!.textContent).toContain(
+    "Simplify or trim this track before fetching heights",
+  );
+  expect(document.getElementById("confirm-input-terrain")).toBeNull();
+  expect(button("simplify-for-limit")).not.toBeNull();
+  expect(job).not.toHaveBeenCalled();
+  expect(button("input-add").disabled).toBe(false);
+  expect(button("input-insert").disabled).toBe(false);
+  expect(state.maps[0].lastRender[1].points).toHaveLength(5001);
+});
+
+it("offers a preview and keeps the original when accepting the simplified copy from a limit prompt", async () => {
+  await start(true, false, false, false, (w) => {
+    w.tracks[0].points = pointsForLimit(5001);
+  });
+  const L = (await import("leaflet")).default;
+  const preview = {
+    fitBounds: vi.fn(),
+    remove: vi.fn(),
+    invalidateSize: vi.fn(),
+  };
+  const layer = { addTo: vi.fn().mockReturnThis() };
+  const spies = [
+    vi.spyOn(L, "map").mockReturnValue(preview as any),
+    vi.spyOn(L, "tileLayer").mockReturnValue(layer as any),
+    vi.spyOn(L, "layerGroup").mockReturnValue(layer as any),
+    vi.spyOn(L, "polyline").mockReturnValue(layer as any),
+  ];
+  try {
+    click("add-route");
+    click("simplify-for-limit");
+    expect(document.querySelector("#dialog")!.textContent).toContain(
+      "Preview Simplified Track",
+    );
+    click("accept-simplify");
+    expect(document.getElementById("source-count")!.textContent).toBe("2");
+    expect(document.getElementById("route-plan-allowance")!.textContent).toBe(
+      "0 of 5,000 points used",
+    );
+    const inputs = state.maps[0].lastRender[0];
+    expect(
+      inputs.find((track: Track) => track.id === "input-one").points,
+    ).toHaveLength(5001);
+    expect(
+      inputs.find((track: Track) => track.id !== "input-one").points.length,
+    ).toBeLessThanOrEqual(5000);
+    expect(preview.remove).toHaveBeenCalled();
+  } finally {
+    spies.forEach((spy) => spy.mockRestore());
+  }
+});
+
+it("allows terrain confirmation at exactly 5,000 points", async () => {
+  await start(true, false, false, false, (w) => {
+    w.tracks[0].points = pointsForLimit(5000);
+  });
+  click("input-terrain");
+  expect(document.getElementById("confirm-input-terrain")).not.toBeNull();
+});
+
+it("disables additions and insertions at the input limit while leaving trimming available", async () => {
+  await start(true, false, false, false, (w) => {
+    w.tracks[0].points = pointsForLimit(MAX_INPUT_POINTS);
+  });
+  expect(button("input-add").disabled).toBe(true);
+  expect(button("input-insert").disabled).toBe(true);
+  expect(button("input-add").title).toContain("Simplify or trim");
+  expect(button("simplify-input").disabled).toBe(false);
+  state.maps[0].callbacks.select(10);
+  expect(button("trim-before").disabled).toBe(false);
+  expect(button("trim-after").disabled).toBe(false);
+});
+
+it("directs a full plan to removal rather than suggesting a copy could fit", async () => {
+  await start(true, false, false, false, (w) => {
+    w.routePlan = [
+      { ...fixture(), id: "full-plan", points: pointsForLimit(5000) },
+    ];
+  });
+  click("add-route");
+  expect(document.querySelector("#dialog")!.textContent).toContain(
+    "Remove a plan entry",
+  );
+  expect(document.getElementById("simplify-for-limit")).toBeNull();
+  click("review-full-plan");
+  expect(
+    document.getElementById("plan-point-allowance")!.textContent,
+  ).toContain("5,000 of 5,000 points used");
+  expect(button("plan-remove").disabled).toBe(false);
+});
+
+it("keeps a reversed plan entry reversed after replacement, with Undo and Redo", async () => {
+  const { addPlanSection, buildPlannedRoute, planSignature } =
+    await import("../src/route-plan");
+  const { reversePlanCopies } = await import("../src/join-review");
+  await start(true, false, false, false, (w) => {
+    w.tracks[0].points.forEach((point, index) => {
+      point.time = `2026-11-16T09:0${index}:00Z`;
+    });
+    w.routePlan = reversePlanCopies(addPlanSection([], w.tracks[0]), [0]);
+    w.route = buildPlannedRoute(w.routePlan);
+    w.confirmedPlan = w.routePlan.map((entry) => entry.id);
+    w.confirmedSignature = planSignature(w.routePlan);
+    w.tracks[0].points[1].ele = 333;
+  });
+  click("open-route-plan");
+  expect(document.querySelector("#dialog")!.textContent).toContain(
+    "Input changed",
+  );
+  click("plan-replace");
+  expect(document.querySelector("#dialog")!.textContent).toContain(
+    "Current copy · Reversed in plan",
+  );
+  await vi.waitFor(() => {
+    const saved = state.store.get(
+      "baregps-track-editor-workspace-v1",
+    ) as Workspace;
+    expect(saved.routePlan![0].points[0].lat).toBe(53.002);
+    expect(saved.routePlan![0].points[1].ele).toBe(333);
+    expect(saved.routePlan![0].points.every((point) => !point.time)).toBe(true);
+    expect(saved.tracks[0].points[0].time).toBe("2026-11-16T09:00:00Z");
+    expect(saved.route!.points[1].ele).toBe(110);
+  });
+  document.querySelector<HTMLDialogElement>("#dialog")!.close();
+  click("undo");
+  await vi.waitFor(() => {
+    const saved = state.store.get(
+      "baregps-track-editor-workspace-v1",
+    ) as Workspace;
+    expect(saved.routePlan![0].points[1].ele).toBe(110);
+    expect(saved.routePlan![0].planReversed).toBe(true);
+  });
+  click("redo");
+  click("open-route-plan");
+  click("confirm-route-plan");
+  await vi.waitFor(() => {
+    const saved = state.store.get(
+      "baregps-track-editor-workspace-v1",
+    ) as Workspace;
+    expect(saved.route!.points[0].lat).toBe(53.002);
+    expect(saved.route!.points[1].ele).toBe(333);
+    expect(saved.route!.points.every((point) => !point.time)).toBe(true);
+  });
+});
+
+it("removes times on input reversal and restores them with Undo or Reset Track", async () => {
+  await start(true, false, false, false, (w) => {
+    w.tracks[0].points.forEach((point, index) => {
+      point.time = `2026-11-16T09:0${index}:00Z`;
+    });
+  });
+  const current = () => state.maps[0].lastRender[1] as Track;
+  click("reverse");
+  expect(current().points[0].lat).toBe(53.002);
+  expect(current().points.every((point) => !point.time)).toBe(true);
+  click("undo");
+  expect(current().points[0].time).toBe("2026-11-16T09:00:00Z");
+  click("redo");
+  expect(current().points.every((point) => !point.time)).toBe(true);
+  click("input-reset");
+  click("confirm-delete");
+  expect(current().points[0].time).toBe("2026-11-16T09:00:00Z");
 });

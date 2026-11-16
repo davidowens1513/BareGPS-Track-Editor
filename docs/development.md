@@ -2,6 +2,24 @@
 
 These notes describe development history and validation, separately from the as-is product description in the [README](../README.md).
 
+## Plan replacement direction and reversed-track timing — 0.3.5, build 78
+
+Replacing a Route Plan entry preserves its `planReversed` choice, applies it to the refreshed input copy and keeps the source input signature so copy status stays accurate. The confirmed route changes only on reconfirmation. Ordinary and twice-reversed entries use the input's normal order.
+
+Reversing an input or plan copy now removes recorded timestamps from the reversed copy, preventing backwards activity times in exported GPX. Point names, heights and connection markers are retained. Original inputs are unaffected by plan reversal; Undo and Reset Track restore input timestamps when reversing an input. About explains both behaviours.
+
+Validation: all 155 unit/UI tests, TypeScript checks and the production web build passed. New checks cover reversed replacement after reload, partial sections, refreshed heights and copy status, ordinary/twice-reversed direction, GPX timestamp removal, input immutability, replacement Undo/Redo and reconfirmation, and restoring input timestamps with Undo or Reset Track. Release preparation targets 0.3.5, build 78; publication and device results are recorded below when verified.
+
+## Point limits and clearer planning — 0.3.5, build 78
+
+Inputs retain the 150,000-point import limit, and adding/inserting now uses the same limit. At that limit those two tools are disabled with an explanation; trimming and simplification remain available. The Route Plan retains its 5,000-point total limit and displays the used allowance beneath its button and inside the plan. Adding or replacing an input that will not fit offers the existing simplification preview; replacement counts the space freed by its selected entry. A full plan points users to removing an entry. Simplification keeps the original and does not automatically add or replace plan entries.
+
+Inputs above 5,000 points now explain the terrain limit and offer Simplify before a terrain request starts. Terrain sampling still enforces the 5,000-point limit, including added samples, with advice to simplify or trim. About explains these limits. Validation: all 150 unit/UI tests, TypeScript checks and the production web build passed. Regression checks cover editing above 5,000 points and at the 150,000 boundary, live plan allowance and Undo, replacement space, full-plan guidance, terrain boundaries and accepting a simplified copy while preserving its original. The README describes current behaviour; development and validation history stays in this linked file.
+
+## Map layer control recovery — 0.3.5, build 78
+
+The layers icon now explicitly follows the busy state on every render, restoring it after import, GPX save or terrain work finishes. Regression checks cover saving and terrain success, cancellation and failure, plus importing tracks; each verifies that the control can switch to Satellite afterwards.
+
 ## Map and join refinements — 0.3.4, build 77
 
 - Clearing the confirmed route preserves the map view and input visibility.

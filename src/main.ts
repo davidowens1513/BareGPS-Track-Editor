@@ -649,7 +649,7 @@ function renderControls() {
   const t = editWelcome ? null : active(),
     box = $("input-plan-controls");
   $("route-plan-controls").innerHTML =
-    `<button id="open-route-plan" class="button primary full" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button>`;
+    `<button id="open-route-plan" class="button primary full" aria-label="Route Plan">Route Plan <span class="badge" aria-hidden="true">${workspace.routePlan?.length ?? 0}</span></button><small id="route-plan-allowance" class="plan-allowance">${planPointAllowance()}</small>`;
   $("open-route-plan").onclick = routePlanDialog;
   if (!t || t === workspace.route) {
     inputEditing = false;
@@ -663,6 +663,7 @@ function renderControls() {
   box.innerHTML = `<button id="add-route" class="button primary full">Add to Route Plan</button>`;
   $("add-route").onclick = () => {
     if (busy || t === workspace.route) return;
+    if (offerPlanSimplification(t)) return;
     if (
       commit(() => {
         workspace.routePlan = addPlanSection(workspace.routePlan ?? [], t);
@@ -827,6 +828,38 @@ $("map-layer-toggle").onclick = () => {
   changeMapLayer(layer);
   void set(MAP_LAYER_KEY, layer).catch(report);
 };
+function planPointCount() {
+  return (workspace.routePlan ?? []).reduce(
+    (count, entry) => count + entry.points.length,
+    0,
+  );
+}
+function planPointAllowance() {
+  return `${planPointCount().toLocaleString("en-IE")} of 5,000 points used`;
+}
+function offerSimplification(title: string, message: string) {
+  openDialog(
+    `${dialogHeader(title)}<p>${message}</p><p>Simplify lets you preview a lighter copy while keeping the original. You can also cancel and trim the input track.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="simplify-for-limit" class="button primary">Simplify</button></div>`,
+  );
+  $("simplify-for-limit").onclick = previewSimplification;
+}
+function offerPlanSimplification(input: Track, replacedIndex?: number) {
+  const plan = workspace.routePlan ?? [];
+  const replacedPoints =
+    replacedIndex === undefined ? 0 : plan[replacedIndex].points.length;
+  const remaining = MAX_POINTS - planPointCount() + replacedPoints;
+  if (input.points.length <= remaining) return false;
+  if (remaining < 2) {
+    openDialog(
+      `${dialogHeader("Route Plan is full")}<p>${planPointAllowance()}. Remove a plan entry to make room before adding another track.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="review-full-plan" class="button primary">Review Route Plan</button></div>`,
+    );
+    $("review-full-plan").onclick = routePlanDialog;
+    return true;
+  }
+  const message = `This input has ${input.points.length.toLocaleString("en-IE")} points; the Route Plan has room for ${remaining.toLocaleString("en-IE")}${replacedIndex === undefined ? "" : " after replacing the selected entry"}. The plan can hold 5,000 points in total.`;
+  offerSimplification("This input won't fit in Route Plan", message);
+  return true;
+}
 function previewSimplification() {
   const original = activeInput();
   if (busy || !original) return;
@@ -915,6 +948,13 @@ function bindInputActions() {
   $("input-terrain").onclick = () => {
     const source = activeInput();
     if (busy || !inputEditing || !source || !needsTerrain(source)) return;
+    if (source.points.length > MAX_POINTS) {
+      offerSimplification(
+        "Simplify or trim before fetching heights",
+        `This input has ${source.points.length.toLocaleString("en-IE")} points. Terrain fetching supports up to 5,000 points. Simplify or trim this track before fetching heights.`,
+      );
+      return;
+    }
     openDialog(
       `${dialogHeader("Fetch Input Terrain")}<p>Coordinates for missing heights and changed legs are sent to Open Topo Data to estimate terrain. Existing valid recorded heights are kept. Your input changes only when fetching completes.</p><div class="dialog-actions"><button class="button secondary" data-close>Cancel</button><button id="confirm-input-terrain" class="button primary">Fetch Terrain</button></div>`,
     );
@@ -969,6 +1009,7 @@ function routePlanDialog() {
   const pending = !workspace.route || confirmedRouteChanged(workspace);
   openDialog(
     `${dialogHeader("Route Plan", "Select a track, then move it up or down to set the walking order.", true)}
+    <p id="plan-point-allowance" class="dialog-note">${planPointAllowance()}. Terrain connections may add points when you confirm.</p>
     <p class="dialog-note">${pending ? "Confirm Plan fetches missing heights and connections from Open Topo Data, then builds the route in this order. The Route Card stays unchanged until completion." : "This order is confirmed. Changes take effect when you confirm again."}</p>
     <div class="plan-scroll" role="region" aria-label="Route Plan tracks" tabindex="0"><table class="plan-grid"><thead><tr><th scope="col">Order</th><th scope="col">Track</th><th scope="col">Points</th><th scope="col">Distance<br>(km)</th></tr></thead><tbody>${plan.length ? plan.map((track, i) => `<tr data-plan-id="${track.id}" class="${track.id === selectedPlanId ? "selected" : ""}"><td>${i + 1}</td><td><button class="plan-select" aria-pressed="${track.id === selectedPlanId}" data-select-plan="${track.id}">${esc(track.name)}</button><small class="plan-copy-status">${esc(planCopyStatus(track, workspace.tracks))}${track.planReversed ? " · Reversed in plan" : ""}</small></td><td>${track.points.length.toLocaleString()}</td><td>${km(analytics(track.points).length)}</td></tr>`).join("") : '<tr><td colspan="4" class="plan-empty">No tracks yet. Edit an input track and choose Add to Route Plan.</td></tr>'}</tbody></table></div>
     <div class="plan-row-actions"><button id="plan-up" class="button secondary compact" ${index <= 0 ? "disabled" : ""}>Move up</button><button id="plan-down" class="button secondary compact" ${index < 0 || index === plan.length - 1 ? "disabled" : ""}>Move down</button><button id="plan-remove" class="button secondary compact" ${index < 0 ? "disabled" : ""}>Remove</button></div>
@@ -1046,6 +1087,7 @@ function routePlanDialog() {
       (t) => t.id === selectedPlanId,
     );
     if (index < 0) return;
+    if (offerPlanSimplification(replacementInput, index)) return;
     if (
       commit(() => {
         const replacement = replacePlanSection(
@@ -1263,6 +1305,7 @@ function render() {
     "empty-import",
     "dismiss-another-track",
     "view-toggle",
+    "map-layer-toggle",
   ])
     $<HTMLButtonElement>(id).disabled = busy;
   document.querySelectorAll<HTMLButtonElement>("button").forEach((b) => {
@@ -1294,7 +1337,13 @@ function render() {
       "aria-pressed",
       String(inputEditing && inputTool === tool),
     );
-    $<HTMLButtonElement>("input-" + tool).disabled = busy || !input;
+    const atInputLimit =
+      !!input && input.points.length >= MAX_INPUT_POINTS && tool !== "move";
+    $<HTMLButtonElement>("input-" + tool).disabled =
+      busy || !input || atInputLimit;
+    $("input-" + tool).title = atInputLimit
+      ? "150,000 point limit reached. Simplify or trim before adding more points."
+      : "";
   }
   const inputTerrain = $<HTMLButtonElement>("input-terrain");
   if (inputTerrain)

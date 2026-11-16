@@ -3120,6 +3120,13 @@ body:not(.creating) .map-legend {
 .route-plan-controls {
   width: 100%;
 }
+.plan-allowance {
+  display: block;
+  margin: 5px 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
 .input-plan-controls > .button,
 .route-plan-controls > .button {
   width: 100%;

@@ -200,6 +200,8 @@ export function reverse(track: Track): Track {
   const points = track.points
     .map((p, i) => ({
       ...p,
+      // A reversed route is a plan, not the original recorded activity.
+      time: undefined,
       gapBefore: track.points[i + 1]?.gapBefore,
       terrain: track.points[i + 1]?.terrain,
       terrainPending: track.points[i + 1]?.terrainPending,

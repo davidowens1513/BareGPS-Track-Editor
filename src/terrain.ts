@@ -21,7 +21,9 @@ export function sampleGaps(track: Track): Track {
     }
     points.push({ ...b });
     if (points.length > MAX_POINTS)
-      throw new Error("Terrain sampling would exceed the route point limit.");
+      throw new Error(
+        "Terrain sampling would exceed the 5,000 point limit. Simplify or trim the input tracks before fetching heights or confirming the plan.",
+      );
   }
   const missing = points.filter((p) => p.gapBefore && !p.terrain);
   if (missing.length > 5000)

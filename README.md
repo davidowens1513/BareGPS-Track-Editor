@@ -2,7 +2,7 @@
 
 Import, edit, simplify and combine GPX tracks into a walking route.
 
-**Version 0.3.4 · build 77.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
+**Version 0.3.5 · build 78.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
 
 [Open in browser](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and instructions](https://appsbyonzy.dev/#baregps-track-editor) · [Development and validation notes](docs/development.md)
 
@@ -11,7 +11,7 @@ Import, edit, simplify and combine GPX tracks into a walking route.
 1. Open one or more GPX files. After the first import, “Open another Track?” provides another file picker in the same map position; tapping it or its white X dismisses the prompt. Open files under Input Tracks remains available.
 2. Inputs stay visible together, including after confirming a route. The current input has the stronger line, a “Current: [name]” map label and a matching coloured dot in Input Tracks. Other inputs remain visible with lighter lines. Tap another line or its Input Tracks row to make it current. At overlapping sections, use the list to choose explicitly.
 3. Tap the current line to reveal a small group of local editing handles. Drag to reshape a section; Done editing or tapping empty map space hides the local handles. Start and Finish remain labelled. Only the current input is editable.
-4. Trim, reverse, insert, move or delete points as needed. Reset Track restores the current input’s saved starting points, name and colour, with confirmation and Undo/Redo. Other inputs, plan copies, confirmed output and exported files are unaffected.
+4. Trim, reverse, insert, move or delete points as needed. Reversing removes recorded timestamps from the edited copy; Undo or Reset Track restores them. Reset Track restores the current input’s saved starting points, name and colour, with confirmation and Undo/Redo. Other inputs, plan copies, confirmed output and exported files are unaffected.
 5. Export the selected edited track directly with **Export Edited GPX**, or add inputs to Route Plan, reorder or replace its entries, then Confirm Plan. Export the confirmed GPX or share its text/PDF Route Card.
 
 Simplify previews a separate copy, targeting 10 handles/km with at most 10 metres deviation. Accept retains the original. Names, endpoints, bends and segment boundaries are protected, so some tracks need more points.
@@ -26,6 +26,8 @@ Clearing the route keeps the current map position. Confirm Plan checks unusually
 
 Plan copies show when the input has changed. If you change the plan after confirming, the Route Card warns that it is an older confirmed route; exporting it requires an explicit choice. Renamed tracks and routes use their names in exported filenames.
 
+Replacing a plan entry preserves any reversal chosen in Route Plan while taking the latest input data. Plan reversals leave the source input untouched.
+
 ## Terrain and Route Cards
 
 Fetch Terrain supplies missing elevation estimates from Open Topo Data’s Mapzen dataset. Route Cards default to 30 checkpoints, retaining endpoints and named points; more than 30 names can exceed that target. Full Card lists all points. Text and portrait A4 PDF sharing follow the chosen card view. Route metrics use the full geometry, and GPX export retains all route points.
@@ -34,8 +36,9 @@ Terrain sampling is roughly 90 metres. Incomplete, missing or invalidated elevat
 
 ## Limits and use
 
-- Inputs: up to 150,000 points per file, 15 MB per file and 20 files per import, within a bounded workspace.
-- Planning and terrain jobs: up to 5,000 points; simplify or trim larger inputs first.
+- Imports: up to 150,000 points per file, 15 MB per file and 20 files per import, within a bounded workspace. Adding and inserting use the same 150,000-point input limit.
+- Route Plan: up to 5,000 points in total. The allowance appears below its button and inside the plan. Inputs that will not fit offer a simplification preview, which keeps the original. A full plan needs an entry removed first.
+- Terrain jobs: up to 5,000 points, including added samples. Larger inputs explain the limit before fetching and offer Simplify; trimming is another option.
 - Lines connect points directly and do not automatically follow paths. Check access, terrain and walkability yourself.
 - Maps and terrain need internet. There is no navigation, activity recording, account, cloud sync or offline map pack.
 - Native apps target iPhone and Android phones. Tablets can use the browser app.

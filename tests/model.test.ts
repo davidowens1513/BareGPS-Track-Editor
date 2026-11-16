@@ -99,6 +99,34 @@ describe("track editing and walking totals", () => {
       8,
     );
   });
+  it("removes recorded timestamps when reversing, without changing source data", () => {
+    const source = track();
+    source.points.forEach((point, index) => {
+      point.time = `2026-11-16T09:0${index}:00Z`;
+      point.name = `Checkpoint ${index}`;
+    });
+    const original = structuredClone(source);
+    const reversed = reverse(source);
+    expect(reversed.points.map((point) => point.lat)).toEqual(
+      source.points.map((point) => point.lat).reverse(),
+    );
+    expect(reversed.points.every((point) => point.time === undefined)).toBe(
+      true,
+    );
+    expect(reversed.points[0].name).toBe("Checkpoint 4");
+    expect(reversed.points[0].ele).toBe(130);
+    expect(exportGPX(reversed)).not.toContain("<time>");
+    expect(
+      parseGPX(exportGPX(reversed), "reversed.gpx")[0].points.every(
+        (point) => point.time === undefined,
+      ),
+    ).toBe(true);
+    expect(
+      reverse(reversed).points.every((point) => point.time === undefined),
+    ).toBe(true);
+    expect(source).toEqual(original);
+    expect(exportGPX(source)).toContain("<time>");
+  });
   it("reports partial ascent when elevation is missing, while retaining full distance", () => {
     const t = track();
     delete t.points[2].ele;

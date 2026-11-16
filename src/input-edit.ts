@@ -1,4 +1,10 @@
-import { distance, MAX_POINTS, type Point, type Track } from "./model";
+import {
+  distance,
+  MAX_POINTS,
+  MAX_INPUT_POINTS,
+  type Point,
+  type Track,
+} from "./model";
 import { isClosedRoute } from "./track-geometry";
 
 export type InputPointTool = "move" | "add" | "insert";
@@ -78,8 +84,10 @@ export function insertInputPoint(
   validCoordinate(point);
   if (!Number.isInteger(index) || index < 0 || index > track.points.length)
     throw new Error("That input segment has changed. Try again.");
-  if (track.points.length >= MAX_POINTS)
-    throw new Error("This input track has reached the 5,000 point limit.");
+  if (track.points.length >= MAX_INPUT_POINTS)
+    throw new Error(
+      "This input track has reached the 150,000 point limit. Simplify or trim it before adding more points.",
+    );
   if (
     [track.points[index - 1], track.points[index]].some(
       (neighbour) => neighbour && distance(neighbour, point) < 0.5,

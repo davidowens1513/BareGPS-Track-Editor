@@ -5,7 +5,10 @@ import {
   buildPlannedRoute,
   MAX_PLAN_SECTIONS,
   allInputsInPlan,
+  replacePlanSection,
+  planCopyStatus,
 } from "../src/route-plan";
+import { reversePlanCopies } from "../src/join-review";
 import {
   emptyWorkspace,
   validateWorkspace,
@@ -26,6 +29,67 @@ const input = (id = "input", latitude = 53): Track => ({
   })),
 });
 describe("intermediate Route Plan", () => {
+  it("retains a reversed plan direction through replacement and reload, using refreshed input data", () => {
+    const source = input();
+    source.points.forEach((point, index) => {
+      point.time = `2026-11-16T09:0${index}:00Z`;
+    });
+    const plan = reversePlanCopies(addPlanSection([], source), [0]);
+    const confirmed = buildPlannedRoute(plan);
+    const refreshed = structuredClone(source);
+    refreshed.points[2].ele = 350;
+    const original = structuredClone(refreshed);
+    expect(planCopyStatus(plan[0], [refreshed])).toBe("Input changed");
+    const reloaded = JSON.parse(JSON.stringify(plan));
+    const replacement = replacePlanSection(reloaded, 0, refreshed, {
+      start: 0,
+      end: 3,
+    });
+    expect(replacement[0].planReversed).toBe(true);
+    expect(replacement[0].points.map((point) => point.name)).toEqual([
+      "P3",
+      "P2",
+      "P1",
+      "P0",
+    ]);
+    expect(replacement[0].points[1].ele).toBe(350);
+    expect(
+      replacement[0].points.every((point) => point.time === undefined),
+    ).toBe(true);
+    expect(replacement[0].id).not.toBe(plan[0].id);
+    expect(planCopyStatus(replacement[0], [refreshed])).toBe("Current copy");
+    expect(refreshed).toEqual(original);
+    expect(confirmed.points[1].ele).toBe(120);
+    expect(buildPlannedRoute(replacement, confirmed).points[1].ele).toBe(350);
+    const again = replacePlanSection(
+      JSON.parse(JSON.stringify(replacement)),
+      0,
+      refreshed,
+      { start: 1, end: 3 },
+    );
+    expect(again[0].points.map((point) => point.name)).toEqual([
+      "P3",
+      "P2",
+      "P1",
+    ]);
+    expect(again[0].planReversed).toBe(true);
+  });
+  it("keeps an ordinary or twice-reversed entry in input order, retaining recorded times", () => {
+    const source = input();
+    source.points[0].time = "2026-11-16T09:00:00Z";
+    const plan = addPlanSection([], source);
+    for (const entries of [
+      plan,
+      reversePlanCopies(reversePlanCopies(plan, [0]), [0]),
+    ]) {
+      const replacement = replacePlanSection(entries, 0, source, {
+        start: 0,
+        end: 3,
+      });
+      expect(replacement[0].points).toEqual(source.points);
+      expect(replacement[0].planReversed).toBeFalsy();
+    }
+  });
   it("copies the current A–B section and isolates it from later input edits", () => {
     const track = input();
     const plan = addPlanSection([], track, { start: 1, end: 3 });

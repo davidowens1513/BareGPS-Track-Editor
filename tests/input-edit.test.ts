@@ -10,6 +10,7 @@ import {
 } from "../src/input-edit";
 import {
   exportGPX,
+  MAX_INPUT_POINTS,
   parseGPX,
   reverse,
   section,
@@ -36,6 +37,34 @@ const input = (count = 61): Track => ({
   })),
 });
 describe("input geometry editing", () => {
+  it("allows additions and insertions above 5,000 points, up to the input limit", () => {
+    const source = input();
+    source.points = Array.from({ length: 5001 }, (_, i) => ({
+      lat: 53 + i * 0.00001,
+      lon: -6,
+    }));
+    const added = insertInputPoint(source, source.points.length, {
+      lat: 53.06,
+      lon: -6,
+    });
+    expect(added.points).toHaveLength(5002);
+    expect(
+      insertInputPoint(source, 1, { lat: 53.000005, lon: -5.9999 }).points,
+    ).toHaveLength(5002);
+    source.points = Array.from({ length: MAX_INPUT_POINTS - 1 }, () => ({
+      lat: 53,
+      lon: -6,
+    }));
+    const full = insertInputPoint(source, source.points.length, {
+      lat: 53.01,
+      lon: -6,
+    });
+    expect(full.points).toHaveLength(MAX_INPUT_POINTS);
+    expect(() => insertInputPoint(full, 1, { lat: 53.02, lon: -6 })).toThrow(
+      "150,000 point limit",
+    );
+    expect(source.points).toHaveLength(MAX_INPUT_POINTS - 1);
+  });
   it("spaces handles without reducing the source and includes explicit and gap boundaries", () => {
     const t = input();
     expect(inputHandleIndices(t, 20)).toEqual([0, 20, 40, 60]);

@@ -1,6 +1,7 @@
 import {
   join,
   MAX_POINTS,
+  reverse,
   section,
   type Selection,
   type Track,
@@ -121,7 +122,11 @@ export function replacePlanSection(
   if (!Number.isInteger(index) || index < 0 || index >= plan.length)
     throw new Error("Select a planned section to replace.");
   const result = [...plan];
-  result[index] = addPlanSection([], input, selection)[0];
+  const replacement = addPlanSection([], input, selection)[0];
+  result[index] = {
+    ...(plan[index].planReversed ? reverse(replacement) : replacement),
+    planReversed: plan[index].planReversed,
+  };
   if (
     result.reduce((count, track) => count + track.points.length, 0) > MAX_POINTS
   )
