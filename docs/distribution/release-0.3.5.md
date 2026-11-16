@@ -6,4 +6,4 @@ Replacing a plan entry retains its chosen reversal and updated heights. Reversin
 
 The layers control is restored after import, saving and terrain work. Regression checks cover successful, cancelled and failed operations.
 
-Validation: 155 unit/UI tests and nine native file-guard tests pass. TypeScript, production web builds and native preparation pass. Android Studio assembled the signed release APK and installed build 78 on SM-A075F. iPhone launch and website publication results are recorded separately after verification. Public Android downloads require the permanent release certificate and a non-debuggable build; earlier downloads remain available.
+Validation: 155 unit/UI tests and nine native file-guard tests pass. TypeScript, production web builds and native preparation pass. Android Studio assembled the signed release APK and installed build 78 on SM-A075F. Xcode installed and launched build 78 on TestBed iOS; all native web assets match the current build. Website publication results are recorded separately after verification. Public Android downloads require the permanent release certificate and a non-debuggable build; earlier downloads remain available.
