@@ -142,11 +142,12 @@ async function start(
   configure?.(w);
   state.store.set("baregps-track-editor-workspace-v1", w);
   await import("../src/main");
-  await vi.waitFor(() =>
+  await vi.waitFor(() => {
+    expect(state.maps[0].lastRender.length).toBeGreaterThan(0);
     expect(document.getElementById("source-count")!.textContent).toBe(
       withInput ? (secondInput ? "2" : "1") : "0",
-    ),
-  );
+    );
+  });
 }
 it("Reset Track confirms, restores only the active input and supports Undo/Redo", async () => {
   await start();

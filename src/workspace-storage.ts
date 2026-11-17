@@ -50,6 +50,17 @@ export class WorkspaceStorage {
     await this.backend.write(entries);
     this.good = next;
   }
+  async forget(): Promise<void> {
+    if (!this.ready)
+      throw new Error(
+        "Workspace recovery is unavailable; the saved copy has been kept.",
+      );
+    await this.backend.write([
+      [WORKSPACE_KEY, undefined],
+      [PREVIOUS_KEY, undefined],
+    ]);
+    this.good = undefined;
+  }
   async previous(): Promise<Workspace | undefined> {
     const raw = await this.backend.read(PREVIOUS_KEY);
     return validateWorkspace(raw) ? raw : undefined;

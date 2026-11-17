@@ -112,3 +112,68 @@ test("only the editing map exists, and input colour changes close correctly and 
   await page.locator("#undo").click();
   await expect(colour).toHaveAttribute("style", before!);
 });
+
+test("cancelled saves clear the previous GPX save confirmation", async ({
+  page,
+}) => {
+  const chooser = page.waitForEvent("filechooser");
+  await page.locator("#empty-import").click();
+  await (
+    await chooser
+  ).setFiles({
+    name: "test.gpx",
+    mimeType: "text/xml",
+    buffer: Buffer.from(gpx(3)),
+  });
+  await page.evaluate(() => {
+    (window as any).showSaveFilePicker = async () => ({
+      createWritable: async () => ({
+        write: async () => {},
+        close: async () => {},
+      }),
+    });
+  });
+  await page.locator("#export-input").click();
+  await expect(page.locator("#notice")).toContainText("GPX saved");
+  await page.evaluate(() => {
+    (window as any).showSaveFilePicker = async () => {
+      throw new DOMException("Save cancelled", "AbortError");
+    };
+  });
+  await page.locator("#export-input").click();
+  await expect(page.locator("#notice")).toBeHidden();
+  await expect(page.locator("#export-input")).toBeEnabled();
+});
+
+test("bottom errors expire ten seconds after the latest message", async ({
+  page,
+}) => {
+  const chooser = page.waitForEvent("filechooser");
+  await page.locator("#empty-import").click();
+  await (
+    await chooser
+  ).setFiles({
+    name: "test.gpx",
+    mimeType: "text/xml",
+    buffer: Buffer.from(gpx(3)),
+  });
+  await page.clock.install();
+  await page.evaluate(() => {
+    (window as any).showSaveFilePicker = async () => {
+      throw new Error("Save failed");
+    };
+  });
+  await page.locator("#export-input").click();
+  await expect(page.locator("#notice")).toContainText("Save failed");
+  await page.clock.fastForward(6000);
+  await expect(page.locator("#notice")).toBeVisible();
+  await page.locator("#export-input").click();
+  await page.clock.fastForward(6000);
+  await expect(page.locator("#notice")).toBeVisible();
+  await page.clock.fastForward(4000);
+  await expect(page.locator("#notice")).toBeHidden();
+  await page.locator("#export-input").click();
+  await expect(page.locator("#notice")).toBeVisible();
+  await page.getByRole("button", { name: "Dismiss message" }).click();
+  await expect(page.locator("#notice")).toBeHidden();
+});

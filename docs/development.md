@@ -187,3 +187,14 @@ Downloads are a signed Android APK/ZIP and an iPhone Xcode source ZIP, not an IP
 Publication authorised on 16 November 2026. This release includes the phone-sized direction-review actions and the opening-guide stacking correction installed on both phones. The README describes the current app; this file retains progress. Public Android downloads use the permanent release key, separately from the compatible development-signed phone installation. Website and download verification is recorded in docs/testing/release-0.3.6.json.
 
 Production deployment `e8b03317-4297-41a5-8c9b-24f481e0122a` is live. The homepage shows Track Editor 0.3.6 build 80 and Route Maker iOS 1.0.1 build 103 / Android 0.1.6 build 13. Both previews loaded; current About guidance and selected-layer credits were checked. Downloaded APK SHA-256 values and every file in both products’ expanded iOS/Android bundles match the packaged releases. All previous site files are retained. All three repositories were pushed; this verification record is committed separately. App Store Connect was observed showing Route Maker build 103 Waiting for Review.
+
+
+## Release 0.3.7 — build 81 (17 November 2026)
+
+Save confirmations are cleared before each new save so cancellation cannot leave an old success message visible. Bottom notices dismiss after ten seconds or via their close button; replacement messages receive their own timer. Empty workspaces reset preview and editing state. The browser GPX picker remains attached until completion and handles focus returning without a cancel/change event, without interrupting slow file reads. Import preparation now releases its busy state even if rendering fails.
+
+Settings → Remember workspace defaults to on. Turning it off clears saved/current-history snapshots, keeps the active session usable, suppresses further automatic saves and starts fresh on relaunch or page reload. Turning it back on saves the active workspace. About and README describe this behaviour.
+
+Validation before release preparation: 170 native-source unit/UI checks and 128 legacy web-source checks pass, including new picker, restart and preference regressions; TypeScript and production web builds pass. The web preview and both native builds will now use the same current source. Phone installation, public packaging, website deployment and Git push results are recorded below as verified.
+
+Native preparation passed with both platforms using the same `dist` assets. Xcode built, installed and launched 0.3.7 (81) on TestBed iOS; the debug navigator shows the process running and the WebView loaded. Android Studio completed `assembleRelease` and `installDebug`, confirming installation on the attached SM-A075F. The phone retains its compatible development signature; the public APK uses the permanent release signature.

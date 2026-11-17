@@ -2,7 +2,7 @@
 
 Import, edit, simplify and combine GPX tracks into a walking route.
 
-**Version 0.3.6 · build 80.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
+**Version 0.3.7 · build 81.** Available as a browser app, a signed Android APK and an iPhone Xcode source bundle.
 
 [Open in browser](https://appsbyonzy.dev/tools/baregps-track-editor/) · [Downloads and instructions](https://appsbyonzy.dev/#baregps-track-editor) · [Development and validation notes](docs/development.md)
 
@@ -45,7 +45,7 @@ Terrain sampling is roughly 90 metres. Incomplete, missing or invalidated elevat
 
 ## Saving and privacy
 
-The workspace is saved on the current device or browser. Settings → Workspace recovery and backup can export and restore complete workspace backups, restore the previous successful save, and export preserved unreadable recovery data. Keep original GPX files and export important routes. Reset Track uses the starting version retained for each input; inputs saved before that feature use their saved state at upgrade as the baseline.
+Settings → Remember workspace is on by default and saves the workspace on the current device or browser. Turning it off clears the saved workspace, keeps the current session open and starts fresh on the next launch or page reload. The header shows “Session only” while it is off; export GPX files to keep your work. Turning it back on saves the current workspace again. Settings → Workspace recovery and backup can export and restore complete workspace backups, restore the previous successful save, and export preserved unreadable recovery data. Keep original GPX files and export important routes. Reset Track uses the starting version retained for each input; inputs saved before that feature use their saved state at upgrade as the baseline.
 
 Map providers receive viewed map areas. Terrain providers receive requested coordinates; browser terrain requests use the website’s Cloudflare relay. Sharing sends files to the destination you choose. Dependency and map credits are available in About.
 

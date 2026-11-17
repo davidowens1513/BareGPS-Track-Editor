@@ -85,6 +85,8 @@ let coordinateSystem: CoordinateSystem = "latlon";
 const COORDINATE_KEY = "baregps-track-editor-coordinate-system-v1";
 let allowPointNaming = false;
 const POINT_NAMING_KEY = "baregps-track-editor-allow-point-naming-v1";
+const REMEMBER_WORKSPACE_KEY = "baregps-track-editor-remember-workspace-v1";
+let rememberWorkspace = true;
 const INPUT_COLOUR_KEY = "baregps-track-editor-input-colour-v1";
 let defaultInputColour: string | undefined;
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
@@ -268,17 +270,23 @@ const allTracks = () => [
   ...(workspace.routePlan ?? []),
   ...(workspace.route ? [workspace.route] : []),
 ];
+let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+function dismissNotification() {
+  clearTimeout(noticeTimer);
+  noticeTimer = undefined;
+  $("notice").hidden = true;
+}
 function notification(message: string, error = false, showSuccess = false) {
-  // Routine actions stay quiet; warnings and errors remain visible until dismissed.
+  // Routine actions stay quiet; visible messages expire after ten seconds.
   if (!error && !showSuccess) return;
+  dismissNotification();
   const el = $("notice");
   el.className = `notice ${error ? "error" : ""}`;
   el.setAttribute("role", error ? "alert" : "status");
   el.innerHTML = `${icon(error ? "info" : "check", 18)}<span>${esc(message)}</span><button class="icon-button" aria-label="Dismiss message">${icon("close", 16)}</button>`;
   el.hidden = false;
-  el.querySelector("button")!.onclick = () => {
-    el.hidden = true;
-  };
+  el.querySelector("button")!.onclick = dismissNotification;
+  noticeTimer = setTimeout(dismissNotification, 10000);
 }
 function report(error: unknown) {
   if (isCancelled(error)) return;
@@ -296,12 +304,17 @@ function setSaveState(full: string, short: string) {
   $("save-state").innerHTML =
     `<span class="save-full">${full}</span><span class="save-short" aria-hidden="true">${short}</span>`;
   $("save-state").setAttribute("aria-label", full);
-  $("save-state").title =
-    `${full}. This refers to the workspace on this device; use Save Input Track or Save Route to export a GPX file.`;
+  $("save-state").title = rememberWorkspace
+    ? `${full}. This refers to the workspace on this device; use Save Input Track or Save Route to export a GPX file.`
+    : "This workspace is only kept for this session. Export GPX files to keep your work.";
 }
 let storageRevision = 0;
 function flushWorkspace() {
   clearTimeout(saveTimer);
+  if (!rememberWorkspace) {
+    setSaveState("Session only", "Session only");
+    return;
+  }
   const snapshot = structuredClone(workspace),
     revision = storageRevision;
   saveQueue = saveQueue
@@ -322,6 +335,10 @@ function flushWorkspace() {
 function persist() {
   storageRevision++;
   clearTimeout(saveTimer);
+  if (!rememberWorkspace) {
+    setSaveState("Session only", "Session only");
+    return;
+  }
   setSaveState("Saving…", "Saving…");
   saveTimer = setTimeout(flushWorkspace, 300);
 }
@@ -1284,6 +1301,23 @@ async function confirmRoutePlan() {
   $("back-to-plan").onclick = routePlanDialog;
 }
 function render() {
+  // A deleted route cannot remain in Preview Mode. An empty workspace must
+  // always return to the initial import state, regardless of deletion order.
+  if (!workspace.route) {
+    previewMode = false;
+    previewReturnInputId = null;
+  }
+  if (!workspace.tracks.length && !workspace.route) {
+    editWelcome = true;
+    anotherTrackDismissed = false;
+    showAll = true;
+    inputEditing = false;
+    selectedInputPoint = null;
+    inputTool = "move";
+    workspace.activeId = null;
+    workspace.selection = { start: 0, end: 0 };
+    map.resetSelection();
+  }
   $("exit-preview").hidden = !previewMode;
   $<HTMLButtonElement>("exit-preview").disabled = busy;
   renderTracks();
@@ -1376,8 +1410,8 @@ function ensureTrackCapacity(count: number, points: number) {
 async function importFiles(files?: ImportFile[]) {
   if (busy) return;
   busy = true;
-  render();
   try {
+    render();
     const incoming = files ?? (await pickFiles());
     if (!incoming.length) return;
     if (incoming.length > 20)
@@ -1441,6 +1475,7 @@ async function importFiles(files?: ImportFile[]) {
 }
 async function exportTrack(track: Track) {
   if (busy) return;
+  dismissNotification();
   busy = true;
   render();
   try {
@@ -2148,10 +2183,38 @@ $("settings").onclick = () => {
       )
       .join(
         "",
-      )}</select></section>${colourSection}<section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section><section><h3>Saved work</h3><button id="workspace-recovery" class="button secondary">Workspace recovery and backup</button></section></div><div class="settings-dialog-actions"><button class="button primary full" data-close>Done</button></div>`,
+      )}</select></section>${colourSection}<section class="settings-point-naming"><div class="settings-toggle-row"><h3 id="point-naming-heading">Allow Point Naming</h3><button id="allow-point-naming" class="settings-switch" type="button" role="switch" aria-labelledby="point-naming-heading" aria-describedby="point-naming-description" aria-checked="${allowPointNaming}"><span aria-hidden="true"></span></button></div><p id="point-naming-description">Allow individual points in a route to be named.</p></section><section class="settings-remember-workspace"><div class="settings-toggle-row"><h3 id="remember-workspace-heading">Remember workspace</h3><button id="remember-workspace" class="settings-switch" type="button" role="switch" aria-labelledby="remember-workspace-heading" aria-describedby="remember-workspace-description" aria-checked="${rememberWorkspace}"><span aria-hidden="true"></span></button></div><p id="remember-workspace-description">Restore your tracks and route next time. Turn off to start fresh; your current session stays open. Export GPX files to keep your work.</p></section><section><h3>Saved work</h3><button id="workspace-recovery" class="button secondary">Workspace recovery and backup</button></section></div><div class="settings-dialog-actions"><button class="button primary full" data-close>Done</button></div>`,
     "settings",
   );
   $("workspace-recovery").onclick = openWorkspaceRecovery;
+  $("remember-workspace").onclick = async () => {
+    const button = $<HTMLButtonElement>("remember-workspace");
+    button.disabled = true;
+    try {
+      const next = !rememberWorkspace;
+      await set(REMEMBER_WORKSPACE_KEY, next);
+      rememberWorkspace = next;
+      storageRevision++;
+      clearTimeout(saveTimer);
+      if (next) persist();
+      else {
+        setSaveState("Session only", "Session only");
+        // Clear after any in-flight save so it cannot restore the old snapshot.
+        saveQueue = saveQueue
+          .catch(() => {})
+          .then(() => workspaceStorage.forget());
+        await saveQueue;
+      }
+    } catch {
+      notification(
+        "Could not update workspace storage. Check the setting and export GPX files to keep your work.",
+        true,
+      );
+    } finally {
+      button.setAttribute("aria-checked", String(rememberWorkspace));
+      button.disabled = false;
+    }
+  };
   const bindSettingsColour = () => {
     bindColourPicker(
       colourTrack?.color ?? defaultInputColour ?? "#d32f2f",
@@ -2272,6 +2335,7 @@ async function pendingFiles() {
 }
 async function init() {
   try {
+    rememberWorkspace = (await get(REMEMBER_WORKSPACE_KEY)) !== false;
     const savedColour = await get(INPUT_COLOUR_KEY);
     if (typeof savedColour === "string" && /^#[0-9a-f]{6}$/i.test(savedColour))
       defaultInputColour = savedColour.toLowerCase();
@@ -2283,7 +2347,8 @@ async function init() {
       coordinateSystem = savedCoordinates;
   } catch {}
   try {
-    const saved = await workspaceStorage.load();
+    const stored = await workspaceStorage.load();
+    const saved = rememberWorkspace ? stored : undefined;
     if (saved) {
       if (validateWorkspace(saved)) {
         workspace = restoreSeparateWorkspace(saved);
@@ -2320,6 +2385,7 @@ async function init() {
       "A saved workspace needed recovery. Its original data is preserved. Open Settings → Workspace recovery and backup for options.",
       true,
     );
+  if (!rememberWorkspace) setSaveState("Session only", "Session only");
   render();
   fitMap();
   if (Capacitor.isNativePlatform()) {

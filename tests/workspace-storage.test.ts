@@ -69,3 +69,16 @@ it("rejects malformed new snapshots and never replaces the good saved copy", asy
   await expect(storage.save({ version: 999 } as any)).rejects.toThrow("safely");
   expect(store.data.get(WORKSPACE_KEY)).toEqual(emptyWorkspace());
 });
+it("forgets saved and previous snapshots, then allows a new remembered session", async () => {
+  const store = backend(),
+    storage = new WorkspaceStorage(store);
+  await storage.load();
+  await storage.save(emptyWorkspace());
+  await storage.save({ ...emptyWorkspace(), routePlan: [] });
+  expect(await storage.previous()).toBeDefined();
+  await storage.forget();
+  expect(await storage.previous()).toBeUndefined();
+  expect(await new WorkspaceStorage(store).load()).toBeUndefined();
+  await storage.save(emptyWorkspace());
+  expect(store.data.get(WORKSPACE_KEY)).toEqual(emptyWorkspace());
+});

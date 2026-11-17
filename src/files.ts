@@ -28,13 +28,30 @@ export async function pickFiles(): Promise<ImportFile[]> {
     const { files } = await NativeFiles.pick();
     return files.map((f) => ({ name: f.name, text: decode(f.data) }));
   }
-  return new Promise((resolve, reject) => {
+  return new Promise<ImportFile[]>((resolve, reject) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".gpx,application/gpx+xml,application/xml,text/xml";
     input.multiple = true;
-    input.addEventListener("cancel", () => resolve([]));
-    input.addEventListener("change", async () => {
+    input.hidden = true;
+    let reading = false;
+    let settled = false;
+    let focusTimer: ReturnType<typeof setTimeout> | undefined;
+    const cleanup = () => {
+      settled = true;
+      clearTimeout(focusTimer);
+      window.removeEventListener("focus", onFocus);
+      input.remove();
+    };
+    const cancel = () => {
+      if (settled || reading) return;
+      cleanup();
+      resolve([]);
+    };
+    const read = async () => {
+      if (settled || reading) return;
+      reading = true;
+      clearTimeout(focusTimer);
       try {
         const files = Array.from(input.files ?? []);
         if (
@@ -57,9 +74,29 @@ export async function pickFiles(): Promise<ImportFile[]> {
         );
       } catch (e) {
         reject(e);
+      } finally {
+        cleanup();
       }
-    });
-    input.click();
+    };
+    function onFocus() {
+      // Some browsers return from the picker without a cancel/change event.
+      // Allow the selection event to arrive before checking the input itself.
+      clearTimeout(focusTimer);
+      focusTimer = setTimeout(() => {
+        if (input.files?.length) void read();
+        else cancel();
+      }, 1000);
+    }
+    input.addEventListener("cancel", cancel);
+    input.addEventListener("change", read);
+    window.addEventListener("focus", onFocus);
+    document.body.append(input);
+    try {
+      input.click();
+    } catch (e) {
+      cleanup();
+      reject(e);
+    }
   });
 }
 export function decode(data: string): string {
