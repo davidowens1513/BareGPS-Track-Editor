@@ -1,0 +1,19 @@
+{
+  "version": "0.3.7",
+  "build": 81,
+  "app_source_commit": "93f4635c9757b27643f19b9387f9f72281c8371c",
+  "files": 298,
+  "previous_files_retained": true,
+  "changed_existing_files": [
+    "index.html",
+    "_headers",
+    "tools/baregps-track-editor/index.html"
+  ],
+  "archive_sha256": "fb21eaf625b5c7436deee2e36d8aadb875cebfdf9b7c278581848e3f6ffaa247",
+  "tests": 170,
+  "native_file_checks": 9,
+  "ios_install": "TestBed iOS: running, WebView loaded",
+  "android_install": "SM-A075F: installed successfully",
+  "status": "staged",
+  "public_apk_sha256": "1d4854f60bdb78a9217e32d83f5244683c76ddadf295bbf446486bc317985c5e"
+}
