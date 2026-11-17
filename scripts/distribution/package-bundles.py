@@ -55,10 +55,21 @@ for platform in (['ios','android'] if args.platform=='both' else [args.platform]
     directory=output/platform
     directory.mkdir(parents=True,exist_ok=True)
     guide=root/'docs'/'distribution'/f'{platform}-instructions.txt'
-    shutil.copy(guide,directory/'instructions.txt')
+    guide_text = guide.read_text()
+    if platform == 'android':
+        guide_version = version
+        guide_build = re.search(r"versionCode='(\d+)'", badging)[1]
+    else:
+        project_text = (root/'ios/App/App.xcodeproj/project.pbxproj').read_text()
+        guide_version = re.search(r'MARKETING_VERSION = ([^;]+);', project_text)[1].strip('"')
+        guide_build = re.search(r'CURRENT_PROJECT_VERSION = ([^;]+);', project_text)[1].strip('"')
+    guide_text = re.sub(r'^Version .*$', f'Version {guide_version}, build {guide_build}', guide_text, flags=re.M)
+    guide_text = re.sub(r'BareGPS-(?:Route-Maker|Track-Editor)-[0-9.]+\.apk', f'{filename_prefix}-{version}.apk', guide_text)
+    guide_text = re.sub(r'Check About for version [^\n]+', f'Check About for version {guide_version}, build {guide_build}.', guide_text)
+    (directory/'instructions.txt').write_text(guide_text)
     bundle=directory/f'{filename_prefix}-{platform}-Bundle-{version}.zip'
     with zipfile.ZipFile(bundle,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
-        archive.write(guide,'instructions.txt')
+        archive.writestr('instructions.txt', guide_text)
         archive.writestr('BUILD-INFO.json',json.dumps({'app':'BareGPS Track Editor','version':version,'platform':platform,'app_source_commit':commit},indent=2)+'\n')
         if platform=='android':
             filename=f'{filename_prefix}-{version}.apk'
